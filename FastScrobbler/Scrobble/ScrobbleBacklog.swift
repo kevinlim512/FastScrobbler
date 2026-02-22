@@ -1,0 +1,178 @@
+import Foundation
+import OSLog
+
+actor ScrobbleBacklog {
+    struct Item: Codable, Hashable {
+        var id: UUID
+        var track: Track
+        var startTimestamp: Int
+        var queuedAt: Date
+        var attemptCount: Int
+        var lastAttemptAt: Date?
+    }
+
+    struct FlushResult: Sendable {
+        struct SentItem: Sendable, Hashable {
+            var track: Track
+            var startTimestamp: Int
+            var scrobbledAt: Date
+        }
+
+        var sentCount: Int
+        var skippedCount: Int
+        var remainingCount: Int
+        var sentItems: [SentItem]
+    }
+
+    static let shared = ScrobbleBacklog()
+
+    private let logger = Logger(subsystem: "FastScrobbler", category: "ScrobbleBacklog")
+    private var isLoaded = false
+    private var items: [Item] = []
+
+    private init() {}
+
+    func pendingCount() async -> Int {
+        await loadIfNeeded()
+        return items.count
+    }
+
+    func enqueue(track: Track, startTimestamp: Int) async {
+        await loadIfNeeded()
+
+        if items.contains(where: { $0.startTimestamp == startTimestamp && $0.track == track }) {
+            return
+        }
+
+        items.append(
+            Item(
+                id: UUID(),
+                track: track,
+                startTimestamp: startTimestamp,
+                queuedAt: Date(),
+                attemptCount: 0,
+                lastAttemptAt: nil
+            )
+        )
+        await save()
+    }
+
+    func flush(sessionKey: String, maxItems: Int = 25) async -> FlushResult {
+        await flush(sessionKey: sessionKey, maxItems: maxItems, ignoreBackoff: false)
+    }
+
+    func flush(sessionKey: String, maxItems: Int = 25, ignoreBackoff: Bool) async -> FlushResult {
+        await loadIfNeeded()
+        guard !items.isEmpty else {
+            return FlushResult(sentCount: 0, skippedCount: 0, remainingCount: 0, sentItems: [])
+        }
+
+        let now = Date()
+        var sentCount = 0
+        var skippedCount = 0
+        var sentItems: [FlushResult.SentItem] = []
+
+        do {
+            let client = try LastFMClient()
+
+            items.sort(by: { $0.startTimestamp < $1.startTimestamp })
+            var idx = 0
+            while idx < items.count, sentCount < maxItems {
+                var item = items[idx]
+
+                if item.startTimestamp <= 0 || item.attemptCount >= 10 {
+                    items.remove(at: idx)
+                    continue
+                }
+
+                if !ignoreBackoff, let last = item.lastAttemptAt, now.timeIntervalSince(last) < 10 * 60 {
+                    skippedCount += 1
+                    idx += 1
+                    continue
+                }
+
+                do {
+                    try await client.scrobble(track: item.track, sessionKey: sessionKey, startTimestamp: item.startTimestamp)
+                    sentItems.append(
+                        FlushResult.SentItem(track: item.track, startTimestamp: item.startTimestamp, scrobbledAt: now)
+                    )
+                    items.remove(at: idx)
+                    sentCount += 1
+                } catch {
+                    item.attemptCount += 1
+                    item.lastAttemptAt = now
+                    items[idx] = item
+                    logger.warning("backlog scrobble failed: \(error.localizedDescription, privacy: .public)")
+                    break
+                }
+            }
+        } catch {
+            logger.warning("failed to init LastFMClient for backlog flush: \(error.localizedDescription, privacy: .public)")
+        }
+
+        await save()
+        return FlushResult(sentCount: sentCount, skippedCount: skippedCount, remainingCount: items.count, sentItems: sentItems)
+    }
+
+    private func loadIfNeeded() async {
+        guard !isLoaded else { return }
+        isLoaded = true
+
+        if let sharedURL = sharedFileURL() {
+            let fm = FileManager.default
+            if !fm.fileExists(atPath: sharedURL.path) {
+                let legacyURL = legacyFileURL()
+                if fm.fileExists(atPath: legacyURL.path) {
+                    do {
+                        try fm.createDirectory(at: sharedURL.deletingLastPathComponent(), withIntermediateDirectories: true, attributes: nil)
+                        try fm.moveItem(at: legacyURL, to: sharedURL)
+                    } catch {
+                        logger.warning("failed to migrate backlog to app group: \(error.localizedDescription, privacy: .public)")
+                    }
+                }
+            }
+        }
+
+        let url = fileURL()
+        do {
+            let data = try Data(contentsOf: url)
+            items = try JSONDecoder().decode([Item].self, from: data)
+        } catch {
+            items = []
+        }
+    }
+
+    private func save() async {
+        let url = fileURL()
+        do {
+            let data = try JSONEncoder().encode(items)
+            try FileManager.default.createDirectory(
+                at: url.deletingLastPathComponent(),
+                withIntermediateDirectories: true,
+                attributes: nil
+            )
+            try data.write(to: url, options: [.atomic])
+        } catch {
+            logger.warning("failed to persist backlog: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    private func fileURL() -> URL {
+        sharedFileURL() ?? legacyFileURL()
+    }
+
+    private func sharedFileURL() -> URL? {
+        FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.kevin.FastScrobbler")?
+            .appendingPathComponent("FastScrobblerShared", isDirectory: true)
+            .appendingPathComponent("scrobble_backlog.json")
+    }
+
+    private func legacyFileURL() -> URL {
+        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first ?? {
+            logger.warning("applicationSupportDirectory unavailable; falling back to temporaryDirectory")
+            return FileManager.default.temporaryDirectory
+        }()
+        let bundleID = Bundle.main.bundleIdentifier ?? "FastScrobbler"
+        return base.appendingPathComponent(bundleID, isDirectory: true).appendingPathComponent("scrobble_backlog.json")
+    }
+}

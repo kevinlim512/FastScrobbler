@@ -1,0 +1,983 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 54;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		09E7013040C0432089FB415F /* FastScrobblerNowPlayingControl.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 11EF64B3CB4E49F2AAC19D50 /* FastScrobblerNowPlayingControl.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		0C549D6F43E732558BD98F36 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4AFF729BAB7DC943A3460013 /* Security.framework */; };
+		0ED2ACBEE1384A1DB2BC13F4 /* MediaPlayer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BF012C08E644A48531462C32 /* MediaPlayer.framework */; };
+		1532AF771AC84DB1AF9D5B01 /* ScrobbleShortcutsIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95CFA90A67844B45AFAFF0BE /* ScrobbleShortcutsIntents.swift */; };
+		15C53DD3C83444F39DBD17F4 /* LastFMSecrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73D6C642664C98AB8890C228 /* LastFMSecrets.swift */; };
+		18D01140D29D4FC88EABD375 /* KeychainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23F8BF9A7DD1FE96CA6A4F03 /* KeychainStore.swift */; };
+		1A2B3C4D5E6F708192A3B4C5 /* ScrobbleLogStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A7B8C9D0E1F23456789ABCD /* ScrobbleLogStore.swift */; };
+		1E87E7469C64DCDFFDC1E345 /* MediaPlayer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BF012C08E644A48531462C32 /* MediaPlayer.framework */; };
+		22C56AD0C8A5D95CDB09058C /* ScrobbleEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DB82CCC939EB4CD49356CDF /* ScrobbleEngine.swift */; };
+		2585C58BA7C84C92AAEF4284 /* LastFMClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BEC0966173EEAC2917686CE /* LastFMClient.swift */; };
+		2748F006664BCB7C2D40BF30 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3A2698BA9AD0965E5113E338 /* Assets.xcassets */; };
+		29F213E7E62A413E8549CBB4 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4AFF729BAB7DC943A3460013 /* Security.framework */; };
+		2BCD7AFE74FB4FF5B1543366 /* Track.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38D267030F9C37D54F5CEFDA /* Track.swift */; };
+		2F0203072BBA4D4CAC5D89BA /* Track.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38D267030F9C37D54F5CEFDA /* Track.swift */; };
+		2FC20AFD348B41B398C408FC /* ScrobbleShortcutsIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95CFA90A67844B45AFAFF0BE /* ScrobbleShortcutsIntents.swift */; };
+		318863F67AD7C48D79F9E796 /* KeychainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23F8BF9A7DD1FE96CA6A4F03 /* KeychainStore.swift */; };
+		3330844AA38F82EC9F24E93D /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E77E0BC6B95EB08AC0DB79E /* SceneDelegate.swift */; };
+		33B9DA4C576ABD6CF6602426 /* LastFMClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BEC0966173EEAC2917686CE /* LastFMClient.swift */; };
+		3C4AEB72EBF5D3C3FBBE7788 /* LastFMSecrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73D6C642664C98AB8890C228 /* LastFMSecrets.swift */; };
+		3E3906520896EBA080C903E8 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5EC6750EA1D59565F65CDAC6 /* Foundation.framework */; };
+		455119A5E0C024451C908C78 /* KeychainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23F8BF9A7DD1FE96CA6A4F03 /* KeychainStore.swift */; };
+		469F517D5F1B91DB90C275F9 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0873ACD17176629EAA7E2860 /* ContentView.swift */; };
+		47E0C03D7FA279E308CCB372 /* AuthenticationServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 89AA033CD567382217A0C32D /* AuthenticationServices.framework */; };
+		48E841E759584B8685D12A12 /* MediaPlayer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BF012C08E644A48531462C32 /* MediaPlayer.framework */; };
+		4BA1F9A9AABAFFD9EE079A17 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99A2B3D7774E8C729FCA2166 /* AppDelegate.swift */; };
+		5386B64516E3437DB0BA1FE7 /* ScrobbleShortcutsIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95CFA90A67844B45AFAFF0BE /* ScrobbleShortcutsIntents.swift */; };
+		5D420CAE2853E3F84BBB26ED /* LastFMSecrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73D6C642664C98AB8890C228 /* LastFMSecrets.swift */; };
+		5D9BA41CF4D94828AF0F9ECA /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4AFF729BAB7DC943A3460013 /* Security.framework */; };
+		702E4715BF18405FB59C162E /* FastScrobblerScrobbleControl.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = D4467D7EFEDA43598A5BA2D1 /* FastScrobblerScrobbleControl.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		7F9327C88A4B49F5AC1ADAAB /* ScrobbleSongControlWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDD4DC9323834789BA1D7AAD /* ScrobbleSongControlWidget.swift */; };
+		86A419E6203D47B58AFA00AC /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = ACACACACACACACACACACACAC /* WidgetKit.framework */; };
+		9909FFE89F1B42E8B9394D3E /* ScrobbleBacklog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C86E869F03F4F2EB6C64F81 /* ScrobbleBacklog.swift */; };
+		A615142326FF40B59B85B853 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = ACACACACACACACACACACACAC /* WidgetKit.framework */; };
+		A9D755CCD1AB4C119A7E6572 /* ScrobbleLogStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A7B8C9D0E1F23456789ABCD /* ScrobbleLogStore.swift */; };
+		ACE0B286FFAC44DC99974BC4 /* ScrobbleBacklog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C86E869F03F4F2EB6C64F81 /* ScrobbleBacklog.swift */; };
+		AF2921D6DAB241FEBEB6D885 /* PlaybackHistoryImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFFA5AE94BB24145B30E3A28 /* PlaybackHistoryImporter.swift */; };
+		B0A0A0A0A0A0A0A0A0A0A0A0 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = ACACACACACACACACACACACAC /* WidgetKit.framework */; };
+		B0B0B0B0B0B0B0B0B0B0B0B0 /* ActivityKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = ADADADADADADADADADADADAD /* ActivityKit.framework */; };
+		B0C0C0C0C0C0C0C0C0C0C0C0 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5EC6750EA1D59565F65CDAC6 /* Foundation.framework */; };
+		B0D0D0D0D0D0D0D0D0D0D0D0 /* FastScrobblerLiveActivity.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = A99999999999999999999999 /* FastScrobblerLiveActivity.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		B11111111111111111111111 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11111111111111111111111 /* AppModel.swift */; };
+		B22222222222222222222222 /* BackgroundTaskManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A22222222222222222222222 /* BackgroundTaskManager.swift */; };
+		B33333333333333333333333 /* BackgroundTasks.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A33333333333333333333333 /* BackgroundTasks.framework */; };
+		B44444444444444444444444 /* ScrobblingActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A44444444444444444444444 /* ScrobblingActivityAttributes.swift */; };
+		B5476F6A3A9D40A3BC9922BE /* KeychainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23F8BF9A7DD1FE96CA6A4F03 /* KeychainStore.swift */; };
+		B55555555555555555555555 /* LiveActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A55555555555555555555555 /* LiveActivityManager.swift */; };
+		B66666666666666666666666 /* ScrobblingActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A44444444444444444444444 /* ScrobblingActivityAttributes.swift */; };
+		B77777777777777777777777 /* FastScrobblerLiveActivityBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = A77777777777777777777777 /* FastScrobblerLiveActivityBundle.swift */; };
+		B88888888888888888888888 /* ScrobblingLiveActivityWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = A88888888888888888888888 /* ScrobblingLiveActivityWidget.swift */; };
+		BB7C463DDA0ADD56499CF530 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4AFF729BAB7DC943A3460013 /* Security.framework */; };
+		C0DEC0DEC0DEC0DEC0DEC0DF /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DEC0DEC0DEC0DEC0DEC0DE /* SettingsView.swift */; };
+		C36666FF3ACF65D85A0927CC /* Track.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38D267030F9C37D54F5CEFDA /* Track.swift */; };
+		C572DB79AD9B4ABAB3829D3C /* ScrobbleBacklog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C86E869F03F4F2EB6C64F81 /* ScrobbleBacklog.swift */; };
+		D0E1F2A3B4C5D6E7F8091A2C /* SetupHelpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E1F2A3B4C5D6E7F8091A2B /* SetupHelpView.swift */; };
+		D416B0364BC3D89D256E7232 /* ScrobbleBacklog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C86E869F03F4F2EB6C64F81 /* ScrobbleBacklog.swift */; };
+		D474EE0B0B5FD5EC600D92F4 /* AppleMusicNowPlayingObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = A37471961A7AA84A79E7719E /* AppleMusicNowPlayingObserver.swift */; };
+		D962AC8DC6CB4F96B91A4220 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5EC6750EA1D59565F65CDAC6 /* Foundation.framework */; };
+		DD744431C3B64C949189F33E /* LastFMClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BEC0966173EEAC2917686CE /* LastFMClient.swift */; };
+		DEA014110A874D938E618E4C /* SendNowPlayingControlWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48C6144295334C29B36BAF8B /* SendNowPlayingControlWidget.swift */; };
+		E060219923EC4D728F4A9D99 /* LastFMSecrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73D6C642664C98AB8890C228 /* LastFMSecrets.swift */; };
+		E1824AB4A97149F9A2EA0057 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5EC6750EA1D59565F65CDAC6 /* Foundation.framework */; };
+		EAAFC195DFA8411687CD3EC3 /* ScrobbleLogStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A7B8C9D0E1F23456789ABCD /* ScrobbleLogStore.swift */; };
+		F44BF0D3255B803410B8C344 /* Track.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38D267030F9C37D54F5CEFDA /* Track.swift */; };
+		F66F5225DEC7F6D42A372184 /* LastFMAuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60E1134F29E244F029987C4A /* LastFMAuthManager.swift */; };
+		FB616D8EA0CE35AB95ED2094 /* LastFMClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BEC0966173EEAC2917686CE /* LastFMClient.swift */; };
+		FDD1255597AE245A166ABFDC /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 5F8054C63B7A44F48539A959 /* LaunchScreen.storyboard */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		23227A567FF84206B3E5B600 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CAB816EF5BD05ED1EAA5470C /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E0B5512A4C5B4651AB3845EA;
+			remoteInfo = FastScrobblerNowPlayingControl;
+		};
+		A0E0E0E0E0E0E0E0E0E0E0E0 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CAB816EF5BD05ED1EAA5470C /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D66666666666666666666666;
+			remoteInfo = FastScrobblerLiveActivity;
+		};
+		BAEE0A1704064209AD99DD9C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CAB816EF5BD05ED1EAA5470C /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 745154CC70564F28AD3EBDC4;
+			remoteInfo = FastScrobblerScrobbleControl;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		E99999999999999999999999 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				B0D0D0D0D0D0D0D0D0D0D0D0 /* FastScrobblerLiveActivity.appex in Embed App Extensions */,
+				702E4715BF18405FB59C162E /* FastScrobblerScrobbleControl.appex in Embed App Extensions */,
+				09E7013040C0432089FB415F /* FastScrobblerNowPlayingControl.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		0873ACD17176629EAA7E2860 /* ContentView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		11EF64B3CB4E49F2AAC19D50 /* FastScrobblerNowPlayingControl.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = FastScrobblerNowPlayingControl.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		23F8BF9A7DD1FE96CA6A4F03 /* KeychainStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = KeychainStore.swift; sourceTree = "<group>"; };
+		38D267030F9C37D54F5CEFDA /* Track.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Track.swift; sourceTree = "<group>"; };
+		3A2698BA9AD0965E5113E338 /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		48C6144295334C29B36BAF8B /* SendNowPlayingControlWidget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SendNowPlayingControlWidget.swift; sourceTree = "<group>"; };
+		4AFF729BAB7DC943A3460013 /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = ../../../../System/Library/Frameworks/Security.framework; sourceTree = "<group>"; };
+		4DB82CCC939EB4CD49356CDF /* ScrobbleEngine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScrobbleEngine.swift; sourceTree = "<group>"; };
+		53DAD64725BA4FE68DE68994 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		5C86E869F03F4F2EB6C64F81 /* ScrobbleBacklog.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScrobbleBacklog.swift; sourceTree = "<group>"; };
+		5EC6750EA1D59565F65CDAC6 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		5F8054C63B7A44F48539A959 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
+		60E1134F29E244F029987C4A /* LastFMAuthManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LastFMAuthManager.swift; sourceTree = "<group>"; };
+		6A7B8C9D0E1F23456789ABCD /* ScrobbleLogStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScrobbleLogStore.swift; sourceTree = "<group>"; };
+		6BEC0966173EEAC2917686CE /* LastFMClient.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LastFMClient.swift; sourceTree = "<group>"; };
+		73D6C642664C98AB8890C228 /* LastFMSecrets.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LastFMSecrets.swift; sourceTree = "<group>"; };
+		754A93811BDB1699E38AAC91 /* FastScrobbler.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FastScrobbler.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		89AA033CD567382217A0C32D /* AuthenticationServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AuthenticationServices.framework; path = ../../../../System/Library/Frameworks/AuthenticationServices.framework; sourceTree = "<group>"; };
+		95CFA90A67844B45AFAFF0BE /* ScrobbleShortcutsIntents.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScrobbleShortcutsIntents.swift; sourceTree = "<group>"; };
+		99A2B3D7774E8C729FCA2166 /* AppDelegate.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		9E77E0BC6B95EB08AC0DB79E /* SceneDelegate.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
+		9FC0D00228CB4010BB8A73BC /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A11111111111111111111111 /* AppModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		A22222222222222222222222 /* BackgroundTaskManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BackgroundTaskManager.swift; sourceTree = "<group>"; };
+		A33333333333333333333333 /* BackgroundTasks.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = BackgroundTasks.framework; path = ../../../../System/Library/Frameworks/BackgroundTasks.framework; sourceTree = "<group>"; };
+		A37471961A7AA84A79E7719E /* AppleMusicNowPlayingObserver.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppleMusicNowPlayingObserver.swift; sourceTree = "<group>"; };
+		A44444444444444444444444 /* ScrobblingActivityAttributes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScrobblingActivityAttributes.swift; sourceTree = "<group>"; };
+		A55555555555555555555555 /* LiveActivityManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LiveActivityManager.swift; sourceTree = "<group>"; };
+		A66666666666666666666666 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A77777777777777777777777 /* FastScrobblerLiveActivityBundle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FastScrobblerLiveActivityBundle.swift; sourceTree = "<group>"; };
+		A88888888888888888888888 /* ScrobblingLiveActivityWidget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScrobblingLiveActivityWidget.swift; sourceTree = "<group>"; };
+		A99999999999999999999999 /* FastScrobblerLiveActivity.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = FastScrobblerLiveActivity.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		ACACACACACACACACACACACAC /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = ../../../../System/Library/Frameworks/WidgetKit.framework; sourceTree = "<group>"; };
+		ADADADADADADADADADADADAD /* ActivityKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ActivityKit.framework; path = ../../../../System/Library/Frameworks/ActivityKit.framework; sourceTree = "<group>"; };
+		B97BC0DAAD548CE8C47F3D30 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		BF012C08E644A48531462C32 /* MediaPlayer.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MediaPlayer.framework; path = ../../../../System/Library/Frameworks/MediaPlayer.framework; sourceTree = "<group>"; };
+		C0DEC0DEC0DEC0DEC0DEC0DE /* SettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		CDD4DC9323834789BA1D7AAD /* ScrobbleSongControlWidget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScrobbleSongControlWidget.swift; sourceTree = "<group>"; };
+		D0E1F2A3B4C5D6E7F8091A2B /* SetupHelpView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SetupHelpView.swift; sourceTree = "<group>"; };
+		D4467D7EFEDA43598A5BA2D1 /* FastScrobblerScrobbleControl.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = FastScrobblerScrobbleControl.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		DF68928E729142998578CD04 /* FastScrobblerNowPlayingControl.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = FastScrobblerNowPlayingControl.entitlements; sourceTree = "<group>"; };
+		DFFA5AE94BB24145B30E3A28 /* PlaybackHistoryImporter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PlaybackHistoryImporter.swift; sourceTree = "<group>"; };
+		F15DA4D427544C318D23A558 /* FastScrobblerScrobbleControl.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = FastScrobblerScrobbleControl.entitlements; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		23DBF0DF4B714ED7B34EFD3E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D962AC8DC6CB4F96B91A4220 /* Foundation.framework in Frameworks */,
+				A615142326FF40B59B85B853 /* WidgetKit.framework in Frameworks */,
+				0ED2ACBEE1384A1DB2BC13F4 /* MediaPlayer.framework in Frameworks */,
+				29F213E7E62A413E8549CBB4 /* Security.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		28DD85509652024BFF10D4B2 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3E3906520896EBA080C903E8 /* Foundation.framework in Frameworks */,
+				47E0C03D7FA279E308CCB372 /* AuthenticationServices.framework in Frameworks */,
+				B33333333333333333333333 /* BackgroundTasks.framework in Frameworks */,
+				1E87E7469C64DCDFFDC1E345 /* MediaPlayer.framework in Frameworks */,
+				BB7C463DDA0ADD56499CF530 /* Security.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E77777777777777777777777 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B0C0C0C0C0C0C0C0C0C0C0C0 /* Foundation.framework in Frameworks */,
+				B0B0B0B0B0B0B0B0B0B0B0B0 /* ActivityKit.framework in Frameworks */,
+				B0A0A0A0A0A0A0A0A0A0A0A0 /* WidgetKit.framework in Frameworks */,
+				0C549D6F43E732558BD98F36 /* Security.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EE44C7D5F7CD44A7BC633682 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E1824AB4A97149F9A2EA0057 /* Foundation.framework in Frameworks */,
+				86A419E6203D47B58AFA00AC /* WidgetKit.framework in Frameworks */,
+				48E841E759584B8685D12A12 /* MediaPlayer.framework in Frameworks */,
+				5D9BA41CF4D94828AF0F9ECA /* Security.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		0F9D7D02EAC572494EBAAF05 = {
+			isa = PBXGroup;
+			children = (
+				6527E7F791630133AD00B5AB /* Products */,
+				F73C8E6C65728B69C713A67F /* Frameworks */,
+				122EB704BD6650F766AF390A /* FastScrobbler */,
+				C66666666666666666666666 /* FastScrobblerLiveActivity */,
+				AC3E0DBB9102414BB64A2513 /* FastScrobblerScrobbleControl */,
+				7A3C9A35BD3844A798477A65 /* FastScrobblerNowPlayingControl */,
+			);
+			sourceTree = "<group>";
+		};
+		122EB704BD6650F766AF390A /* FastScrobbler */ = {
+			isa = PBXGroup;
+			children = (
+				99A2B3D7774E8C729FCA2166 /* AppDelegate.swift */,
+				A11111111111111111111111 /* AppModel.swift */,
+				A22222222222222222222222 /* BackgroundTaskManager.swift */,
+				C44444444444444444444444 /* LiveActivity */,
+				6647DA5973D144C5941373BC /* Intents */,
+				0873ACD17176629EAA7E2860 /* ContentView.swift */,
+				C0DEC0DEC0DEC0DEC0DEC0DE /* SettingsView.swift */,
+				D0E1F2A3B4C5D6E7F8091A2B /* SetupHelpView.swift */,
+				B97BC0DAAD548CE8C47F3D30 /* Info.plist */,
+				BBD4CD27E724B98753523B97 /* LastFM */,
+				73D6C642664C98AB8890C228 /* LastFMSecrets.swift */,
+				A70AA3DA43FE42947365DFBC /* Models */,
+				4EA3896EEAD3DD69098F5339 /* NowPlaying */,
+				CC28EBFCCF0FFBD86F694CD7 /* Resources */,
+				9E77E0BC6B95EB08AC0DB79E /* SceneDelegate.swift */,
+				9AEAE436E5B809C7BB0FC4B3 /* Scrobble */,
+			);
+			path = FastScrobbler;
+			sourceTree = "<group>";
+		};
+		4EA3896EEAD3DD69098F5339 /* NowPlaying */ = {
+			isa = PBXGroup;
+			children = (
+				A37471961A7AA84A79E7719E /* AppleMusicNowPlayingObserver.swift */,
+				DFFA5AE94BB24145B30E3A28 /* PlaybackHistoryImporter.swift */,
+			);
+			path = NowPlaying;
+			sourceTree = "<group>";
+		};
+		6527E7F791630133AD00B5AB /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				754A93811BDB1699E38AAC91 /* FastScrobbler.app */,
+				A99999999999999999999999 /* FastScrobblerLiveActivity.appex */,
+				D4467D7EFEDA43598A5BA2D1 /* FastScrobblerScrobbleControl.appex */,
+				11EF64B3CB4E49F2AAC19D50 /* FastScrobblerNowPlayingControl.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		6647DA5973D144C5941373BC /* Intents */ = {
+			isa = PBXGroup;
+			children = (
+				95CFA90A67844B45AFAFF0BE /* ScrobbleShortcutsIntents.swift */,
+			);
+			path = Intents;
+			sourceTree = "<group>";
+		};
+		7A3C9A35BD3844A798477A65 /* FastScrobblerNowPlayingControl */ = {
+			isa = PBXGroup;
+			children = (
+				9FC0D00228CB4010BB8A73BC /* Info.plist */,
+				DF68928E729142998578CD04 /* FastScrobblerNowPlayingControl.entitlements */,
+				48C6144295334C29B36BAF8B /* SendNowPlayingControlWidget.swift */,
+			);
+			path = FastScrobblerNowPlayingControl;
+			sourceTree = "<group>";
+		};
+		9AEAE436E5B809C7BB0FC4B3 /* Scrobble */ = {
+			isa = PBXGroup;
+			children = (
+				4DB82CCC939EB4CD49356CDF /* ScrobbleEngine.swift */,
+				5C86E869F03F4F2EB6C64F81 /* ScrobbleBacklog.swift */,
+				6A7B8C9D0E1F23456789ABCD /* ScrobbleLogStore.swift */,
+			);
+			path = Scrobble;
+			sourceTree = "<group>";
+		};
+		A70AA3DA43FE42947365DFBC /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				38D267030F9C37D54F5CEFDA /* Track.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		AC3E0DBB9102414BB64A2513 /* FastScrobblerScrobbleControl */ = {
+			isa = PBXGroup;
+			children = (
+				53DAD64725BA4FE68DE68994 /* Info.plist */,
+				F15DA4D427544C318D23A558 /* FastScrobblerScrobbleControl.entitlements */,
+				CDD4DC9323834789BA1D7AAD /* ScrobbleSongControlWidget.swift */,
+			);
+			path = FastScrobblerScrobbleControl;
+			sourceTree = "<group>";
+		};
+		BBD4CD27E724B98753523B97 /* LastFM */ = {
+			isa = PBXGroup;
+			children = (
+				23F8BF9A7DD1FE96CA6A4F03 /* KeychainStore.swift */,
+				60E1134F29E244F029987C4A /* LastFMAuthManager.swift */,
+				6BEC0966173EEAC2917686CE /* LastFMClient.swift */,
+			);
+			path = LastFM;
+			sourceTree = "<group>";
+		};
+		C44444444444444444444444 /* LiveActivity */ = {
+			isa = PBXGroup;
+			children = (
+				A44444444444444444444444 /* ScrobblingActivityAttributes.swift */,
+				A55555555555555555555555 /* LiveActivityManager.swift */,
+			);
+			path = LiveActivity;
+			sourceTree = "<group>";
+		};
+		C66666666666666666666666 /* FastScrobblerLiveActivity */ = {
+			isa = PBXGroup;
+			children = (
+				A66666666666666666666666 /* Info.plist */,
+				A77777777777777777777777 /* FastScrobblerLiveActivityBundle.swift */,
+				A88888888888888888888888 /* ScrobblingLiveActivityWidget.swift */,
+			);
+			path = FastScrobblerLiveActivity;
+			sourceTree = "<group>";
+		};
+		CC28EBFCCF0FFBD86F694CD7 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				3A2698BA9AD0965E5113E338 /* Assets.xcassets */,
+				5F8054C63B7A44F48539A959 /* LaunchScreen.storyboard */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		F4E62B8B7A09CE57C467842E /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				5EC6750EA1D59565F65CDAC6 /* Foundation.framework */,
+			);
+			name = iOS;
+			sourceTree = "<group>";
+		};
+		F73C8E6C65728B69C713A67F /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				F4E62B8B7A09CE57C467842E /* iOS */,
+				89AA033CD567382217A0C32D /* AuthenticationServices.framework */,
+				ADADADADADADADADADADADAD /* ActivityKit.framework */,
+				A33333333333333333333333 /* BackgroundTasks.framework */,
+				BF012C08E644A48531462C32 /* MediaPlayer.framework */,
+				4AFF729BAB7DC943A3460013 /* Security.framework */,
+				ACACACACACACACACACACACAC /* WidgetKit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		745154CC70564F28AD3EBDC4 /* FastScrobblerScrobbleControl */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 07CB2F6FE81C400DBFB1AE0A /* Build configuration list for PBXNativeTarget "FastScrobblerScrobbleControl" */;
+			buildPhases = (
+				6196EAFC16B44A55B11A2BA7 /* Sources */,
+				23DBF0DF4B714ED7B34EFD3E /* Frameworks */,
+				3B701731FA2341B0AF6F72D5 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = FastScrobblerScrobbleControl;
+			productName = FastScrobblerScrobbleControl;
+			productReference = D4467D7EFEDA43598A5BA2D1 /* FastScrobblerScrobbleControl.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		CE7CB1C03FBC72B2173F9556 /* FastScrobbler */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E03163BCDAD1B3C004F9318A /* Build configuration list for PBXNativeTarget "FastScrobbler" */;
+			buildPhases = (
+				B322362EEC4B36B8C5A3E265 /* Sources */,
+				28DD85509652024BFF10D4B2 /* Frameworks */,
+				E99999999999999999999999 /* Embed App Extensions */,
+				B7B806F1B0FDBACAB97FDE9E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A0F0F0F0F0F0F0F0F0F0F0F0 /* PBXTargetDependency */,
+				ABF258967A1245D9AAA32DEF /* PBXTargetDependency */,
+				2192C4C8826648A69E3B5AB5 /* PBXTargetDependency */,
+			);
+			name = FastScrobbler;
+			productName = FastScrobbler;
+			productReference = 754A93811BDB1699E38AAC91 /* FastScrobbler.app */;
+			productType = "com.apple.product-type.application";
+		};
+		D66666666666666666666666 /* FastScrobblerLiveActivity */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F66666666666666666666666 /* Build configuration list for PBXNativeTarget "FastScrobblerLiveActivity" */;
+			buildPhases = (
+				E66666666666666666666666 /* Sources */,
+				E77777777777777777777777 /* Frameworks */,
+				E88888888888888888888888 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = FastScrobblerLiveActivity;
+			productName = FastScrobblerLiveActivity;
+			productReference = A99999999999999999999999 /* FastScrobblerLiveActivity.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		E0B5512A4C5B4651AB3845EA /* FastScrobblerNowPlayingControl */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6018CD53A3EE491688E0C6CB /* Build configuration list for PBXNativeTarget "FastScrobblerNowPlayingControl" */;
+			buildPhases = (
+				50F4D1BD26FC4EA692F47406 /* Sources */,
+				EE44C7D5F7CD44A7BC633682 /* Frameworks */,
+				C93E4B58A55C42ED8B62F018 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = FastScrobblerNowPlayingControl;
+			productName = FastScrobblerNowPlayingControl;
+			productReference = 11EF64B3CB4E49F2AAC19D50 /* FastScrobblerNowPlayingControl.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		CAB816EF5BD05ED1EAA5470C /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 2620;
+			};
+			buildConfigurationList = 42FA34948C4FDCB3ABD3255B /* Build configuration list for PBXProject "FastScrobbler" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 0F9D7D02EAC572494EBAAF05;
+			productRefGroup = 6527E7F791630133AD00B5AB /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				CE7CB1C03FBC72B2173F9556 /* FastScrobbler */,
+				D66666666666666666666666 /* FastScrobblerLiveActivity */,
+				745154CC70564F28AD3EBDC4 /* FastScrobblerScrobbleControl */,
+				E0B5512A4C5B4651AB3845EA /* FastScrobblerNowPlayingControl */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		3B701731FA2341B0AF6F72D5 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B7B806F1B0FDBACAB97FDE9E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2748F006664BCB7C2D40BF30 /* Assets.xcassets in Resources */,
+				FDD1255597AE245A166ABFDC /* LaunchScreen.storyboard in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C93E4B58A55C42ED8B62F018 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E88888888888888888888888 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		50F4D1BD26FC4EA692F47406 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DEA014110A874D938E618E4C /* SendNowPlayingControlWidget.swift in Sources */,
+				5386B64516E3437DB0BA1FE7 /* ScrobbleShortcutsIntents.swift in Sources */,
+				2F0203072BBA4D4CAC5D89BA /* Track.swift in Sources */,
+				18D01140D29D4FC88EABD375 /* KeychainStore.swift in Sources */,
+				DD744431C3B64C949189F33E /* LastFMClient.swift in Sources */,
+				E060219923EC4D728F4A9D99 /* LastFMSecrets.swift in Sources */,
+				C572DB79AD9B4ABAB3829D3C /* ScrobbleBacklog.swift in Sources */,
+				A9D755CCD1AB4C119A7E6572 /* ScrobbleLogStore.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6196EAFC16B44A55B11A2BA7 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7F9327C88A4B49F5AC1ADAAB /* ScrobbleSongControlWidget.swift in Sources */,
+				2FC20AFD348B41B398C408FC /* ScrobbleShortcutsIntents.swift in Sources */,
+				2BCD7AFE74FB4FF5B1543366 /* Track.swift in Sources */,
+				B5476F6A3A9D40A3BC9922BE /* KeychainStore.swift in Sources */,
+				2585C58BA7C84C92AAEF4284 /* LastFMClient.swift in Sources */,
+				15C53DD3C83444F39DBD17F4 /* LastFMSecrets.swift in Sources */,
+				9909FFE89F1B42E8B9394D3E /* ScrobbleBacklog.swift in Sources */,
+				EAAFC195DFA8411687CD3EC3 /* ScrobbleLogStore.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B322362EEC4B36B8C5A3E265 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4BA1F9A9AABAFFD9EE079A17 /* AppDelegate.swift in Sources */,
+				B11111111111111111111111 /* AppModel.swift in Sources */,
+				B22222222222222222222222 /* BackgroundTaskManager.swift in Sources */,
+				B44444444444444444444444 /* ScrobblingActivityAttributes.swift in Sources */,
+				B55555555555555555555555 /* LiveActivityManager.swift in Sources */,
+				469F517D5F1B91DB90C275F9 /* ContentView.swift in Sources */,
+				C0DEC0DEC0DEC0DEC0DEC0DF /* SettingsView.swift in Sources */,
+				D0E1F2A3B4C5D6E7F8091A2C /* SetupHelpView.swift in Sources */,
+				3C4AEB72EBF5D3C3FBBE7788 /* LastFMSecrets.swift in Sources */,
+				3330844AA38F82EC9F24E93D /* SceneDelegate.swift in Sources */,
+				455119A5E0C024451C908C78 /* KeychainStore.swift in Sources */,
+				F66F5225DEC7F6D42A372184 /* LastFMAuthManager.swift in Sources */,
+				33B9DA4C576ABD6CF6602426 /* LastFMClient.swift in Sources */,
+				C36666FF3ACF65D85A0927CC /* Track.swift in Sources */,
+				D474EE0B0B5FD5EC600D92F4 /* AppleMusicNowPlayingObserver.swift in Sources */,
+				AF2921D6DAB241FEBEB6D885 /* PlaybackHistoryImporter.swift in Sources */,
+				22C56AD0C8A5D95CDB09058C /* ScrobbleEngine.swift in Sources */,
+				ACE0B286FFAC44DC99974BC4 /* ScrobbleBacklog.swift in Sources */,
+				1A2B3C4D5E6F708192A3B4C5 /* ScrobbleLogStore.swift in Sources */,
+				1532AF771AC84DB1AF9D5B01 /* ScrobbleShortcutsIntents.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E66666666666666666666666 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B66666666666666666666666 /* ScrobblingActivityAttributes.swift in Sources */,
+				B77777777777777777777777 /* FastScrobblerLiveActivityBundle.swift in Sources */,
+				B88888888888888888888888 /* ScrobblingLiveActivityWidget.swift in Sources */,
+				5D420CAE2853E3F84BBB26ED /* LastFMSecrets.swift in Sources */,
+				FB616D8EA0CE35AB95ED2094 /* LastFMClient.swift in Sources */,
+				318863F67AD7C48D79F9E796 /* KeychainStore.swift in Sources */,
+				F44BF0D3255B803410B8C344 /* Track.swift in Sources */,
+				D416B0364BC3D89D256E7232 /* ScrobbleBacklog.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		2192C4C8826648A69E3B5AB5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E0B5512A4C5B4651AB3845EA /* FastScrobblerNowPlayingControl */;
+			targetProxy = 23227A567FF84206B3E5B600 /* PBXContainerItemProxy */;
+		};
+		A0F0F0F0F0F0F0F0F0F0F0F0 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D66666666666666666666666 /* FastScrobblerLiveActivity */;
+			targetProxy = A0E0E0E0E0E0E0E0E0E0E0E0 /* PBXContainerItemProxy */;
+		};
+		ABF258967A1245D9AAA32DEF /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 745154CC70564F28AD3EBDC4 /* FastScrobblerScrobbleControl */;
+			targetProxy = BAEE0A1704064209AD99DD9C /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		2986B75174A946E39805CE18 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = FastScrobblerScrobbleControl/FastScrobblerScrobbleControl.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 6SVRCQ9AH5;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = FastScrobblerScrobbleControl/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kevin.FastScrobbler.scrobblecontrol;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) WIDGET_EXTENSION";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		5BC43730A712483A9C0D5412 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = FastScrobblerNowPlayingControl/FastScrobblerNowPlayingControl.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 6SVRCQ9AH5;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = FastScrobblerNowPlayingControl/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kevin.FastScrobbler.nowplayingcontrol;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) WIDGET_EXTENSION";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		8DBA0CB2282A4A20B58E034C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = FastScrobblerNowPlayingControl/FastScrobblerNowPlayingControl.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 6SVRCQ9AH5;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = FastScrobblerNowPlayingControl/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kevin.FastScrobbler.nowplayingcontrol;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) WIDGET_EXTENSION";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		B66DF6BEEA014E2AA6D2C0EF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = FastScrobblerScrobbleControl/FastScrobblerScrobbleControl.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 6SVRCQ9AH5;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = FastScrobblerScrobbleControl/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kevin.FastScrobbler.scrobblecontrol;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) WIDGET_EXTENSION";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		C19C22D82CE1CC4EDA9FBCC4 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 6SVRCQ9AH5;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		CDF71C21E56C1459018231D9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = FastScrobbler/FastScrobbler.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = FastScrobbler/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kevin.FastScrobbler;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		E168A34AB3EFD5631FCE89E0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = FastScrobbler/FastScrobbler.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = FastScrobbler/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kevin.FastScrobbler;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		F65ABFFFF4AF447C65585F69 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 6SVRCQ9AH5;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		F77777777777777777777777 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = FastScrobblerLiveActivity/FastScrobblerLiveActivity.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 6SVRCQ9AH5;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = FastScrobblerLiveActivity/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kevin.FastScrobbler.liveactivity;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) WIDGET_EXTENSION";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		F88888888888888888888888 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = FastScrobblerLiveActivity/FastScrobblerLiveActivity.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 6SVRCQ9AH5;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = FastScrobblerLiveActivity/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kevin.FastScrobbler.liveactivity;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) WIDGET_EXTENSION";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		07CB2F6FE81C400DBFB1AE0A /* Build configuration list for PBXNativeTarget "FastScrobblerScrobbleControl" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B66DF6BEEA014E2AA6D2C0EF /* Release */,
+				2986B75174A946E39805CE18 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		42FA34948C4FDCB3ABD3255B /* Build configuration list for PBXProject "FastScrobbler" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C19C22D82CE1CC4EDA9FBCC4 /* Debug */,
+				F65ABFFFF4AF447C65585F69 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		6018CD53A3EE491688E0C6CB /* Build configuration list for PBXNativeTarget "FastScrobblerNowPlayingControl" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5BC43730A712483A9C0D5412 /* Release */,
+				8DBA0CB2282A4A20B58E034C /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E03163BCDAD1B3C004F9318A /* Build configuration list for PBXNativeTarget "FastScrobbler" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E168A34AB3EFD5631FCE89E0 /* Release */,
+				CDF71C21E56C1459018231D9 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F66666666666666666666666 /* Build configuration list for PBXNativeTarget "FastScrobblerLiveActivity" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F88888888888888888888888 /* Release */,
+				F77777777777777777777777 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = CAB816EF5BD05ED1EAA5470C /* Project object */;
+}
