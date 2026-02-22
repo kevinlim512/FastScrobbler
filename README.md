@@ -57,6 +57,10 @@ FastScrobbler is an iOS app that reads Apple Music (the Music app) now-playing m
 - Recent scrobbles and the retry backlog are persisted locally (Application Support / App Group container).
 - Network requests go to Last.fm’s API (`ws.audioscrobbler.com`).
 
+## Privacy Policy
+
+For App Store submission and a more complete description of data handling, see `PRIVACY_POLICY.md`.
+
 ## Troubleshooting
 
 - **“No track detected”**: make sure Apple Music is playing, and Media Library permission is granted for FastScrobbler.
