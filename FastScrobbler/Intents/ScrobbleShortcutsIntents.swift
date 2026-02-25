@@ -34,6 +34,7 @@ private enum ShortcutsPlaybackReader {
             }
 
             let album = item.albumTitle?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let albumArtist = item.albumArtist?.trimmingCharacters(in: .whitespacesAndNewlines)
             let duration = item.playbackDuration
             let pid = item.persistentID
 
@@ -41,6 +42,7 @@ private enum ShortcutsPlaybackReader {
                 artist: artist,
                 title: title,
                 album: (album?.isEmpty == false) ? album : nil,
+                albumArtist: (albumArtist?.isEmpty == false) ? albumArtist : nil,
                 durationSeconds: duration > 0 ? duration : nil,
                 persistentID: pid
             )
@@ -56,6 +58,7 @@ private enum ShortcutsPlaybackReader {
             }
 
             let album = (info[MPMediaItemPropertyAlbumTitle] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let albumArtist = (info[MPMediaItemPropertyAlbumArtist] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
             let duration: TimeInterval? = {
                 if let n = info[MPMediaItemPropertyPlaybackDuration] as? NSNumber { return n.doubleValue }
                 if let d = info[MPMediaItemPropertyPlaybackDuration] as? Double { return d }
@@ -76,6 +79,7 @@ private enum ShortcutsPlaybackReader {
                 artist: artist,
                 title: title,
                 album: (album?.isEmpty == false) ? album : nil,
+                albumArtist: (albumArtist?.isEmpty == false) ? albumArtist : nil,
                 durationSeconds: (duration ?? 0) > 0 ? duration : nil,
                 persistentID: pid
             )
@@ -132,19 +136,22 @@ struct ScrobbleSongIntent: AppIntent {
 
         let now = Date()
         let (track, playbackTimeSeconds) = try ShortcutsPlaybackReader.nowPlayingTrackAndPlaybackTime()
+        let isPro = ProEntitlement.cachedIsPro()
+        let shouldUseAlbumArtist = ProSettings.useAlbumArtistForScrobbling(isPro: isPro)
+        let scrobbleTrack = shouldUseAlbumArtist ? track.applyingAlbumArtistAsArtistIfAvailable() : track
         let startedAt = now.addingTimeInterval(-max(0, playbackTimeSeconds))
         let ts = Int(startedAt.timeIntervalSince1970.rounded(.down))
 
         let client = try LastFMClient()
         do {
-            try await client.scrobble(track: track, sessionKey: sessionKey, startTimestamp: ts)
+            try await client.scrobble(track: scrobbleTrack, sessionKey: sessionKey, startTimestamp: ts)
             await MainActor.run {
-                ScrobbleLogStore.shared.record(track: track, startTimestamp: ts, source: .live)
+                ScrobbleLogStore.shared.record(track: scrobbleTrack, startTimestamp: ts, source: .live)
             }
-            return .result(dialog: "Scrobbled: \(track.artist) — \(track.title)")
+            return .result(dialog: "Scrobbled: \(scrobbleTrack.artist) — \(scrobbleTrack.title)")
         } catch {
             logger.warning("manual scrobble failed: \(error.localizedDescription, privacy: .public)")
-            await ScrobbleBacklog.shared.enqueue(track: track, startTimestamp: ts)
+            await ScrobbleBacklog.shared.enqueue(track: scrobbleTrack, startTimestamp: ts)
             throw error
         }
     }

@@ -1,4 +1,6 @@
+#if canImport(MediaPlayer)
 import MediaPlayer
+#endif
 import SwiftUI
 
 struct ContentView: View {
@@ -10,6 +12,7 @@ struct ContentView: View {
     @EnvironmentObject private var observer: AppleMusicNowPlayingObserver
     @EnvironmentObject private var engine: ScrobbleEngine
     @EnvironmentObject private var scrobbleLog: ScrobbleLogStore
+    @EnvironmentObject private var pro: ProPurchaseManager
 
     @Environment(\.openURL) private var openURL
     @Environment(\.scenePhase) private var scenePhase
@@ -20,42 +23,27 @@ struct ContentView: View {
     @State private var isShowingSetup = false
     @State private var isShowingHelp = false
     @State private var isShowingSettings = false
+#if os(iOS)
+    @State private var isShowingProUpgrade = false
+    @State private var isScanningListeningHistory = false
+    @State private var isShowingListeningHistoryScanAlert = false
+    @State private var listeningHistoryScanAlertTitle = ""
+    @State private var listeningHistoryScanAlertMessage = ""
+#endif
 
     var body: some View {
-        NavigationView {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    statusCard
-                    trackCard
-                    controls
-                        .padding(.top, 12)
-                    scrobbleLogCard
-                    if let errorText {
-                        Text(errorText)
-                            .foregroundColor(.red)
-                            .font(.footnote)
-                    }
-                }
-                .padding()
+        Group {
+#if os(macOS)
+            // On macOS, `NavigationView` defaults to a split view (sidebar + detail).
+            // Use a single-column stack to avoid the empty detail column.
+            NavigationStack {
+                mainContent
             }
-            .navigationTitle("FastScrobbler")
-            .toolbar {
-                ToolbarItemGroup(placement: .navigationBarTrailing) {
-                    Button {
-                        isShowingSettings = true
-                    } label: {
-                        Image(systemName: "gearshape")
-                    }
-                    .accessibilityLabel("Settings")
-
-                    Button {
-                        isShowingHelp = true
-                    } label: {
-                        Image(systemName: "questionmark.circle")
-                    }
-                    .accessibilityLabel("Help")
-                }
+#else
+            NavigationView {
+                mainContent
             }
+#endif
         }
         .onAppear {
             presentSetupIfNeeded()
@@ -67,9 +55,15 @@ struct ContentView: View {
         .onChange(of: observer.authorizationStatus) { _ in
             presentSetupIfNeeded()
         }
+#if os(macOS)
+        .overlay {
+            macModalOverlay
+        }
+#else
         .fullScreenCover(isPresented: $isShowingSetup) {
             SetupHelpView(mode: .onboarding) {
                 guard MPMediaLibrary.authorizationStatus() == .authorized else { return }
+                guard auth.sessionKey != nil else { return }
                 hasSeenSetup = true
                 isShowingSetup = false
                 Task { @MainActor in
@@ -82,6 +76,8 @@ struct ContentView: View {
                 isShowingHelp = false
             }
         }
+#endif
+#if os(iOS)
         .sheet(isPresented: $isShowingSettings) {
             NavigationView {
                 SettingsView()
@@ -100,7 +96,110 @@ struct ContentView: View {
                     }
             }
         }
+#endif
+#if os(iOS)
+        .sheet(isPresented: $isShowingProUpgrade) {
+            NavigationView {
+                ProUpgradeView(showsCloseButton: true)
+                    .navigationBarTitleDisplayMode(.inline)
+            }
+        }
+        .alert(listeningHistoryScanAlertTitle, isPresented: $isShowingListeningHistoryScanAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(listeningHistoryScanAlertMessage)
+        }
+#endif
     }
+
+    private var mainContent: some View {
+        ZStack(alignment: .topTrailing) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+#if os(macOS)
+                    macAttentionBanner
+#endif
+                    statusCard
+                    trackCard
+                    controls
+                        .padding(.top, 12)
+                    scrobbleLogCard
+                    if let errorText {
+                        Text(errorText)
+                            .foregroundColor(.red)
+                            .font(.footnote)
+                    }
+                }
+                .padding()
+#if os(macOS)
+                // Leave room for the top-right popover buttons.
+                .padding(.top, MacFloatingBarLayout.contentTopPadding)
+#endif
+            }
+
+#if os(macOS)
+            macPopoverTopButtons
+                .padding(.top, 10)
+                .padding(.trailing, 10)
+#endif
+        }
+        .navigationTitle("FastScrobbler")
+        .toolbar {
+#if os(iOS)
+            ToolbarItemGroup(placement: .navigationBarTrailing) {
+                Button {
+                    isShowingProUpgrade = true
+                } label: {
+                    Text("Pro")
+                        .font(.callout.weight(.bold))
+                }
+                .accessibilityLabel("Pro upgrade")
+
+                Button {
+                    isShowingSettings = true
+                } label: {
+                    Image(systemName: "gearshape")
+                }
+                .accessibilityLabel("Settings")
+
+                Button {
+                    isShowingHelp = true
+                } label: {
+                    Image(systemName: "questionmark.circle")
+                }
+                .accessibilityLabel("Help")
+            }
+#endif
+        }
+    }
+
+#if os(macOS)
+    private var macPopoverTopButtons: some View {
+        MacCapsuleBar {
+            HStack(spacing: 10) {
+                Button {
+                    isShowingSettings = true
+                } label: {
+                    Image(systemName: "gearshape")
+                        .font(.system(size: 16, weight: .semibold))
+                        .padding(6)
+                }
+                .help("Settings")
+                .accessibilityLabel("Settings")
+
+                Button {
+                    isShowingHelp = true
+                } label: {
+                    Image(systemName: "questionmark.circle")
+                        .font(.system(size: 16, weight: .semibold))
+                        .padding(6)
+                }
+                .help("Help")
+                .accessibilityLabel("Help")
+            }
+        }
+    }
+#endif
 
     private var statusCard: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -124,8 +223,11 @@ struct ContentView: View {
 
     private var trackCard: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Now Playing")
-                .font(.title2.weight(.semibold))
+            HStack {
+                Text("Now Playing")
+                    .font(.title2.weight(.semibold))
+                Spacer()
+            }
             if let t = observer.track {
                 Text("\(t.artist) - \(t.title)")
                 if let album = t.album, !album.isEmpty {
@@ -152,7 +254,13 @@ struct ContentView: View {
     }
 
     private var controls: some View {
-        let actionButtonHeight: CGFloat = 48
+        let actionButtonHeight: CGFloat = {
+#if os(macOS)
+            return 40
+#else
+            return 48
+#endif
+        }()
         let actionButtonSpacing: CGFloat = 12
 
         return VStack(spacing: 12) {
@@ -166,7 +274,7 @@ struct ContentView: View {
                     .frame(maxWidth: .infinity, minHeight: actionButtonHeight)
             }
             .buttonStyle(.borderedProminent)
-            .buttonBorderShape(.capsule)
+            .pillButtonBorder()
             .tint(.red)
 
             HStack(spacing: actionButtonSpacing) {
@@ -181,7 +289,7 @@ struct ContentView: View {
                     .frame(maxWidth: .infinity, minHeight: actionButtonHeight)
                 }
                 .buttonStyle(.borderedProminent)
-                .buttonBorderShape(.capsule)
+                .pillButtonBorder()
                 .tint(engine.isUserPaused ? .green : .orange)
                 .disabled(auth.sessionKey == nil)
 
@@ -194,7 +302,7 @@ struct ContentView: View {
                             .frame(maxWidth: .infinity, minHeight: actionButtonHeight)
                     }
                     .buttonStyle(.borderedProminent)
-                    .buttonBorderShape(.capsule)
+                    .pillButtonBorder()
                     .tint(.blue)
                 } else {
                     Button {
@@ -210,11 +318,42 @@ struct ContentView: View {
                         .frame(maxWidth: .infinity, minHeight: actionButtonHeight, alignment: .center)
                     }
                     .buttonStyle(.borderedProminent)
-                    .buttonBorderShape(.capsule)
+                    .pillButtonBorder()
                     .tint(.purple)
                     .disabled(engine.isUserPaused)
                 }
             }
+
+#if os(iOS)
+            if auth.sessionKey != nil {
+                Button {
+                    Task { @MainActor in
+                        guard !isScanningListeningHistory else { return }
+                        isScanningListeningHistory = true
+                        defer { isScanningListeningHistory = false }
+                        let imported = await AppModel.shared.scanListeningHistory()
+                        listeningHistoryScanAlertTitle = "Listening History"
+                        if imported > 0 {
+                            listeningHistoryScanAlertMessage = "Imported \(imported) play\(imported == 1 ? "" : "s")."
+                        } else {
+                            listeningHistoryScanAlertMessage = "No new plays found."
+                        }
+                        isShowingListeningHistoryScanAlert = true
+                    }
+                } label: {
+                    Label(
+                        isScanningListeningHistory ? "Scanning…" : "Scan Listening History",
+                        systemImage: "clock.arrow.circlepath"
+                    )
+                    .font(.body.weight(.bold))
+                    .frame(maxWidth: .infinity, minHeight: actionButtonHeight)
+                }
+                .buttonStyle(.borderedProminent)
+                .pillButtonBorder()
+                .tint(.indigo)
+                .disabled(isScanningListeningHistory)
+            }
+#endif
 
             if auth.sessionKey != nil {
                 Button {
@@ -227,7 +366,7 @@ struct ContentView: View {
                         .frame(maxWidth: .infinity, minHeight: actionButtonHeight)
                 }
                 .buttonStyle(.borderedProminent)
-                .buttonBorderShape(.capsule)
+                .pillButtonBorder()
                 .tint(.blue)
                 .disabled(auth.profileURL == nil)
             }
@@ -235,13 +374,73 @@ struct ContentView: View {
         .frame(maxWidth: .infinity, alignment: .center)
     }
 
+#if os(macOS)
+    @ViewBuilder
+    private var macAttentionBanner: some View {
+        let isLoggedOut = (auth.sessionKey == nil)
+        let isPermissionOff = (observer.authorizationStatus != .authorized)
+        if isLoggedOut || isPermissionOff {
+            VStack(alignment: .leading, spacing: 10) {
+                if isLoggedOut {
+                    Label(
+                        "You’re logged out of Last.fm. Open Settings to sign in.",
+                        systemImage: "person.crop.circle.badge.exclamationmark"
+                    )
+                    .font(.subheadline.weight(.semibold))
+                }
+
+                if isPermissionOff {
+                    Label(
+                        "Music permission is off. Enable it in System Settings → Privacy & Security.",
+                        systemImage: "exclamationmark.triangle.fill"
+                    )
+                    .font(.subheadline.weight(.semibold))
+                }
+
+                HStack(spacing: 10) {
+                    if isLoggedOut {
+                        Button("Open Settings") {
+                            isShowingSettings = true
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(.white)
+                    }
+
+                    if isPermissionOff {
+                        Button("Open System Settings") {
+                            if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security") {
+                                openURL(url)
+                            }
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(.white)
+                    }
+
+                    Spacer(minLength: 0)
+                }
+            }
+            .foregroundStyle(.white)
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.red.opacity(0.92), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .strokeBorder(.white.opacity(0.18), lineWidth: 1)
+            }
+        }
+    }
+#endif
+
     private func presentSetupIfNeeded() {
         let mediaAuthorized = (MPMediaLibrary.authorizationStatus() == .authorized)
-        let shouldShow = (!hasSeenSetup || !mediaAuthorized)
+        let shouldShow = (!hasSeenSetup || !mediaAuthorized || auth.sessionKey == nil)
         guard shouldShow else { return }
 
         isShowingHelp = false
         isShowingSettings = false
+#if os(iOS)
+        isShowingProUpgrade = false
+#endif
         if !isShowingSetup {
             isShowingSetup = true
         }
@@ -273,8 +472,16 @@ struct ContentView: View {
                                 }
                                 HStack(spacing: 8) {
                                     Text(relativeHoursMinutes(from: entry.scrobbledAt, to: context.date))
-                                    if entry.source == .backlog {
-                                        Text("Backlog")
+                                    if entry.lovedOnLastFM == true {
+                                        Text("Loved")
+                                            .padding(.horizontal, 8)
+                                            .padding(.vertical, 2)
+                                            .foregroundColor(.white)
+                                            .background(Color.red)
+                                            .clipShape(Capsule())
+                                    }
+                                    if entry.source != .live {
+                                        Text(sourceLabel(entry.source))
                                             .padding(.horizontal, 8)
                                             .padding(.vertical, 2)
                                             .background(Color.secondary.opacity(0.15))
@@ -302,12 +509,22 @@ struct ContentView: View {
         .shadow(color: .black.opacity(0.12), radius: 10, x: 0, y: 5)
     }
 
+    private func sourceLabel(_ source: ScrobbleLogStore.Source) -> String {
+        switch source {
+        case .live: return ""
+        case .backlog: return "Backlog"
+        case .playbackHistory: return "Listening History"
+        case .recentlyPlayed: return "Recently Played"
+        }
+    }
+
     private func connectTapped() async {
         errorText = nil
         do {
             try await auth.connect()
             engine.start()
         } catch {
+            if error is CancellationError { return }
             errorText = error.localizedDescription
         }
     }
@@ -387,3 +604,132 @@ struct IOSCloseButtonLabel: View {
         }
     }
 }
+
+extension View {
+    @ViewBuilder
+    func pillButtonBorder() -> some View {
+#if os(macOS)
+        if #available(macOS 14.0, *) {
+            self.buttonBorderShape(.capsule)
+        } else {
+            self.buttonBorderShape(.roundedRectangle)
+        }
+#else
+        self.buttonBorderShape(.capsule)
+#endif
+    }
+}
+
+#if os(macOS)
+enum MacFloatingBarLayout {
+    /// Extra top padding (in addition to the view's normal padding) to keep content from sitting under the floating capsule buttons.
+    static let contentTopPadding: CGFloat = 52
+}
+
+struct MacCapsuleBar<Content: View>: View {
+    private let content: Content
+
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+
+    var body: some View {
+        content
+            .buttonStyle(.plain)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .background(.ultraThinMaterial, in: Capsule())
+            .overlay {
+                Capsule()
+                    .strokeBorder(.primary.opacity(0.12), lineWidth: 0.5)
+            }
+            .shadow(color: .black.opacity(0.18), radius: 10, x: 0, y: 6)
+    }
+}
+
+struct MacFloatingCircleButton: View {
+    let systemImage: String
+    let help: String
+    let accessibilityLabel: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(.primary)
+                .frame(width: 36, height: 36)
+                .background(.ultraThinMaterial, in: Circle())
+                .overlay {
+                    Circle()
+                        .strokeBorder(.primary.opacity(0.12), lineWidth: 0.5)
+                }
+                .shadow(color: .black.opacity(0.18), radius: 10, x: 0, y: 6)
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .help(help)
+        .accessibilityLabel(accessibilityLabel)
+    }
+}
+
+extension ContentView {
+    @ViewBuilder
+    private var macModalOverlay: some View {
+        let isPresented = (isShowingSetup || isShowingHelp || isShowingSettings)
+        if isPresented {
+            ZStack {
+                Color.black.opacity(0.18)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        dismissMacModal()
+                    }
+
+                macModalContent
+                    .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .strokeBorder(.primary.opacity(0.12), lineWidth: 0.5)
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .shadow(color: .black.opacity(0.22), radius: 18, x: 0, y: 10)
+                    .padding(12)
+                    .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .onTapGesture {}
+            }
+            .transition(.opacity)
+            .animation(.easeOut(duration: 0.15), value: isPresented)
+        }
+    }
+
+    @ViewBuilder
+    private var macModalContent: some View {
+        if isShowingSetup {
+            SetupHelpView(mode: .onboarding) {
+                hasSeenSetup = true
+                isShowingSetup = false
+                Task { @MainActor in
+                    await AppModel.shared.startIfNeeded()
+                }
+            }
+        } else if isShowingHelp {
+            SetupHelpView(mode: .help) {
+                isShowingHelp = false
+            }
+        } else if isShowingSettings {
+            SettingsView(onBack: { isShowingSettings = false })
+        }
+    }
+
+    private func dismissMacModal() {
+        if isShowingSettings {
+            isShowingSettings = false
+        } else if isShowingHelp {
+            isShowingHelp = false
+        } else if isShowingSetup {
+            hasSeenSetup = true
+            isShowingSetup = false
+        }
+    }
+}
+#endif

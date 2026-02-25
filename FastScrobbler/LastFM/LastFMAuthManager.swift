@@ -1,19 +1,21 @@
 import AuthenticationServices
 import Foundation
+#if os(iOS)
 import UIKit
+#elseif os(macOS)
+import AppKit
+#endif
 
 @MainActor
 final class LastFMAuthManager: NSObject, ObservableObject {
     enum AuthError: Error, LocalizedError {
         case missingCallbackScheme
-        case webAuthCanceled
         case invalidCallbackURL
         case missingTokenInCallback
 
         var errorDescription: String? {
             switch self {
             case .missingCallbackScheme: return "Missing callback URL scheme."
-            case .webAuthCanceled: return "Last.fm sign-in was canceled."
             case .invalidCallbackURL: return "Invalid sign-in callback URL."
             case .missingTokenInCallback: return "Last.fm callback did not include an auth token."
             }
@@ -50,7 +52,7 @@ final class LastFMAuthManager: NSObject, ObservableObject {
                 if let error = error as? ASWebAuthenticationSessionError,
                    error.code == .canceledLogin
                 {
-                    cont.resume(throwing: AuthError.webAuthCanceled)
+                    cont.resume(throwing: CancellationError())
                     return
                 }
                 if let error { cont.resume(throwing: error); return }
@@ -117,6 +119,7 @@ final class LastFMAuthManager: NSObject, ObservableObject {
 
 extension LastFMAuthManager: ASWebAuthenticationPresentationContextProviding {
     func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
+#if os(iOS)
         let scenes = UIApplication.shared.connectedScenes
             .compactMap { $0 as? UIWindowScene }
         for scene in scenes {
@@ -125,5 +128,10 @@ extension LastFMAuthManager: ASWebAuthenticationPresentationContextProviding {
             }
         }
         return ASPresentationAnchor()
+#elseif os(macOS)
+        return NSApp.keyWindow ?? NSApp.windows.first ?? NSWindow()
+#else
+        return ASPresentationAnchor()
+#endif
     }
 }

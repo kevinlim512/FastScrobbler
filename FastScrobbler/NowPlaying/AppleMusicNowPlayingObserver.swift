@@ -21,11 +21,16 @@ final class AppleMusicNowPlayingObserver: ObservableObject {
     @Published private(set) var track: Track?
     @Published private(set) var playbackState: MPMusicPlaybackState = .stopped
     @Published private(set) var playbackTimeSeconds: TimeInterval = 0
+    @Published private(set) var isNowPlayingLovedInAppleMusic: Bool?
 
     @Published private(set) var isRunning = false
 
     private let player = MPMusicPlayerController.systemMusicPlayer
     private var timer: Timer?
+
+    private var favoritesIndex: AppleMusicFavorites.Index?
+    private var favoritesIndexDirty = true
+    private var favoritesIndexRefreshTask: Task<Void, Never>?
 
     init() {
         authorizationStatus = MPMediaLibrary.authorizationStatus()
@@ -85,7 +90,17 @@ final class AppleMusicNowPlayingObserver: ObservableObject {
             object: player
         )
 
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(mediaLibraryChanged),
+            name: .MPMediaLibraryDidChange,
+            object: nil
+        )
+
+        MPMediaLibrary.default().beginGeneratingLibraryChangeNotifications()
         player.beginGeneratingPlaybackNotifications()
+
+        refreshFavoritesIndexIfNeeded()
         refreshFromPlayer()
 
         timer?.invalidate()
@@ -104,7 +119,11 @@ final class AppleMusicNowPlayingObserver: ObservableObject {
 
         timer?.invalidate()
         timer = nil
+
+        favoritesIndexRefreshTask?.cancel()
+        favoritesIndexRefreshTask = nil
         player.endGeneratingPlaybackNotifications()
+        MPMediaLibrary.default().endGeneratingLibraryChangeNotifications()
         NotificationCenter.default.removeObserver(self)
     }
 
@@ -116,32 +135,69 @@ final class AppleMusicNowPlayingObserver: ObservableObject {
         refreshFromPlayer()
     }
 
+    @objc private func mediaLibraryChanged() {
+        favoritesIndexDirty = true
+        refreshFavoritesIndexIfNeeded()
+    }
+
+    private func refreshFavoritesIndexIfNeeded() {
+        guard MPMediaLibrary.authorizationStatus() == .authorized else {
+            favoritesIndex = nil
+            favoritesIndexDirty = true
+            return
+        }
+
+        guard favoritesIndexDirty else { return }
+        guard favoritesIndexRefreshTask == nil else { return }
+
+        favoritesIndexRefreshTask = Task.detached(priority: .utility) { [weak self] in
+            let index = AppleMusicFavorites.buildIndex()
+            await MainActor.run {
+                guard let self else { return }
+                self.favoritesIndex = index
+                self.favoritesIndexDirty = false
+                self.favoritesIndexRefreshTask = nil
+                self.refreshFromPlayer()
+            }
+        }
+    }
+
     private func refreshFromPlayer() {
+        refreshFavoritesIndexIfNeeded()
+
         playbackState = player.playbackState
         playbackTimeSeconds = max(0, player.currentPlaybackTime)
 
         guard let item = player.nowPlayingItem else {
             track = nil
+            isNowPlayingLovedInAppleMusic = nil
             return
         }
 
         let artist = item.artist ?? ""
         let title = item.title ?? ""
         let album = item.albumTitle
+        let albumArtist = item.albumArtist
         let duration = item.playbackDuration
         let pid = item.persistentID
 
         if artist.isEmpty || title.isEmpty {
             track = nil
+            isNowPlayingLovedInAppleMusic = nil
             return
         }
 
-        track = Track(
+        let nextTrack = Track(
             artist: artist,
             title: title,
             album: album,
+            albumArtist: albumArtist,
             durationSeconds: duration > 0 ? duration : nil,
             persistentID: pid
         )
+
+        let loved = AppleMusicFavorites.isFavorited(item, index: favoritesIndex)
+        track = nextTrack
+        isNowPlayingLovedInAppleMusic = loved
     }
 }

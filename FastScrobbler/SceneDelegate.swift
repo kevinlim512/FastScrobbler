@@ -17,6 +17,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             .environmentObject(model.observer)
             .environmentObject(model.engine)
             .environmentObject(model.scrobbleLog)
+            .environmentObject(model.pro)
 
         let window = UIWindow(windowScene: windowScene)
         window.rootViewController = UIHostingController(rootView: contentView)

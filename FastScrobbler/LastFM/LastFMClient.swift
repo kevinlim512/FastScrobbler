@@ -106,6 +106,19 @@ struct LastFMClient {
         )
     }
 
+    func love(track: Track, sessionKey: String) async throws {
+        let params: [String: String] = [
+            "artist": track.artist,
+            "track": track.title,
+        ]
+        _ = try await signedCall(
+            method: "track.love",
+            sessionKey: sessionKey,
+            params: params,
+            httpMethod: "POST"
+        )
+    }
+
     private func signedCall(
         method: String,
         sessionKey: String?,

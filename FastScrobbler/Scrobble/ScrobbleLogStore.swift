@@ -6,6 +6,8 @@ final class ScrobbleLogStore: ObservableObject {
     enum Source: String, Codable, Sendable {
         case live
         case backlog
+        case playbackHistory
+        case recentlyPlayed
     }
 
     struct Entry: Identifiable, Codable, Hashable, Sendable {
@@ -14,6 +16,7 @@ final class ScrobbleLogStore: ObservableObject {
         var startTimestamp: Int
         var scrobbledAt: Date
         var source: Source
+        var lovedOnLastFM: Bool?
     }
 
     static let shared = ScrobbleLogStore()
@@ -27,13 +30,20 @@ final class ScrobbleLogStore: ObservableObject {
         load()
     }
 
-    func record(track: Track, startTimestamp: Int, scrobbledAt: Date = Date(), source: Source) {
+    func record(
+        track: Track,
+        startTimestamp: Int,
+        scrobbledAt: Date = Date(),
+        source: Source,
+        lovedOnLastFM: Bool = false
+    ) {
         let entry = Entry(
             id: UUID(),
             track: track,
             startTimestamp: startTimestamp,
             scrobbledAt: scrobbledAt,
-            source: source
+            source: source,
+            lovedOnLastFM: lovedOnLastFM
         )
 
         if entries.contains(where: { $0.startTimestamp == startTimestamp && $0.track == track }) {
@@ -50,6 +60,13 @@ final class ScrobbleLogStore: ObservableObject {
     func clear() {
         entries = []
         save()
+    }
+
+    func containsSimilar(track: Track, around startTimestamp: Int, toleranceSeconds: Int) -> Bool {
+        let tol = max(0, toleranceSeconds)
+        return entries.contains(where: {
+            $0.track == track && abs($0.startTimestamp - startTimestamp) <= tol
+        })
     }
 
     private func load() {

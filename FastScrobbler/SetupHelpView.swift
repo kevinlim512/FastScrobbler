@@ -54,6 +54,33 @@ struct SetupHelpView: View {
         let badgeLevel: StatusLevel
         let actionTitle: String?
         let action: (() -> Void)?
+        let actionDisabled: Bool
+        let actionProminent: Bool
+        let actionTint: Color?
+
+        init(
+            icon: String,
+            title: String,
+            subtitle: String,
+            badgeText: String,
+            badgeLevel: StatusLevel,
+            actionTitle: String?,
+            action: (() -> Void)?,
+            actionDisabled: Bool = false,
+            actionProminent: Bool = false,
+            actionTint: Color? = nil
+        ) {
+            self.icon = icon
+            self.title = title
+            self.subtitle = subtitle
+            self.badgeText = badgeText
+            self.badgeLevel = badgeLevel
+            self.actionTitle = actionTitle
+            self.action = action
+            self.actionDisabled = actionDisabled
+            self.actionProminent = actionProminent
+            self.actionTint = actionTint
+        }
 
         var body: some View {
             HStack(alignment: .top, spacing: 12) {
@@ -77,11 +104,26 @@ struct SetupHelpView: View {
                         .foregroundStyle(.secondary)
 
                     if let actionTitle, let action {
-                        Button(actionTitle) { action() }
-                            .font(.subheadline.weight(.semibold))
-                            .padding(.top, 6)
+                        if actionProminent {
+                            Button {
+                                action()
+                            } label: {
+                                Label(actionTitle, systemImage: "music.note")
+                                    .frame(maxWidth: .infinity)
+                            }
+                                .disabled(actionDisabled)
+                                .buttonStyle(GiantPillButtonStyle(tint: actionTint ?? .accentColor))
+                                .padding(.top, 10)
+                        } else {
+                            Button(actionTitle) { action() }
+                                .disabled(actionDisabled)
+                                .font(.subheadline.weight(.semibold))
+                                .tint(actionTint)
+                                .padding(.top, 6)
+                        }
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding()
@@ -90,15 +132,42 @@ struct SetupHelpView: View {
         }
     }
 
+    private struct GiantPillButtonStyle: ButtonStyle {
+        let tint: Color
+
+        @Environment(\.isEnabled) private var isEnabled
+
+        func makeBody(configuration: Configuration) -> some View {
+            configuration.label
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 24)
+                .frame(minHeight: 68)
+                .background(tint)
+                .clipShape(Capsule())
+                .shadow(
+                    color: .black.opacity(configuration.isPressed ? 0.14 : 0.22),
+                    radius: configuration.isPressed ? 6 : 10,
+                    y: configuration.isPressed ? 3 : 6
+                )
+                .opacity(isEnabled ? (configuration.isPressed ? 0.92 : 1.0) : 0.55)
+                .scaleEffect(configuration.isPressed ? 0.99 : 1.0)
+                .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+        }
+    }
+
     let mode: Mode
     let onDone: () -> Void
 
+    @EnvironmentObject private var auth: LastFMAuthManager
     @Environment(\.openURL) private var openURL
     @Environment(\.scenePhase) private var scenePhase
 
     @State private var mediaStatus: MPMediaLibraryAuthorizationStatus = .notDetermined
     @State private var backgroundRefreshStatus: UIBackgroundRefreshStatus = .restricted
     @State private var liveActivitiesEnabled: Bool? = nil
+    @State private var isSigningInToLastFM = false
+    @State private var lastFMErrorText: String?
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
@@ -108,6 +177,7 @@ struct SetupHelpView: View {
                         .padding(.top, 30)
 
                     VStack(spacing: 12) {
+                        lastFMRow
                         mediaLibraryRow
                         backgroundRefreshRow
                         liveActivitiesRow
@@ -124,7 +194,7 @@ struct SetupHelpView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.blue)
-                    .disabled(mode == .onboarding && mediaStatus != .authorized)
+                    .disabled(auth.sessionKey == nil || (mode == .onboarding && mediaStatus != .authorized))
                     .padding(.top, 2)
                 }
                 .padding(.horizontal, 20)
@@ -144,6 +214,17 @@ struct SetupHelpView: View {
             }
         }
         .interactiveDismissDisabled(mode == .onboarding)
+        .alert(
+            "Last.fm Sign-in",
+            isPresented: Binding(
+                get: { lastFMErrorText != nil },
+                set: { if !$0 { lastFMErrorText = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(lastFMErrorText ?? "")
+        }
         .onAppear { refreshStatuses() }
         .onChange(of: scenePhase) { newValue in
             if newValue == .active {
@@ -165,6 +246,37 @@ struct SetupHelpView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 8)
+    }
+
+    private var lastFMRow: some View {
+        let isConnected = (auth.sessionKey != nil)
+        let badgeText = isConnected ? "Connected" : "Required"
+        let badgeLevel: StatusLevel = isConnected ? .good : .bad
+
+        return SettingRow(
+            icon: "person.crop.circle",
+            title: "Last.fm",
+            subtitle: "Sign in to start scrobbling to your Last.fm account.",
+            badgeText: badgeText,
+            badgeLevel: badgeLevel,
+            actionTitle: isConnected ? nil : (isSigningInToLastFM ? "Signing In…" : "Sign In to Last.fm"),
+            action: isConnected ? nil : {
+                guard !isSigningInToLastFM else { return }
+                isSigningInToLastFM = true
+                Task { @MainActor in
+                    defer { isSigningInToLastFM = false }
+                    do {
+                        try await auth.connect()
+                    } catch {
+                        if error is CancellationError { return }
+                        lastFMErrorText = error.localizedDescription
+                    }
+                }
+            },
+            actionDisabled: isSigningInToLastFM,
+            actionProminent: true,
+            actionTint: .red
+        )
     }
 
     private var mediaLibraryRow: some View {

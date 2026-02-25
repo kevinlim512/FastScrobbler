@@ -2,10 +2,18 @@ import Foundation
 import OSLog
 
 actor ScrobbleBacklog {
+    enum Origin: String, Codable, Sendable {
+        case live
+        case playbackHistory
+        case recentlyPlayed
+    }
+
     struct Item: Codable, Hashable {
         var id: UUID
         var track: Track
         var startTimestamp: Int
+        var origin: Origin?
+        var wasAppleMusicFavorite: Bool?
         var queuedAt: Date
         var attemptCount: Int
         var lastAttemptAt: Date?
@@ -16,6 +24,8 @@ actor ScrobbleBacklog {
             var track: Track
             var startTimestamp: Int
             var scrobbledAt: Date
+            var origin: Origin?
+            var lovedOnLastFM: Bool
         }
 
         var sentCount: Int
@@ -38,6 +48,14 @@ actor ScrobbleBacklog {
     }
 
     func enqueue(track: Track, startTimestamp: Int) async {
+        await enqueue(track: track, startTimestamp: startTimestamp, origin: nil)
+    }
+
+    func enqueue(track: Track, startTimestamp: Int, origin: Origin?) async {
+        await enqueue(track: track, startTimestamp: startTimestamp, origin: origin, wasAppleMusicFavorite: nil)
+    }
+
+    func enqueue(track: Track, startTimestamp: Int, origin: Origin?, wasAppleMusicFavorite: Bool?) async {
         await loadIfNeeded()
 
         if items.contains(where: { $0.startTimestamp == startTimestamp && $0.track == track }) {
@@ -49,12 +67,22 @@ actor ScrobbleBacklog {
                 id: UUID(),
                 track: track,
                 startTimestamp: startTimestamp,
+                origin: origin,
+                wasAppleMusicFavorite: wasAppleMusicFavorite,
                 queuedAt: Date(),
                 attemptCount: 0,
                 lastAttemptAt: nil
             )
         )
         await save()
+    }
+
+    func containsSimilar(track: Track, around startTimestamp: Int, toleranceSeconds: Int) async -> Bool {
+        await loadIfNeeded()
+        let tol = max(0, toleranceSeconds)
+        return items.contains(where: {
+            $0.track == track && abs($0.startTimestamp - startTimestamp) <= tol
+        })
     }
 
     func flush(sessionKey: String, maxItems: Int = 25) async -> FlushResult {
@@ -66,6 +94,8 @@ actor ScrobbleBacklog {
         guard !items.isEmpty else {
             return FlushResult(sentCount: 0, skippedCount: 0, remainingCount: 0, sentItems: [])
         }
+
+        let loveOnFavoriteEnabled = ProSettings.loveOnFavoriteEnabled(isPro: ProEntitlement.cachedIsPro())
 
         let now = Date()
         var sentCount = 0
@@ -93,8 +123,23 @@ actor ScrobbleBacklog {
 
                 do {
                     try await client.scrobble(track: item.track, sessionKey: sessionKey, startTimestamp: item.startTimestamp)
+                    var lovedOnLastFM = false
+                    if item.wasAppleMusicFavorite == true, loveOnFavoriteEnabled {
+                        do {
+                            try await client.love(track: item.track, sessionKey: sessionKey)
+                            lovedOnLastFM = true
+                        } catch {
+                            // Keep silent; scrobble succeeded even if loving fails.
+                        }
+                    }
                     sentItems.append(
-                        FlushResult.SentItem(track: item.track, startTimestamp: item.startTimestamp, scrobbledAt: now)
+                        FlushResult.SentItem(
+                            track: item.track,
+                            startTimestamp: item.startTimestamp,
+                            scrobbledAt: now,
+                            origin: item.origin,
+                            lovedOnLastFM: lovedOnLastFM
+                        )
                     )
                     items.remove(at: idx)
                     sentCount += 1
