@@ -1,117 +1,112 @@
 # FastScrobbler
 
-FastScrobbler is an iOS app (plus a macOS menu bar app) that reads Apple Music (the Music app) now-playing metadata and submits it to Last.fm:
+FastScrobbler is a lightweight scrobbler for Apple Music that sends:
 
-- `track.updateNowPlaying` immediately (shows as “currently playing”)
-- `track.scrobble` once enough of the track has played (best-effort; see iOS constraints below)
+- `track.updateNowPlaying` (shows as “currently playing” on Last.fm)
+- `track.scrobble` once you’ve listened long enough (threshold is configurable)
+
+It includes:
+
+- An iOS app (`FastScrobbler/`)
+- A macOS menu bar app (`FastScrobblerMac/`)
+- iOS extensions (Live Activity + iOS 18 Control Center widgets)
 
 ## Features
 
-- Observes Apple Music now playing via `MPMusicPlayerController.systemMusicPlayer`
-- Live Activity (Lock Screen + Dynamic Island) showing scrobbling status (iOS 16.1+)
-- Backfills missed plays from Apple Music “Use Listening History” / Playback History (best-effort)
-- Shortcuts actions:
-  - **Send Now Playing**
-  - **Scrobble Song**
-- Control Center buttons for the same actions (iOS 18.0+ Control Widgets targets)
-- Offline / failure tolerance: scrobbles can be queued and retried later (backlog)
+- **Now Playing → Last.fm**: sends now playing as soon as playback is detected.
+- **Auto-scrobble with threshold**: scrobbles after 10% / 25% / 50% / 75% of track duration (default 50%).
+- **Manual “Scrobble Now”**: scrobble the current track immediately from the app.
+- **Pause/Resume scrobbling**: stops all sending while paused.
+- **Offline / failure tolerant**: queues scrobbles locally and retries with exponential-ish backoff.
+- **Listening History import (iOS)**: scans the device’s Apple Music “Playback History” playlist and imports missed plays (best-effort; this device only).
+- **Apple Music favorites → Last.fm love (optional)**: when enabled, favoriting a song in Apple Music can trigger `track.love` after scrobbling.
+- **Scrobble metadata controls**:
+  - Use **Album Artist** as scrobble artist (when available).
+  - Strip “`- EP`” / “`- Single`” suffixes from album names.
+- **Live Activity (iOS 16.1+)**: shows scrobbling status on Lock Screen / Dynamic Island.
+- **Shortcuts (iOS)**:
+  - **Send Now Playing** (updates Last.fm “currently playing”)
+  - **Scrobble Song** (immediate scrobble)
+- **Control Center buttons (iOS 18+)**: Control Widgets that run the same actions without opening the app.
+- **macOS menu bar UI**: no dock icon/windows; click the menu bar icon to open the popover UI.
+- **Start at login (macOS)**: optional toggle in Settings.
 
 ## Requirements
 
-- Xcode (recent version) and an Apple developer signing setup
-- A physical iPhone for reliable iOS Music app integration
-- iOS:
-  - App target: iOS 16.6+
-  - Live Activity target: iOS 16.1+
-  - Control Center widget targets: iOS 18.0+
-- macOS:
-  - App target: macOS 13.0+
+- Xcode (recent) and an Apple Developer signing setup
+- Recommended: a physical iPhone for reliable Apple Music now-playing metadata
+- iOS targets:
+  - App: iOS 16.6+
+  - Live Activity extension: iOS 16.1+
+  - Control Widgets extensions: iOS 18.0+
+- macOS target:
+  - Menu bar app: macOS 13.5+
 
-## Setup
+## Permissions / OS prompts
 
-1. Create a Last.fm API account/app and copy the **API key** + **shared secret**.
+- **iOS**: Media Library / Apple Music permission is used to read now-playing metadata and (optionally) Playback History and favorites status.
+- **macOS**: Automation (Apple Events) permission is used to read now-playing metadata from the Music app.
+
+## Build & run (from source)
+
+1. Create a Last.fm API app and copy your **API key** + **shared secret**.
 2. Create your local secrets file:
-   - If `FastScrobbler/LastFMSecrets.swift` doesn’t exist, copy `FastScrobbler/LastFMSecrets_Template.swift` to `FastScrobbler/LastFMSecrets.swift`
-   - Fill in `apiKey` and `apiSecret` (and avoid committing this file)
-3. Keychain access group (optional, for sharing auth between app + extensions):
-   - This repo includes `FastScrobbler/LastFM/KeychainStore_template.swift` (safe to commit) which reads `KEYCHAIN_ACCESS_GROUP` from each target’s Info.plist.
-   - If you set a shared access group, also add it to each target’s `keychain-access-groups` entitlement.
-4. Open `FastScrobbler.xcodeproj` in Xcode and set your signing team / bundle IDs as needed.
-5. Choose what to build:
-   - iOS: select the `FastScrobbler` scheme and build/run on device.
-   - macOS: select the `FastScrobblerMac` scheme and build/run on “My Mac”.
+   - Copy `FastScrobbler/LastFMSecrets_Template.swift` → `FastScrobbler/LastFMSecrets.swift`
+   - Fill in `LastFMSecrets.apiKey` and `LastFMSecrets.apiSecret`
+   - Keep it uncommitted (it’s in `.gitignore`)
+3. Open `FastScrobbler.xcodeproj` and set your signing team / bundle identifiers.
+4. App Group + Keychain access groups (recommended for extensions):
+   - All targets are configured to use an App Group (`group.com.kevin.FastScrobbler`) and a Keychain access group via entitlements (`*.entitlements`).
+   - If you change bundle IDs / team, make sure:
+     - The App Group identifier exists in your developer account and matches the entitlements.
+     - The Keychain access group matches your Team ID.
+   - This repo’s `FastScrobbler/LastFM/KeychainStore.swift` includes a hard-coded access group string; you’ll likely need to update it for your Team ID if you want app+extensions Keychain sharing.
+     - Alternative: replace it with `FastScrobbler/LastFM/KeychainStore_template.swift` and provide the access group via Info.plist.
 
-## macOS build notes
+### Run on iOS
 
-- The macOS target (`FastScrobblerMac/`) runs as a **menu bar app** (no Dock icon / no windows).
-- CLI build (optional): `xcodebuild -scheme FastScrobblerMac -destination 'platform=macOS' build`
-- On first launch, macOS will prompt for permission to control the Music app (Apple Events). If you deny it, re-enable it in **System Settings → Privacy & Security → Automation**.
-- Some iOS-only features don’t apply on macOS (e.g. Live Activities, Control Center widgets, Apple Music playback-history backfill).
+- Build/run the `FastScrobbler` scheme on a device.
+- First launch checklist:
+  - Allow **Media Library** access.
+  - Sign in to Last.fm in **Settings**.
+  - Start playing music in Apple Music.
+- Optional:
+  - Enable **Live Activities** in iOS Settings for FastScrobbler.
+  - Add the app’s **Shortcuts** actions and (iOS 18+) **Control Center** widgets.
 
-## Usage
+### Run on macOS
 
-### iOS
-
-1. Open FastScrobbler and grant **Media Library** permission when prompted.
-2. Tap **Log In** to connect your Last.fm account (uses `ASWebAuthenticationSession`).
-3. Start playing music in Apple Music.
-4. Optional:
-   - Enable **Live Activities** in iOS Settings for FastScrobbler.
-   - Add the app’s **Shortcuts** actions and (on iOS 18+) **Control Center** buttons.
-
-### macOS
-
-1. Run the `FastScrobblerMac` target (a menu bar icon appears).
-2. If prompted, allow Automation permission to control the Music app.
-3. Tap **Log In** to connect your Last.fm account.
-4. Start playing music in the Music app.
+- Build/run the `FastScrobblerMac` scheme (menu bar app).
+- On first launch, macOS may prompt for permission to control Music. If you deny it, re-enable it in:
+  - **System Settings → Privacy & Security → Automation → FastScrobbler → Music**
 
 ## iOS constraints / gotchas
 
-- Background scrobbling is **best-effort**. iOS can suspend apps aggressively; this project uses background task scheduling (`BGAppRefreshTask` / `BGProcessingTask`), but you should not expect always-on behavior.
-- When the app resumes, it can backfill missed plays using the local Apple Music “Playback History” playlist (if available).
-- Scrobbling requires a track duration. If Apple Music doesn’t provide a duration for an item, FastScrobbler can still send **Now Playing**, but may not scrobble automatically.
-- Live Activities don’t always update immediately after running a Shortcut or tapping a Control Center button (iOS can throttle widget/intent execution).
+- Background scrobbling is **best-effort**. iOS can suspend apps aggressively; FastScrobbler uses `BGAppRefreshTask` / `BGProcessingTask`, but always-on behavior is not guaranteed.
+- Scrobbling requires a track duration. If Apple Music doesn’t provide a duration, FastScrobbler can still send **Now Playing**, but may not auto-scrobble.
+- Listening History import uses the device’s “Playback History” playlist; it’s best-effort and intentionally avoids importing plays synced from other devices.
+- Live Activities, Shortcuts, and Control Center widgets may update with a delay (iOS can throttle background/intent execution).
 
-## Privacy & storage notes
+## Privacy
 
-- Last.fm session keys are stored in the iOS Keychain.
-- Recent scrobbles and the retry backlog are persisted locally (Application Support / App Group container).
-- Network requests go to Last.fm’s API (`ws.audioscrobbler.com`).
-
-## Privacy Policy
-
-For App Store submission and a more complete description of data handling, see `PRIVACY_POLICY.md`.
+- FastScrobbler has no developer-run backend.
+- Network traffic goes directly from your device to Last.fm (`ws.audioscrobbler.com`) after you connect your account.
+- More details: `PRIVACY_POLICY.md`.
 
 ## Troubleshooting
 
-- **“No track detected”**: make sure Apple Music is playing, and Media Library permission is granted for FastScrobbler.
-- **No scrobbles while locked/backgrounded**: keep the app opened occasionally; ensure Background App Refresh is enabled; iOS may still delay execution.
+- **No track detected (iOS)**: make sure Apple Music is playing and Media Library permission is granted.
+- **No scrobbles while locked/backgrounded (iOS)**: keep the app open occasionally; ensure Background App Refresh is enabled.
+- **macOS shows “permission” errors**: enable Automation permission for Music in System Settings.
 - **Auth callback issues**: `LastFMSecrets.callbackScheme` must match `CFBundleURLTypes` in `FastScrobbler/Info.plist`.
 
-## Development notes
+## Project layout
 
-- The app target lives in `FastScrobbler/`.
-- Extensions:
-  - Live Activity widget: `FastScrobblerLiveActivity/`
-  - iOS 18 Control Widgets: `FastScrobblerNowPlayingControl/`, `FastScrobblerScrobbleControl/`
+- iOS app: `FastScrobbler/`
+- macOS menu bar app: `FastScrobblerMac/`
+- Live Activity widget extension: `FastScrobblerLiveActivity/`
+- iOS 18 Control Widgets: `FastScrobblerNowPlayingControl/`, `FastScrobblerScrobbleControl/`
 
-## In-App Purchases (Pro)
+## Notes on purchases
 
-This project uses StoreKit 2 for a single “Pro” unlock.
-
-- Product id: `com.kevin.FastScrobbler.pro` (see `FastScrobbler/Pro.swift`)
-
-### Test locally (no App Store Connect)
-
-1. In Xcode: **File → New → File… → StoreKit Configuration File**.
-2. Add a **Non-Consumable** product with id `com.kevin.FastScrobbler.pro` and a price.
-3. Edit scheme: **Product → Scheme → Edit Scheme… → Run → Options → StoreKit Configuration** and select that `.storekit` file.
-4. Run the app; the “Buy” button should use the local StoreKit test environment.
-
-### Test “real” purchase flow (Sandbox / TestFlight)
-
-1. In App Store Connect, create the In‑App Purchase (Non‑Consumable) with id `com.kevin.FastScrobbler.pro`.
-2. Ensure your Paid Apps / Agreements and Banking/Tax are active (otherwise products won’t load).
-3. Add the product to your app version as needed, then upload a build and test via **TestFlight** with a sandbox tester Apple ID.
-4. Use the paywall in the app; **Restore Purchases** calls `AppStore.sync()`.
+This project previously contained support for a “Pro” in-app purchase. `FastScrobbler/Pro.swift` is now a legacy placeholder and all scrobble controls are available by default.

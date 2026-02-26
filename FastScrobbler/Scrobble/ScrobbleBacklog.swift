@@ -58,7 +58,7 @@ actor ScrobbleBacklog {
     func enqueue(track: Track, startTimestamp: Int, origin: Origin?, wasAppleMusicFavorite: Bool?) async {
         await loadIfNeeded()
 
-        if items.contains(where: { $0.startTimestamp == startTimestamp && $0.track == track }) {
+        if items.contains(where: { $0.startTimestamp == startTimestamp && $0.track.dedupeKey == track.dedupeKey }) {
             return
         }
 
@@ -81,7 +81,7 @@ actor ScrobbleBacklog {
         await loadIfNeeded()
         let tol = max(0, toleranceSeconds)
         return items.contains(where: {
-            $0.track == track && abs($0.startTimestamp - startTimestamp) <= tol
+            $0.track.dedupeKey == track.dedupeKey && abs($0.startTimestamp - startTimestamp) <= tol
         })
     }
 
@@ -95,7 +95,7 @@ actor ScrobbleBacklog {
             return FlushResult(sentCount: 0, skippedCount: 0, remainingCount: 0, sentItems: [])
         }
 
-        let loveOnFavoriteEnabled = ProSettings.loveOnFavoriteEnabled(isPro: ProEntitlement.cachedIsPro())
+        let loveOnFavoriteEnabled = ProSettings.loveOnFavoriteEnabled()
 
         let now = Date()
         var sentCount = 0

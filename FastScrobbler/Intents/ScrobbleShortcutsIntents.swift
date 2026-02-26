@@ -108,11 +108,12 @@ struct SendNowPlayingIntent: AppIntent {
         }
 
         let track = try ShortcutsPlaybackReader.nowPlayingTrackAndPlaybackTime().track
+        let trackToSend = track.applyingProScrobblePreferences()
         let client = try LastFMClient()
 
         do {
-            try await client.updateNowPlaying(track: track, sessionKey: sessionKey)
-            return .result(dialog: "Sent now playing: \(track.artist) — \(track.title)")
+            try await client.updateNowPlaying(track: trackToSend, sessionKey: sessionKey)
+            return .result(dialog: "Sent now playing: \(trackToSend.artist) — \(trackToSend.title)")
         } catch {
             logger.warning("updateNowPlaying failed: \(error.localizedDescription, privacy: .public)")
             throw error
@@ -136,9 +137,7 @@ struct ScrobbleSongIntent: AppIntent {
 
         let now = Date()
         let (track, playbackTimeSeconds) = try ShortcutsPlaybackReader.nowPlayingTrackAndPlaybackTime()
-        let isPro = ProEntitlement.cachedIsPro()
-        let shouldUseAlbumArtist = ProSettings.useAlbumArtistForScrobbling(isPro: isPro)
-        let scrobbleTrack = shouldUseAlbumArtist ? track.applyingAlbumArtistAsArtistIfAvailable() : track
+        let scrobbleTrack = track.applyingProScrobblePreferences()
         let startedAt = now.addingTimeInterval(-max(0, playbackTimeSeconds))
         let ts = Int(startedAt.timeIntervalSince1970.rounded(.down))
 

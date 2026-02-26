@@ -8,9 +8,16 @@ struct SetupHelpView: View {
     }
 
     let mode: Mode
+    let onOpenSettings: (() -> Void)?
     let onDone: () -> Void
 
     @Environment(\.openURL) private var openURL
+
+    init(mode: Mode, onOpenSettings: (() -> Void)? = nil, onDone: @escaping () -> Void) {
+        self.mode = mode
+        self.onOpenSettings = onOpenSettings
+        self.onDone = onDone
+    }
 
     private struct HelpRow: View {
         let icon: String
@@ -18,13 +25,25 @@ struct SetupHelpView: View {
         let subtitle: String
         let actionTitle: String?
         let action: (() -> Void)?
+        let actionTint: Color?
+        let actionProminent: Bool
 
-        init(icon: String, title: String, subtitle: String, actionTitle: String? = nil, action: (() -> Void)? = nil) {
+        init(
+            icon: String,
+            title: String,
+            subtitle: String,
+            actionTitle: String? = nil,
+            action: (() -> Void)? = nil,
+            actionTint: Color? = nil,
+            actionProminent: Bool = false
+        ) {
             self.icon = icon
             self.title = title
             self.subtitle = subtitle
             self.actionTitle = actionTitle
             self.action = action
+            self.actionTint = actionTint
+            self.actionProminent = actionProminent
         }
 
         var body: some View {
@@ -48,9 +67,30 @@ struct SetupHelpView: View {
                         .foregroundStyle(.secondary)
 
                     if let actionTitle, let action {
-                        Button(actionTitle) { action() }
-                            .font(.subheadline.weight(.semibold))
-                            .padding(.top, 6)
+                        Group {
+                            if let actionTint {
+                                Group {
+                                    if actionProminent {
+                                        Button(actionTitle) { action() }
+                                            .buttonStyle(.borderedProminent)
+                                    } else {
+                                        Button(actionTitle) { action() }
+                                    }
+                                }
+                                .tint(actionTint)
+                            } else {
+                                Group {
+                                    if actionProminent {
+                                        Button(actionTitle) { action() }
+                                            .buttonStyle(.borderedProminent)
+                                    } else {
+                                        Button(actionTitle) { action() }
+                                    }
+                                }
+                            }
+                        }
+                        .font(.subheadline.weight(.semibold))
+                        .padding(.top, 6)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -75,13 +115,17 @@ struct SetupHelpView: View {
                     HelpRow(
                         icon: "person.crop.circle",
                         title: "Connect Last.fm",
-                        subtitle: "Connect your account in Settings to start scrobbling."
+                        subtitle: "Connect your account in Settings to start scrobbling.",
+                        actionTitle: onOpenSettings == nil ? nil : "Sign In to Last.fm",
+                        action: { onOpenSettings?() },
+                        actionTint: .red,
+                        actionProminent: true
                     )
 
                     HelpRow(
                         icon: "music.note",
                         title: "Allow Music Control",
-                        subtitle: "Allow FastScrobbler to control the Music app when prompted.",
+                        subtitle: "When macOS asks to let FastScrobbler control Music, click Allow — this lets FastScrobbler read what’s playing for scrobbling.",
                         actionTitle: "Open System Settings",
                         action: { openPrivacySettings(kind: .automation) }
                     )
@@ -131,7 +175,7 @@ struct SetupHelpView: View {
 
     private var header: some View {
         VStack(spacing: 8) {
-            Text(mode == .onboarding ? "Setup" : "Help")
+            Text("Setup")
                 .font(.system(size: 34, weight: .bold))
             Text("A quick checklist to get scrobbling working reliably.")
                 .font(.subheadline)

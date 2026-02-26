@@ -44,11 +44,16 @@ private struct LockScreenView: View {
             HStack {
                 HStack(spacing: 6) {
                     Image(systemName: "music.note.arrow.trianglehead.clockwise")
-                    Text(state.isActivelyScrobbling ? "Scrobbling Active" : "Last Played")
+                    Text("FastScrobbler")
                 }
                 .font(.headline)
                 Spacer()
             }
+
+            Text(state.status)
+                .font(.caption2)
+                .foregroundColor(.secondary)
+                .lineLimit(1)
 
             if let artist = state.artist, let title = state.title {
                 Text("\(artist) - \(title)")

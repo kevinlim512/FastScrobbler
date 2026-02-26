@@ -100,8 +100,7 @@ final class PlaybackHistoryImporter {
 
             let playsToImport = min(max(delta, 1), min(maxPlaysByTimeWindow, 5))
 
-            let shouldUseAlbumArtist = ProSettings.useAlbumArtistForScrobbling(isPro: ProPurchaseManager.shared.isPro)
-            let scrobbleTrack = shouldUseAlbumArtist ? track.applyingAlbumArtistAsArtistIfAvailable() : track
+            let scrobbleTrack = track.applyingProScrobblePreferences()
 
             for idx in stride(from: playsToImport - 1, through: 0, by: -1) {
                 guard importedCount < maxItems else { break }
@@ -123,8 +122,8 @@ final class PlaybackHistoryImporter {
                 }()
 
                 let isDuplicate =
-                    await backlog.containsSimilar(track: scrobbleTrack, around: startTimestamp, toleranceSeconds: 90) ||
-                    scrobbleLog.containsSimilar(track: scrobbleTrack, around: startTimestamp, toleranceSeconds: 90)
+                    await backlog.containsSimilar(track: scrobbleTrack, around: startTimestamp, toleranceSeconds: 10) ||
+                    scrobbleLog.containsSimilar(track: scrobbleTrack, around: startTimestamp, toleranceSeconds: 10)
 
                 if !isDuplicate {
                     await backlog.enqueue(
@@ -162,7 +161,6 @@ final class PlaybackHistoryImporter {
 
         let candidateNames = [
             "Playback History",
-            "Recently Played",
         ]
 
         for p in playlists {
@@ -181,15 +179,10 @@ final class PlaybackHistoryImporter {
     }
 
     private func fetchCandidatesPlayed(after cutoff: Date) -> [Candidate] {
-        // Prefer a dedicated history playlist if present (older iOS versions sometimes expose this), but
-        // fall back to scanning the library and filtering by `lastPlayedDate`.
-        let items: [MPMediaItem] = {
-            if let playlist = findPlaybackHistoryPlaylist() {
-                return playlist.items
-            }
-            let query = MPMediaQuery.songs()
-            return query.items ?? []
-        }()
+        // Only import from the device's playback history playlist to avoid importing plays
+        // synced from other devices.
+        guard let playlist = findPlaybackHistoryPlaylist() else { return [] }
+        let items: [MPMediaItem] = playlist.items
 
         guard !items.isEmpty else { return [] }
 

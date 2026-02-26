@@ -27,7 +27,6 @@ final class MacAppDelegate: NSObject, NSApplicationDelegate {
             .environmentObject(model.observer)
             .environmentObject(model.engine)
             .environmentObject(model.scrobbleLog)
-            .environmentObject(model.pro)
 
         MenuBarController.shared.start(rootView: rootView)
     }

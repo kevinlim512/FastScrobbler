@@ -9,7 +9,7 @@ final class LiveActivityManager {
 
     static let enabledDefaultsKey = "FastScrobbler.LiveActivity.enabled"
     static let backgroundedAtDefaultsKey = "FastScrobbler.LiveActivity.backgroundedAt"
-    static let maxBackgroundSeconds: TimeInterval = 45 * 60
+    static let maxBackgroundSeconds: TimeInterval = 30 * 60
 
     private let logger = Logger(subsystem: "FastScrobbler", category: "LiveActivity")
     private var activity: Activity<ScrobblingActivityAttributes>?
@@ -21,16 +21,31 @@ final class LiveActivityManager {
         UserDefaults.standard.set(date, forKey: Self.backgroundedAtDefaultsKey)
     }
 
+    func scheduleDismissalAfterAppClosed(backgroundedAt: Date = Date()) async {
+        guard isEnabled else { return }
+        guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
+
+        let dismissalAt = backgroundedAt.addingTimeInterval(Self.maxBackgroundSeconds)
+        let activities = Activity<ScrobblingActivityAttributes>.activities.filter { $0.activityState == .active }
+        guard !activities.isEmpty else { return }
+
+        for a in activities {
+            let content = ActivityContent(state: a.content.state, staleDate: dismissalAt)
+            await a.end(content, dismissalPolicy: .after(dismissalAt))
+        }
+        activity = nil
+    }
+
     func clearEnteredBackground() {
         UserDefaults.standard.removeObject(forKey: Self.backgroundedAtDefaultsKey)
     }
 
     private var isEnabled: Bool {
-        if UserDefaults.standard.object(forKey: Self.enabledDefaultsKey) == nil { return true }
+        if UserDefaults.standard.object(forKey: Self.enabledDefaultsKey) == nil { return false }
         return UserDefaults.standard.bool(forKey: Self.enabledDefaultsKey)
     }
 
-    private func lastEventAt(for activity: Activity<ScrobblingActivityAttributes>) -> Date {
+    private func contentLastEventAt(for activity: Activity<ScrobblingActivityAttributes>) -> Date {
         activity.content.state.lastEventAt
     }
 
@@ -45,8 +60,10 @@ final class LiveActivityManager {
         guard activity == nil else { return }
 
         let existing = Activity<ScrobblingActivityAttributes>.activities
-        if let mostRecent = existing.max(by: { a, b in
-            lastEventAt(for: a) < lastEventAt(for: b)
+        let activeExisting = existing.filter { $0.activityState == .active }
+        let shouldCleanUpExistingAfterRequest = !existing.isEmpty && activeExisting.isEmpty
+        if let mostRecent = activeExisting.max(by: { a, b in
+            contentLastEventAt(for: a) < contentLastEventAt(for: b)
         }) {
             activity = mostRecent
             Task { @MainActor in
@@ -67,9 +84,14 @@ final class LiveActivityManager {
         do {
             activity = try Activity.request(
                 attributes: attrs,
-                content: ActivityContent(state: state, staleDate: Date(timeIntervalSinceNow: 60 * 30)),
+                content: ActivityContent(state: state, staleDate: Date(timeIntervalSinceNow: Self.maxBackgroundSeconds)),
                 pushType: nil
             )
+            if shouldCleanUpExistingAfterRequest, let activity {
+                Task { @MainActor in
+                    await self.endAllActivities(except: activity.id)
+                }
+            }
         } catch {
             logger.warning("Live Activity request failed: \(error.localizedDescription, privacy: .public)")
             activity = nil
@@ -101,11 +123,6 @@ final class LiveActivityManager {
         let now = Date()
         if await endAllActivitiesIfBackgroundedTooLong(now: now) { return }
 
-        if activity == nil {
-            startIfPossible()
-        }
-        guard let activity else { return }
-
         if let lastUpdateAt, now.timeIntervalSince(lastUpdateAt) < throttleSeconds { return }
         self.lastUpdateAt = now
 
@@ -117,7 +134,31 @@ final class LiveActivityManager {
             isActivelyScrobbling: isActivelyScrobbling
         )
 
-        await activity.update(ActivityContent(state: state, staleDate: Date(timeIntervalSinceNow: 60 * 30)))
+        if let backgroundedAt = UserDefaults.standard.object(forKey: Self.backgroundedAtDefaultsKey) as? Date {
+            // When the app is no longer open, schedule the Live Activity to disappear after 30 minutes.
+            // This must be scheduled while the app is still running so it works even if the app is later terminated.
+            let dismissalAt = backgroundedAt.addingTimeInterval(Self.maxBackgroundSeconds)
+
+            if activity == nil {
+                let activeExisting = Activity<ScrobblingActivityAttributes>.activities.filter { $0.activityState == .active }
+                activity = activeExisting.max(by: { a, b in
+                    contentLastEventAt(for: a) < contentLastEventAt(for: b)
+                })
+            }
+            guard let activity else { return }
+
+            let content = ActivityContent(state: state, staleDate: dismissalAt)
+            await activity.end(content, dismissalPolicy: .after(dismissalAt))
+            self.activity = nil
+            return
+        }
+
+        if activity == nil {
+            startIfPossible()
+        }
+        guard let activity else { return }
+
+        await activity.update(ActivityContent(state: state, staleDate: Date(timeIntervalSinceNow: Self.maxBackgroundSeconds)))
     }
 
     @discardableResult
@@ -129,7 +170,7 @@ final class LiveActivityManager {
             return false
         }
 
-        logger.debug("app backgrounded >= 45 minutes; ending all Live Activities")
+        logger.debug("app backgrounded >= 30 minutes; ending all Live Activities")
         await endAllActivities(except: nil)
         activity = nil
         return true
@@ -142,4 +183,5 @@ final class LiveActivityManager {
             await a.end(a.content, dismissalPolicy: .immediate)
         }
     }
+
 }

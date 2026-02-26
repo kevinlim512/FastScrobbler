@@ -1,21 +1,47 @@
 #if os(iOS)
 import ActivityKit
 #endif
+#if os(macOS)
+import ServiceManagement
+#endif
 import SwiftUI
 
 struct SettingsView: View {
-    @AppStorage(LiveActivityManager.enabledDefaultsKey) private var liveActivityEnabled = true
+    @AppStorage(LiveActivityManager.enabledDefaultsKey) private var liveActivityEnabled = false
     @AppStorage(ProSettings.Keys.loveOnFavoriteEnabled, store: AppGroup.userDefaults) private var loveOnFavoriteEnabled = false
     @AppStorage(ProSettings.Keys.scrobbleThresholdIndex, store: AppGroup.userDefaults) private var scrobbleThresholdIndex = ProSettings.defaultScrobbleThresholdIndex
     @AppStorage(ProSettings.Keys.useAlbumArtistForScrobbling, store: AppGroup.userDefaults) private var useAlbumArtistForScrobbling = true
+    @AppStorage(ProSettings.Keys.stripEpAndSingleSuffixFromAlbum, store: AppGroup.userDefaults) private var stripEpAndSingleSuffixFromAlbum = false
 
     @EnvironmentObject private var auth: LastFMAuthManager
     @EnvironmentObject private var engine: ScrobbleEngine
-    @EnvironmentObject private var pro: ProPurchaseManager
     @Environment(\.openURL) private var openURL
     @Environment(\.dismiss) private var dismiss
 
-    @State private var isShowingLogoutConfirmation = false
+    private enum ActiveAlert: Identifiable {
+        case logoutConfirmation
+        case listeningHistoryScanResult(message: String)
+
+        var id: String {
+            switch self {
+            case .logoutConfirmation:
+                return "logoutConfirmation"
+            case .listeningHistoryScanResult(let message):
+                return "listeningHistoryScanResult-\(message)"
+            }
+        }
+    }
+
+    @State private var activeAlert: ActiveAlert?
+    @State private var isSigningInToLastFM = false
+    @State private var lastFMLoginErrorText: String?
+#if os(iOS)
+    @State private var isScanningListeningHistory = false
+#endif
+#if os(macOS)
+    @State private var startAtLoginEnabled = StartAtLoginManager.isEnabled
+    @State private var startAtLoginErrorText: String?
+#endif
 #if os(macOS)
     let onBack: (() -> Void)?
 
@@ -32,6 +58,7 @@ struct SettingsView: View {
                     Text("Settings")
                         .font(.title.weight(.bold))
 
+                    macGeneralCard
                     macScrobbleControlsCard
                     macAccountCard
                 }
@@ -58,8 +85,8 @@ struct SettingsView: View {
 #else
             Form {
 #if os(iOS)
-                Section("Live Activity") {
-                    Toggle("Show Live Activity", isOn: $liveActivityEnabled)
+                Section("Live Activity (Beta)") {
+                    Toggle("Show Live Activity (Beta)", isOn: $liveActivityEnabled)
                         .onChange(of: liveActivityEnabled) { isEnabled in
                             if isEnabled {
                                 LiveActivityManager.shared.startIfPossible()
@@ -78,45 +105,37 @@ struct SettingsView: View {
                         }
                     }
 
-                    Text("Shows scrobbling status on your Lock Screen and Dynamic Island.")
+                    Text("Beta feature: shows scrobbling status on your Lock Screen and Dynamic Island.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
 #endif
 
-                Section("FastScrobbler Pro") {
-                    HStack {
-                        Text("Status")
-                        Spacer()
-                        Text(pro.isPro ? "Upgraded" : "Not upgraded")
-                            .foregroundStyle(pro.isPro ? .green : .secondary)
-                    }
-
-                    NavigationLink {
-                        ProUpgradeView(showsCloseButton: false)
-                            .navigationTitle("FastScrobbler Pro")
-#if os(iOS)
-                            .navigationBarTitleDisplayMode(.inline)
-#endif
-                    } label: {
-                        proPillText(pro.isPro ? "View Pro features" : "Upgrade to Pro", isLarge: true)
-                            .padding(.vertical, 2)
-                    }
-
-                    proOptionToggle(
-                        title: "Love Apple Music favourites on Last.fm",
-                        isOn: $loveOnFavoriteEnabled,
-                        locked: !pro.isPro
-                    )
-
-                    proScrobbleThresholdSlider(locked: !pro.isPro)
-
-                    proOptionToggle(
-                        title: "Use album artist when scrobbling",
-                        isOn: $useAlbumArtistForScrobbling,
-                        locked: !pro.isPro
-                    )
+                Section("Scrobble Controls") {
+                    Toggle("Love Apple Music favourites on Last.fm", isOn: $loveOnFavoriteEnabled)
+                    scrobbleThresholdSlider()
+                    Toggle("Use album artist when scrobbling", isOn: $useAlbumArtistForScrobbling)
+                    Toggle("Remove “- EP” / “- Single” from album name", isOn: $stripEpAndSingleSuffixFromAlbum)
                 }
+
+#if os(iOS)
+                Section("Listening History") {
+                    Button {
+                        Task { await scanListeningHistoryTapped() }
+                    } label: {
+                        Label(
+                            isScanningListeningHistory ? "Scanning…" : "Scan Listening History",
+                            systemImage: "clock.arrow.circlepath"
+                        )
+                        .foregroundStyle(auth.sessionKey != nil ? .primary : .secondary)
+                    }
+                    .disabled(auth.sessionKey == nil || isScanningListeningHistory)
+
+                    Text("Imports plays from Apple Music Playback History (this device only).")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+#endif
 
                 Section("Account") {
                     HStack {
@@ -142,58 +161,123 @@ struct SettingsView: View {
                         }
                     }
 
+                    let canViewProfile = (auth.sessionKey != nil && auth.profileURL != nil)
                     Button {
                         if let url = auth.profileURL {
                             openURL(url)
                         }
                     } label: {
                         Label("View Profile", systemImage: "person.circle")
+                            .foregroundStyle(canViewProfile ? .primary : .secondary)
                     }
-                    .disabled(auth.profileURL == nil)
+                    .disabled(!canViewProfile)
 
-                    Button(role: .destructive) {
-                        isShowingLogoutConfirmation = true
-                    } label: {
-                        Label("Log Out", systemImage: "power")
+                    if auth.sessionKey != nil {
+                        Button(role: .destructive) {
+                            activeAlert = .logoutConfirmation
+                        } label: {
+                            Label("Sign Out", systemImage: "power")
+                        }
+                    } else {
+                        Button {
+                            Task { await connectTapped() }
+                        } label: {
+                            Label(isSigningInToLastFM ? "Signing In…" : "Sign In", systemImage: "person.crop.circle")
+                        }
+                        .disabled(isSigningInToLastFM)
                     }
-                    .disabled(auth.sessionKey == nil)
                 }
             }
 #endif
         }
         .task {
-            await pro.startIfNeeded()
             await auth.refreshUserInfoIfNeeded()
+#if os(macOS)
+            startAtLoginEnabled = StartAtLoginManager.isEnabled
+#endif
         }
-        .alert("Log out of Last.fm?", isPresented: $isShowingLogoutConfirmation) {
-            Button("Cancel", role: .cancel) {}
-            Button("Log Out", role: .destructive) {
-                performLogout()
+        .alert(item: $activeAlert) { alert in
+            switch alert {
+            case .logoutConfirmation:
+                Alert(
+                    title: Text("Sign Out of Last.fm?"),
+                    message: Text("You’ll need to sign in again to scrobble."),
+                    primaryButton: .destructive(Text("Sign Out"), action: performLogout),
+                    secondaryButton: .cancel()
+                )
+            case .listeningHistoryScanResult(let message):
+                Alert(
+                    title: Text("Listening History"),
+                    message: Text(message),
+                    dismissButton: .default(Text("OK"))
+                )
             }
+        }
+        .alert("Couldn't sign in to Last.fm", isPresented: Binding(
+            get: { lastFMLoginErrorText != nil },
+            set: { isPresented in
+                if !isPresented {
+                    lastFMLoginErrorText = nil
+                }
+            }
+        )) {
+            Button("OK", role: .cancel) {}
         } message: {
-            Text("You’ll need to log in again to scrobble.")
+            Text(lastFMLoginErrorText ?? "")
         }
     }
 
 #if os(macOS)
+    private var macGeneralCard: some View {
+        let requiresApproval = (StartAtLoginManager.status == .requiresApproval)
+        return VStack(alignment: .leading, spacing: 12) {
+            Text("General")
+                .font(.title3.weight(.semibold))
+
+            Toggle("Start at login", isOn: $startAtLoginEnabled)
+                .onChange(of: startAtLoginEnabled) { isEnabled in
+                    Task { @MainActor in
+                        do {
+                            try StartAtLoginManager.setEnabled(isEnabled)
+                        } catch {
+                            startAtLoginErrorText = error.localizedDescription
+                        }
+                        startAtLoginEnabled = StartAtLoginManager.isEnabled
+                    }
+                }
+
+            Text(requiresApproval ? "Requires approval in System Settings → Login Items." : "Launches FastScrobbler when you sign in.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding()
+        .background(.thinMaterial)
+        .cornerRadius(12)
+        .shadow(color: .black.opacity(0.12), radius: 10, x: 0, y: 5)
+        .alert("Couldn't update Start at Login", isPresented: Binding(
+            get: { startAtLoginErrorText != nil },
+            set: { isPresented in
+                if !isPresented {
+                    startAtLoginErrorText = nil
+                }
+            }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(startAtLoginErrorText ?? "")
+        }
+    }
+
     private var macScrobbleControlsCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Scrobble Controls")
                 .font(.title3.weight(.semibold))
 
-            proOptionToggle(
-                title: "Love Apple Music favourites on Last.fm",
-                isOn: $loveOnFavoriteEnabled,
-                locked: false
-            )
-
-            proScrobbleThresholdSlider(locked: false)
-
-            proOptionToggle(
-                title: "Use album artist when scrobbling",
-                isOn: $useAlbumArtistForScrobbling,
-                locked: false
-            )
+            Toggle("Love Apple Music favourites on Last.fm", isOn: $loveOnFavoriteEnabled)
+            scrobbleThresholdSlider()
+            Toggle("Use album artist when scrobbling", isOn: $useAlbumArtistForScrobbling)
+            Toggle("Remove “- EP” / “- Single” from album name", isOn: $stripEpAndSingleSuffixFromAlbum)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
@@ -236,18 +320,30 @@ struct SettingsView: View {
                 }
                 .buttonStyle(.bordered)
                 .pillButtonBorder()
-                .disabled(auth.profileURL == nil)
+                .disabled(auth.sessionKey == nil || auth.profileURL == nil)
 
-                Button(role: .destructive) {
-                    isShowingLogoutConfirmation = true
-                } label: {
-                    Label("Log Out", systemImage: "power")
-                        .frame(maxWidth: .infinity, minHeight: 44)
+                if auth.sessionKey == nil {
+                    Button {
+                        Task { await connectTapped() }
+                    } label: {
+                        Label(isSigningInToLastFM ? "Signing In…" : "Sign In", systemImage: "person.crop.circle")
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                    }
+                    .buttonStyle(.bordered)
+                    .pillButtonBorder()
+                    .tint(.blue)
+                    .disabled(isSigningInToLastFM)
+                } else {
+                    Button(role: .destructive) {
+                        activeAlert = .logoutConfirmation
+                    } label: {
+                        Label("Sign Out", systemImage: "power")
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                    }
+                    .buttonStyle(.bordered)
+                    .pillButtonBorder()
+                    .tint(.red)
                 }
-                .buttonStyle(.bordered)
-                .pillButtonBorder()
-                .tint(.red)
-                .disabled(auth.sessionKey == nil)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -264,29 +360,41 @@ struct SettingsView: View {
         engine.stop()
     }
 
-    private func proPillText(_ text: String, isLarge: Bool = false) -> some View {
-        Text(text)
-            .font((isLarge ? Font.callout : Font.caption).weight(.bold))
-            .foregroundStyle(Color.black)
-            .padding(.horizontal, isLarge ? 14 : 10)
-            .padding(.vertical, isLarge ? 8 : 6)
-            .background(Color.yellow, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-    }
+#if os(iOS)
+    @MainActor
+    private func scanListeningHistoryTapped() async {
+        guard auth.sessionKey != nil else { return }
+        guard !isScanningListeningHistory else { return }
+        isScanningListeningHistory = true
+        defer { isScanningListeningHistory = false }
 
-    @ViewBuilder
-    private func proOptionToggle(title: String, isOn: Binding<Bool>, locked: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Toggle(title, isOn: isOn)
-                .disabled(locked)
-            if locked {
-                proPillText("Pro feature")
-            }
+        let imported = await AppModel.shared.scanListeningHistory()
+        if imported > 0 {
+            activeAlert = .listeningHistoryScanResult(message: "Imported \(imported) play\(imported == 1 ? "" : "s").")
+        } else {
+            activeAlert = .listeningHistoryScanResult(message: "No new plays found. Listening History only imports plays from this device.")
         }
-        .opacity(locked ? 0.55 : 1)
+    }
+#endif
+
+    @MainActor
+    private func connectTapped() async {
+        guard !isSigningInToLastFM else { return }
+        isSigningInToLastFM = true
+        lastFMLoginErrorText = nil
+        defer { isSigningInToLastFM = false }
+
+        do {
+            try await auth.connect()
+            engine.start()
+        } catch {
+            if error is CancellationError { return }
+            lastFMLoginErrorText = error.localizedDescription
+        }
     }
 
     @ViewBuilder
-    private func proScrobbleThresholdSlider(locked: Bool) -> some View {
+    private func scrobbleThresholdSlider() -> some View {
         let percentText = ProSettings.scrobbleThresholdPercentText(index: scrobbleThresholdIndex)
         let sliderValue = Binding<Double>(
             get: { Double(scrobbleThresholdIndex) },
@@ -296,11 +404,10 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Scrobble at \(percentText) of duration")
             Slider(value: sliderValue, in: 0...Double(ProSettings.scrobbleThresholdOptions.count - 1), step: 1)
-                .disabled(locked)
             sliderStepMarkers(
                 count: ProSettings.scrobbleThresholdOptions.count,
                 activeIndex: scrobbleThresholdIndex,
-                locked: locked
+                locked: false
             )
             HStack {
                 Text("10%")
@@ -309,12 +416,7 @@ struct SettingsView: View {
             }
             .font(.caption)
             .foregroundStyle(.secondary)
-
-            if locked {
-                proPillText("Pro feature")
-            }
         }
-        .opacity(locked ? 0.55 : 1)
     }
 
     private func sliderStepMarkers(count: Int, activeIndex: Int, locked: Bool) -> some View {
@@ -339,6 +441,31 @@ struct SettingsView: View {
             return Color.primary.opacity(0.14)
         }
     }
+
+#if os(macOS)
+    private enum StartAtLoginManager {
+        static var status: SMAppService.Status {
+            SMAppService.mainApp.status
+        }
+
+        static var isEnabled: Bool {
+            switch status {
+            case .enabled, .requiresApproval:
+                return true
+            default:
+                return false
+            }
+        }
+
+        static func setEnabled(_ enabled: Bool) throws {
+            if enabled {
+                try SMAppService.mainApp.register()
+            } else {
+                try SMAppService.mainApp.unregister()
+            }
+        }
+    }
+#endif
 }
 
 private struct LogoutConfirmationView: View {
@@ -349,10 +476,10 @@ private struct LogoutConfirmationView: View {
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 16) {
-                Text("Log out of Last.fm?")
+                Text("Sign Out of Last.fm?")
                     .font(.title2.weight(.semibold))
 
-                Text("You’ll need to log in again to scrobble.")
+                Text("You’ll need to sign in again to scrobble.")
                     .foregroundColor(.secondary)
 
                 Spacer()
@@ -367,7 +494,7 @@ private struct LogoutConfirmationView: View {
                     }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Log Out", role: .destructive) {
+                    Button("Sign Out", role: .destructive) {
                         confirm()
                         dismiss()
                     }
@@ -379,7 +506,7 @@ private struct LogoutConfirmationView: View {
                     }
                 }
                 ToolbarItem {
-                    Button("Log Out", role: .destructive) {
+                    Button("Sign Out", role: .destructive) {
                         confirm()
                         dismiss()
                     }

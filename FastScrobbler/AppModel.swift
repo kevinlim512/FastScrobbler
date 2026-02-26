@@ -15,26 +15,22 @@ final class AppModel {
     let engine: ScrobbleEngine
     let backlog: ScrobbleBacklog
     let scrobbleLog: ScrobbleLogStore
-    let pro: ProPurchaseManager
 
     private init() {
         let auth = LastFMAuthManager()
         let observer = AppleMusicNowPlayingObserver()
         self.auth = auth
         self.observer = observer
-        let pro = ProPurchaseManager.shared
-        self.pro = pro
         let backlog = ScrobbleBacklog.shared
         self.backlog = backlog
         let scrobbleLog = ScrobbleLogStore.shared
         self.scrobbleLog = scrobbleLog
-        self.engine = ScrobbleEngine(auth: auth, observer: observer, pro: pro, backlog: backlog, scrobbleLog: scrobbleLog)
+        self.engine = ScrobbleEngine(auth: auth, observer: observer, backlog: backlog, scrobbleLog: scrobbleLog)
     }
 
     func startIfNeeded() async {
         guard UserDefaults.standard.bool(forKey: Keys.hasSeenSetup) else { return }
 
-        await pro.startIfNeeded()
         LiveActivityManager.shared.clearEnteredBackground()
         LiveActivityManager.shared.startIfPossible()
         do {
@@ -79,8 +75,16 @@ final class AppModel {
     func prepareForBackground() {
         // In normal (non-debugger) conditions, iOS will suspend the app quickly.
         // Stop timers/observers so behavior is consistent and energy-friendly.
-        UserDefaults.standard.set(Date(), forKey: Keys.lastEnteredBackgroundAt)
-        LiveActivityManager.shared.recordEnteredBackground()
+        let backgroundedAt = Date()
+        UserDefaults.standard.set(backgroundedAt, forKey: Keys.lastEnteredBackgroundAt)
+        LiveActivityManager.shared.recordEnteredBackground(at: backgroundedAt)
+#if os(iOS)
+        Task { @MainActor in
+            if #available(iOS 16.2, *) {
+                await LiveActivityManager.shared.scheduleDismissalAfterAppClosed(backgroundedAt: backgroundedAt)
+            }
+        }
+#endif
         observer.stop()
         engine.pauseForBackground()
     }

@@ -12,7 +12,6 @@ struct ContentView: View {
     @EnvironmentObject private var observer: AppleMusicNowPlayingObserver
     @EnvironmentObject private var engine: ScrobbleEngine
     @EnvironmentObject private var scrobbleLog: ScrobbleLogStore
-    @EnvironmentObject private var pro: ProPurchaseManager
 
     @Environment(\.openURL) private var openURL
     @Environment(\.scenePhase) private var scenePhase
@@ -23,13 +22,6 @@ struct ContentView: View {
     @State private var isShowingSetup = false
     @State private var isShowingHelp = false
     @State private var isShowingSettings = false
-#if os(iOS)
-    @State private var isShowingProUpgrade = false
-    @State private var isScanningListeningHistory = false
-    @State private var isShowingListeningHistoryScanAlert = false
-    @State private var listeningHistoryScanAlertTitle = ""
-    @State private var listeningHistoryScanAlertMessage = ""
-#endif
 
     var body: some View {
         Group {
@@ -97,19 +89,6 @@ struct ContentView: View {
             }
         }
 #endif
-#if os(iOS)
-        .sheet(isPresented: $isShowingProUpgrade) {
-            NavigationView {
-                ProUpgradeView(showsCloseButton: true)
-                    .navigationBarTitleDisplayMode(.inline)
-            }
-        }
-        .alert(listeningHistoryScanAlertTitle, isPresented: $isShowingListeningHistoryScanAlert) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(listeningHistoryScanAlertMessage)
-        }
-#endif
     }
 
     private var mainContent: some View {
@@ -147,14 +126,6 @@ struct ContentView: View {
         .toolbar {
 #if os(iOS)
             ToolbarItemGroup(placement: .navigationBarTrailing) {
-                Button {
-                    isShowingProUpgrade = true
-                } label: {
-                    Text("Pro")
-                        .font(.callout.weight(.bold))
-                }
-                .accessibilityLabel("Pro upgrade")
-
                 Button {
                     isShowingSettings = true
                 } label: {
@@ -297,7 +268,7 @@ struct ContentView: View {
                     Button {
                         Task { await connectTapped() }
                     } label: {
-                        Label("Log In", systemImage: "person.crop.circle")
+                        Label("Sign In", systemImage: "person.crop.circle")
                             .font(.body.weight(.bold))
                             .frame(maxWidth: .infinity, minHeight: actionButtonHeight)
                     }
@@ -323,37 +294,6 @@ struct ContentView: View {
                     .disabled(engine.isUserPaused)
                 }
             }
-
-#if os(iOS)
-            if auth.sessionKey != nil {
-                Button {
-                    Task { @MainActor in
-                        guard !isScanningListeningHistory else { return }
-                        isScanningListeningHistory = true
-                        defer { isScanningListeningHistory = false }
-                        let imported = await AppModel.shared.scanListeningHistory()
-                        listeningHistoryScanAlertTitle = "Listening History"
-                        if imported > 0 {
-                            listeningHistoryScanAlertMessage = "Imported \(imported) play\(imported == 1 ? "" : "s")."
-                        } else {
-                            listeningHistoryScanAlertMessage = "No new plays found."
-                        }
-                        isShowingListeningHistoryScanAlert = true
-                    }
-                } label: {
-                    Label(
-                        isScanningListeningHistory ? "Scanning…" : "Scan Listening History",
-                        systemImage: "clock.arrow.circlepath"
-                    )
-                    .font(.body.weight(.bold))
-                    .frame(maxWidth: .infinity, minHeight: actionButtonHeight)
-                }
-                .buttonStyle(.borderedProminent)
-                .pillButtonBorder()
-                .tint(.indigo)
-                .disabled(isScanningListeningHistory)
-            }
-#endif
 
             if auth.sessionKey != nil {
                 Button {
@@ -383,7 +323,7 @@ struct ContentView: View {
             VStack(alignment: .leading, spacing: 10) {
                 if isLoggedOut {
                     Label(
-                        "You’re logged out of Last.fm. Open Settings to sign in.",
+                        "You’re signed out of Last.fm.",
                         systemImage: "person.crop.circle.badge.exclamationmark"
                     )
                     .font(.subheadline.weight(.semibold))
@@ -399,7 +339,7 @@ struct ContentView: View {
 
                 HStack(spacing: 10) {
                     if isLoggedOut {
-                        Button("Open Settings") {
+                        Button("Sign In") {
                             isShowingSettings = true
                         }
                         .buttonStyle(.bordered)
@@ -438,9 +378,6 @@ struct ContentView: View {
 
         isShowingHelp = false
         isShowingSettings = false
-#if os(iOS)
-        isShowingProUpgrade = false
-#endif
         if !isShowingSetup {
             isShowingSetup = true
         }
@@ -705,7 +642,10 @@ extension ContentView {
     @ViewBuilder
     private var macModalContent: some View {
         if isShowingSetup {
-            SetupHelpView(mode: .onboarding) {
+            SetupHelpView(mode: .onboarding, onOpenSettings: {
+                isShowingSetup = false
+                isShowingSettings = true
+            }) {
                 hasSeenSetup = true
                 isShowingSetup = false
                 Task { @MainActor in
@@ -713,7 +653,10 @@ extension ContentView {
                 }
             }
         } else if isShowingHelp {
-            SetupHelpView(mode: .help) {
+            SetupHelpView(mode: .help, onOpenSettings: {
+                isShowingHelp = false
+                isShowingSettings = true
+            }) {
                 isShowingHelp = false
             }
         } else if isShowingSettings {

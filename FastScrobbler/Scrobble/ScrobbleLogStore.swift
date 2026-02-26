@@ -46,7 +46,7 @@ final class ScrobbleLogStore: ObservableObject {
             lovedOnLastFM: lovedOnLastFM
         )
 
-        if entries.contains(where: { $0.startTimestamp == startTimestamp && $0.track == track }) {
+        if entries.contains(where: { $0.startTimestamp == startTimestamp && $0.track.dedupeKey == track.dedupeKey }) {
             return
         }
 
@@ -65,7 +65,7 @@ final class ScrobbleLogStore: ObservableObject {
     func containsSimilar(track: Track, around startTimestamp: Int, toleranceSeconds: Int) -> Bool {
         let tol = max(0, toleranceSeconds)
         return entries.contains(where: {
-            $0.track == track && abs($0.startTimestamp - startTimestamp) <= tol
+            $0.track.dedupeKey == track.dedupeKey && abs($0.startTimestamp - startTimestamp) <= tol
         })
     }
 

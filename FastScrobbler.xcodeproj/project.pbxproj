@@ -57,40 +57,40 @@
 		B66666666666666666666666 /* ScrobblingActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A44444444444444444444444 /* ScrobblingActivityAttributes.swift */; };
 		B77777777777777777777777 /* FastScrobblerLiveActivityBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = A77777777777777777777777 /* FastScrobblerLiveActivityBundle.swift */; };
 		B88888888888888888888888 /* ScrobblingLiveActivityWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = A88888888888888888888888 /* ScrobblingLiveActivityWidget.swift */; };
-			BB7C463DDA0ADD56499CF530 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4AFF729BAB7DC943A3460013 /* Security.framework */; };
-			C0DEC0DEC0DEC0DEC0DEC0DF /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DEC0DEC0DEC0DEC0DEC0DE /* SettingsView.swift */; };
-			C36666FF3ACF65D85A0927CC /* Track.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38D267030F9C37D54F5CEFDA /* Track.swift */; };
-			C0FFEE000000000000002001 /* FastScrobblerMacApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000001001 /* FastScrobblerMacApp.swift */; };
-			C0FFEE000000000000002002 /* AppleMusicNowPlayingObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000001003 /* AppleMusicNowPlayingObserver.swift */; };
-			C0FFEE000000000000002003 /* PlaybackHistoryImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000001004 /* PlaybackHistoryImporter.swift */; };
-			C0FFEE000000000000002004 /* LiveActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000001005 /* LiveActivityManager.swift */; };
-			C0FFEE000000000000002005 /* MediaPlayerShims.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000001006 /* MediaPlayerShims.swift */; };
-			C0FFEE000000000000002006 /* SetupHelpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000001007 /* SetupHelpView.swift */; };
-			C0FFEE000000000000002007 /* BackgroundTaskManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000001009 /* BackgroundTaskManager.swift */; };
-			C0FFEE000000000000002010 /* AppModel.swift in Sources (Mac) */ = {isa = PBXBuildFile; fileRef = A11111111111111111111111 /* AppModel.swift */; };
-			C0FFEE000000000000002011 /* ContentView.swift in Sources (Mac) */ = {isa = PBXBuildFile; fileRef = 0873ACD17176629EAA7E2860 /* ContentView.swift */; };
-			C0FFEE000000000000002012 /* SettingsView.swift in Sources (Mac) */ = {isa = PBXBuildFile; fileRef = C0DEC0DEC0DEC0DEC0DEC0DE /* SettingsView.swift */; };
-			C0FFEE000000000000002013 /* MenuBarController.swift in Sources (Mac) */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000000010 /* MenuBarController.swift */; };
-			C0FFEE000000000000002014 /* ScrobbleEngine.swift in Sources (Mac) */ = {isa = PBXBuildFile; fileRef = 4DB82CCC939EB4CD49356CDF /* ScrobbleEngine.swift */; };
-			C0FFEE000000000000002015 /* ScrobbleBacklog.swift in Sources (Mac) */ = {isa = PBXBuildFile; fileRef = 5C86E869F03F4F2EB6C64F81 /* ScrobbleBacklog.swift */; };
-			C0FFEE000000000000002016 /* ScrobbleLogStore.swift in Sources (Mac) */ = {isa = PBXBuildFile; fileRef = 6A7B8C9D0E1F23456789ABCD /* ScrobbleLogStore.swift */; };
-			C0FFEE000000000000002017 /* Track.swift in Sources (Mac) */ = {isa = PBXBuildFile; fileRef = 38D267030F9C37D54F5CEFDA /* Track.swift */; };
-			C0FFEE000000000000002018 /* LastFMAuthManager.swift in Sources (Mac) */ = {isa = PBXBuildFile; fileRef = 60E1134F29E244F029987C4A /* LastFMAuthManager.swift */; };
-			C0FFEE000000000000002019 /* LastFMClient.swift in Sources (Mac) */ = {isa = PBXBuildFile; fileRef = 6BEC0966173EEAC2917686CE /* LastFMClient.swift */; };
-			C0FFEE000000000000002020 /* KeychainStore.swift in Sources (Mac) */ = {isa = PBXBuildFile; fileRef = 23F8BF9A7DD1FE96CA6A4F03 /* KeychainStore.swift */; };
-			C0FFEE000000000000002021 /* LastFMSecrets.swift in Sources (Mac) */ = {isa = PBXBuildFile; fileRef = 73D6C642664C98AB8890C228 /* LastFMSecrets.swift */; };
-			C0FFEE000000000000002022 /* Pro.swift in Sources (Mac) */ = {isa = PBXBuildFile; fileRef = F0A1B2C3D4E5F60718293A4B /* Pro.swift */; };
-			C0FFEE000000000000002030 /* Assets.xcassets in Resources (Mac) */ = {isa = PBXBuildFile; fileRef = 3A2698BA9AD0965E5113E338 /* Assets.xcassets */; };
-			C572DB79AD9B4ABAB3829D3C /* ScrobbleBacklog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C86E869F03F4F2EB6C64F81 /* ScrobbleBacklog.swift */; };
-			D0E1F2A3B4C5D6E7F8091A2C /* SetupHelpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E1F2A3B4C5D6E7F8091A2B /* SetupHelpView.swift */; };
-			D416B0364BC3D89D256E7232 /* ScrobbleBacklog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C86E869F03F4F2EB6C64F81 /* ScrobbleBacklog.swift */; };
+		BB7C463DDA0ADD56499CF530 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4AFF729BAB7DC943A3460013 /* Security.framework */; };
+		C0DEC0DEC0DEC0DEC0DEC0DF /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DEC0DEC0DEC0DEC0DEC0DE /* SettingsView.swift */; };
+		C0FFEE000000000000002001 /* FastScrobblerMacApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000001001 /* FastScrobblerMacApp.swift */; };
+		C0FFEE000000000000002002 /* AppleMusicNowPlayingObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000001003 /* AppleMusicNowPlayingObserver.swift */; };
+		C0FFEE000000000000002003 /* PlaybackHistoryImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000001004 /* PlaybackHistoryImporter.swift */; };
+		C0FFEE000000000000002004 /* LiveActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000001005 /* LiveActivityManager.swift */; };
+		C0FFEE000000000000002005 /* MediaPlayerShims.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000001006 /* MediaPlayerShims.swift */; };
+		C0FFEE000000000000002006 /* SetupHelpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000001007 /* SetupHelpView.swift */; };
+		C0FFEE000000000000002007 /* BackgroundTaskManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000001009 /* BackgroundTaskManager.swift */; };
+		C0FFEE000000000000002010 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11111111111111111111111 /* AppModel.swift */; };
+		C0FFEE000000000000002011 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0873ACD17176629EAA7E2860 /* ContentView.swift */; };
+		C0FFEE000000000000002012 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DEC0DEC0DEC0DEC0DEC0DE /* SettingsView.swift */; };
+		C0FFEE000000000000002013 /* MenuBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000000010 /* MenuBarController.swift */; };
+		C0FFEE000000000000002014 /* ScrobbleEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DB82CCC939EB4CD49356CDF /* ScrobbleEngine.swift */; };
+		C0FFEE000000000000002015 /* ScrobbleBacklog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C86E869F03F4F2EB6C64F81 /* ScrobbleBacklog.swift */; };
+		C0FFEE000000000000002016 /* ScrobbleLogStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A7B8C9D0E1F23456789ABCD /* ScrobbleLogStore.swift */; };
+		C0FFEE000000000000002017 /* Track.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38D267030F9C37D54F5CEFDA /* Track.swift */; };
+		C0FFEE000000000000002018 /* LastFMAuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60E1134F29E244F029987C4A /* LastFMAuthManager.swift */; };
+		C0FFEE000000000000002019 /* LastFMClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BEC0966173EEAC2917686CE /* LastFMClient.swift */; };
+		C0FFEE000000000000002020 /* KeychainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23F8BF9A7DD1FE96CA6A4F03 /* KeychainStore.swift */; };
+		C0FFEE000000000000002021 /* LastFMSecrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73D6C642664C98AB8890C228 /* LastFMSecrets.swift */; };
+		C0FFEE000000000000002022 /* Pro.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A1B2C3D4E5F60718293A4B /* Pro.swift */; };
+		C0FFEE000000000000002030 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3A2698BA9AD0965E5113E338 /* Assets.xcassets */; };
+		C36666FF3ACF65D85A0927CC /* Track.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38D267030F9C37D54F5CEFDA /* Track.swift */; };
+		C572DB79AD9B4ABAB3829D3C /* ScrobbleBacklog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C86E869F03F4F2EB6C64F81 /* ScrobbleBacklog.swift */; };
+		D0E1F2A3B4C5D6E7F8091A2C /* SetupHelpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E1F2A3B4C5D6E7F8091A2B /* SetupHelpView.swift */; };
+		D416B0364BC3D89D256E7232 /* ScrobbleBacklog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C86E869F03F4F2EB6C64F81 /* ScrobbleBacklog.swift */; };
 		D474EE0B0B5FD5EC600D92F4 /* AppleMusicNowPlayingObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = A37471961A7AA84A79E7719E /* AppleMusicNowPlayingObserver.swift */; };
-		E3B9A8C7D6E5F40123456789 /* AppleMusicFavorites.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A9F7C2B1D0496E8C5A1234 /* AppleMusicFavorites.swift */; };
 		D962AC8DC6CB4F96B91A4220 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5EC6750EA1D59565F65CDAC6 /* Foundation.framework */; };
 		DD744431C3B64C949189F33E /* LastFMClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BEC0966173EEAC2917686CE /* LastFMClient.swift */; };
 		DEA014110A874D938E618E4C /* SendNowPlayingControlWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48C6144295334C29B36BAF8B /* SendNowPlayingControlWidget.swift */; };
 		E060219923EC4D728F4A9D99 /* LastFMSecrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73D6C642664C98AB8890C228 /* LastFMSecrets.swift */; };
 		E1824AB4A97149F9A2EA0057 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5EC6750EA1D59565F65CDAC6 /* Foundation.framework */; };
+		E3B9A8C7D6E5F40123456789 /* AppleMusicFavorites.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A9F7C2B1D0496E8C5A1234 /* AppleMusicFavorites.swift */; };
 		EAAFC195DFA8411687CD3EC3 /* ScrobbleLogStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A7B8C9D0E1F23456789ABCD /* ScrobbleLogStore.swift */; };
 		F44BF0D3255B803410B8C344 /* Track.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38D267030F9C37D54F5CEFDA /* Track.swift */; };
 		F66F5225DEC7F6D42A372184 /* LastFMAuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60E1134F29E244F029987C4A /* LastFMAuthManager.swift */; };
@@ -166,7 +166,6 @@
 		A22222222222222222222222 /* BackgroundTaskManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BackgroundTaskManager.swift; sourceTree = "<group>"; };
 		A33333333333333333333333 /* BackgroundTasks.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = BackgroundTasks.framework; path = ../../../../System/Library/Frameworks/BackgroundTasks.framework; sourceTree = "<group>"; };
 		A37471961A7AA84A79E7719E /* AppleMusicNowPlayingObserver.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppleMusicNowPlayingObserver.swift; sourceTree = "<group>"; };
-		E3A9F7C2B1D0496E8C5A1234 /* AppleMusicFavorites.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppleMusicFavorites.swift; sourceTree = "<group>"; };
 		A44444444444444444444444 /* ScrobblingActivityAttributes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScrobblingActivityAttributes.swift; sourceTree = "<group>"; };
 		A55555555555555555555555 /* LiveActivityManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LiveActivityManager.swift; sourceTree = "<group>"; };
 		A66666666666666666666666 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -178,24 +177,25 @@
 		B97BC0DAAD548CE8C47F3D30 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		BF012C08E644A48531462C32 /* MediaPlayer.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MediaPlayer.framework; path = ../../../../System/Library/Frameworks/MediaPlayer.framework; sourceTree = "<group>"; };
 		C0DEC0DEC0DEC0DEC0DEC0DE /* SettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		C0FFEE000000000000000010 /* MenuBarController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MenuBarController.swift; sourceTree = "<group>"; };
+		C0FFEE000000000000001001 /* FastScrobblerMacApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FastScrobblerMacApp.swift; sourceTree = "<group>"; };
+		C0FFEE000000000000001002 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		C0FFEE000000000000001003 /* AppleMusicNowPlayingObserver.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppleMusicNowPlayingObserver.swift; sourceTree = "<group>"; };
+		C0FFEE000000000000001004 /* PlaybackHistoryImporter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PlaybackHistoryImporter.swift; sourceTree = "<group>"; };
+		C0FFEE000000000000001005 /* LiveActivityManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LiveActivityManager.swift; sourceTree = "<group>"; };
+		C0FFEE000000000000001006 /* MediaPlayerShims.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MediaPlayerShims.swift; sourceTree = "<group>"; };
+		C0FFEE000000000000001007 /* SetupHelpView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SetupHelpView.swift; sourceTree = "<group>"; };
+		C0FFEE000000000000001008 /* FastScrobbler.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FastScrobbler.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C0FFEE000000000000001009 /* BackgroundTaskManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BackgroundTaskManager.swift; sourceTree = "<group>"; };
 		CDD4DC9323834789BA1D7AAD /* ScrobbleSongControlWidget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScrobbleSongControlWidget.swift; sourceTree = "<group>"; };
 		D0E1F2A3B4C5D6E7F8091A2B /* SetupHelpView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SetupHelpView.swift; sourceTree = "<group>"; };
 		D4467D7EFEDA43598A5BA2D1 /* FastScrobblerScrobbleControl.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = FastScrobblerScrobbleControl.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		DF68928E729142998578CD04 /* FastScrobblerNowPlayingControl.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = FastScrobblerNowPlayingControl.entitlements; sourceTree = "<group>"; };
 		DFFA5AE94BB24145B30E3A28 /* PlaybackHistoryImporter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PlaybackHistoryImporter.swift; sourceTree = "<group>"; };
+		E3A9F7C2B1D0496E8C5A1234 /* AppleMusicFavorites.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppleMusicFavorites.swift; sourceTree = "<group>"; };
 		F0A1B2C3D4E5F60718293A4B /* Pro.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Pro.swift; sourceTree = "<group>"; };
-			F15DA4D427544C318D23A558 /* FastScrobblerScrobbleControl.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = FastScrobblerScrobbleControl.entitlements; sourceTree = "<group>"; };
-			C0FFEE000000000000000010 /* MenuBarController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MenuBarController.swift; sourceTree = "<group>"; };
-			C0FFEE000000000000001001 /* FastScrobblerMacApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FastScrobblerMacApp.swift; sourceTree = "<group>"; };
-			C0FFEE000000000000001002 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-			C0FFEE000000000000001003 /* AppleMusicNowPlayingObserver.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppleMusicNowPlayingObserver.swift; sourceTree = "<group>"; };
-			C0FFEE000000000000001004 /* PlaybackHistoryImporter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PlaybackHistoryImporter.swift; sourceTree = "<group>"; };
-			C0FFEE000000000000001005 /* LiveActivityManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LiveActivityManager.swift; sourceTree = "<group>"; };
-			C0FFEE000000000000001006 /* MediaPlayerShims.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MediaPlayerShims.swift; sourceTree = "<group>"; };
-			C0FFEE000000000000001007 /* SetupHelpView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SetupHelpView.swift; sourceTree = "<group>"; };
-			C0FFEE000000000000001008 /* FastScrobblerMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FastScrobblerMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
-			C0FFEE000000000000001009 /* BackgroundTaskManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BackgroundTaskManager.swift; sourceTree = "<group>"; };
-		/* End PBXFileReference section */
+		F15DA4D427544C318D23A558 /* FastScrobblerScrobbleControl.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = FastScrobblerScrobbleControl.entitlements; sourceTree = "<group>"; };
+/* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		23DBF0DF4B714ED7B34EFD3E /* Frameworks */ = {
@@ -221,6 +221,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C0FFEE000000000000003001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		E77777777777777777777777 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -232,58 +239,51 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-			EE44C7D5F7CD44A7BC633682 /* Frameworks */ = {
-				isa = PBXFrameworksBuildPhase;
-				buildActionMask = 2147483647;
-				files = (
-					E1824AB4A97149F9A2EA0057 /* Foundation.framework in Frameworks */,
-					86A419E6203D47B58AFA00AC /* WidgetKit.framework in Frameworks */,
-					48E841E759584B8685D12A12 /* MediaPlayer.framework in Frameworks */,
-					5D9BA41CF4D94828AF0F9ECA /* Security.framework in Frameworks */,
-				);
-				runOnlyForDeploymentPostprocessing = 0;
-			};
-			C0FFEE000000000000003001 /* Frameworks */ = {
-				isa = PBXFrameworksBuildPhase;
-				buildActionMask = 2147483647;
-				files = (
-				);
-				runOnlyForDeploymentPostprocessing = 0;
-			};
-		/* End PBXFrameworksBuildPhase section */
+		EE44C7D5F7CD44A7BC633682 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E1824AB4A97149F9A2EA0057 /* Foundation.framework in Frameworks */,
+				86A419E6203D47B58AFA00AC /* WidgetKit.framework in Frameworks */,
+				48E841E759584B8685D12A12 /* MediaPlayer.framework in Frameworks */,
+				5D9BA41CF4D94828AF0F9ECA /* Security.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-			0F9D7D02EAC572494EBAAF05 = {
-				isa = PBXGroup;
-				children = (
-					0AD896622F4C6098000AA06A /* FastScrobbler.storekit */,
-					6527E7F791630133AD00B5AB /* Products */,
-					F73C8E6C65728B69C713A67F /* Frameworks */,
-					122EB704BD6650F766AF390A /* FastScrobbler */,
-					C66666666666666666666666 /* FastScrobblerLiveActivity */,
-					AC3E0DBB9102414BB64A2513 /* FastScrobblerScrobbleControl */,
-					7A3C9A35BD3844A798477A65 /* FastScrobblerNowPlayingControl */,
-					C0FFEE000000000000001000 /* FastScrobblerMac */,
-				);
-				sourceTree = "<group>";
-			};
-			122EB704BD6650F766AF390A /* FastScrobbler */ = {
-				isa = PBXGroup;
-				children = (
-					99A2B3D7774E8C729FCA2166 /* AppDelegate.swift */,
-					A11111111111111111111111 /* AppModel.swift */,
-					A22222222222222222222222 /* BackgroundTaskManager.swift */,
-					C44444444444444444444444 /* LiveActivity */,
-					6647DA5973D144C5941373BC /* Intents */,
-					0873ACD17176629EAA7E2860 /* ContentView.swift */,
-					C0DEC0DEC0DEC0DEC0DEC0DE /* SettingsView.swift */,
-					F0A1B2C3D4E5F60718293A4B /* Pro.swift */,
-					C0FFEE000000000000000010 /* MenuBarController.swift */,
-					D0E1F2A3B4C5D6E7F8091A2B /* SetupHelpView.swift */,
-					B97BC0DAAD548CE8C47F3D30 /* Info.plist */,
-					BBD4CD27E724B98753523B97 /* LastFM */,
-					73D6C642664C98AB8890C228 /* LastFMSecrets.swift */,
-					A70AA3DA43FE42947365DFBC /* Models */,
+		0F9D7D02EAC572494EBAAF05 = {
+			isa = PBXGroup;
+			children = (
+				0AD896622F4C6098000AA06A /* FastScrobbler.storekit */,
+				6527E7F791630133AD00B5AB /* Products */,
+				F73C8E6C65728B69C713A67F /* Frameworks */,
+				122EB704BD6650F766AF390A /* FastScrobbler */,
+				C66666666666666666666666 /* FastScrobblerLiveActivity */,
+				AC3E0DBB9102414BB64A2513 /* FastScrobblerScrobbleControl */,
+				7A3C9A35BD3844A798477A65 /* FastScrobblerNowPlayingControl */,
+				C0FFEE000000000000001000 /* FastScrobblerMac */,
+			);
+			sourceTree = "<group>";
+		};
+		122EB704BD6650F766AF390A /* FastScrobbler */ = {
+			isa = PBXGroup;
+			children = (
+				99A2B3D7774E8C729FCA2166 /* AppDelegate.swift */,
+				A11111111111111111111111 /* AppModel.swift */,
+				A22222222222222222222222 /* BackgroundTaskManager.swift */,
+				C44444444444444444444444 /* LiveActivity */,
+				6647DA5973D144C5941373BC /* Intents */,
+				0873ACD17176629EAA7E2860 /* ContentView.swift */,
+				C0DEC0DEC0DEC0DEC0DEC0DE /* SettingsView.swift */,
+				F0A1B2C3D4E5F60718293A4B /* Pro.swift */,
+				C0FFEE000000000000000010 /* MenuBarController.swift */,
+				D0E1F2A3B4C5D6E7F8091A2B /* SetupHelpView.swift */,
+				B97BC0DAAD548CE8C47F3D30 /* Info.plist */,
+				BBD4CD27E724B98753523B97 /* LastFM */,
+				73D6C642664C98AB8890C228 /* LastFMSecrets.swift */,
+				A70AA3DA43FE42947365DFBC /* Models */,
 				4EA3896EEAD3DD69098F5339 /* NowPlaying */,
 				CC28EBFCCF0FFBD86F694CD7 /* Resources */,
 				9E77E0BC6B95EB08AC0DB79E /* SceneDelegate.swift */,
@@ -302,18 +302,18 @@
 			path = NowPlaying;
 			sourceTree = "<group>";
 		};
-			6527E7F791630133AD00B5AB /* Products */ = {
-				isa = PBXGroup;
-				children = (
-					754A93811BDB1699E38AAC91 /* FastScrobbler.app */,
-					C0FFEE000000000000001008 /* FastScrobblerMac.app */,
-					A99999999999999999999999 /* FastScrobblerLiveActivity.appex */,
-					D4467D7EFEDA43598A5BA2D1 /* FastScrobblerScrobbleControl.appex */,
-					11EF64B3CB4E49F2AAC19D50 /* FastScrobblerNowPlayingControl.appex */,
-				);
-				name = Products;
-				sourceTree = "<group>";
-			};
+		6527E7F791630133AD00B5AB /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				754A93811BDB1699E38AAC91 /* FastScrobbler.app */,
+				C0FFEE000000000000001008 /* FastScrobbler.app */,
+				A99999999999999999999999 /* FastScrobblerLiveActivity.appex */,
+				D4467D7EFEDA43598A5BA2D1 /* FastScrobblerScrobbleControl.appex */,
+				11EF64B3CB4E49F2AAC19D50 /* FastScrobblerNowPlayingControl.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		6647DA5973D144C5941373BC /* Intents */ = {
 			isa = PBXGroup;
 			children = (
@@ -370,6 +370,21 @@
 			path = LastFM;
 			sourceTree = "<group>";
 		};
+		C0FFEE000000000000001000 /* FastScrobblerMac */ = {
+			isa = PBXGroup;
+			children = (
+				C0FFEE000000000000001001 /* FastScrobblerMacApp.swift */,
+				C0FFEE000000000000001003 /* AppleMusicNowPlayingObserver.swift */,
+				C0FFEE000000000000001004 /* PlaybackHistoryImporter.swift */,
+				C0FFEE000000000000001005 /* LiveActivityManager.swift */,
+				C0FFEE000000000000001006 /* MediaPlayerShims.swift */,
+				C0FFEE000000000000001007 /* SetupHelpView.swift */,
+				C0FFEE000000000000001009 /* BackgroundTaskManager.swift */,
+				C0FFEE000000000000001002 /* Info.plist */,
+			);
+			path = FastScrobblerMac;
+			sourceTree = "<group>";
+		};
 		C44444444444444444444444 /* LiveActivity */ = {
 			isa = PBXGroup;
 			children = (
@@ -406,36 +421,21 @@
 			name = iOS;
 			sourceTree = "<group>";
 		};
-			F73C8E6C65728B69C713A67F /* Frameworks */ = {
-				isa = PBXGroup;
-				children = (
-					F4E62B8B7A09CE57C467842E /* iOS */,
-					89AA033CD567382217A0C32D /* AuthenticationServices.framework */,
-					ADADADADADADADADADADADAD /* ActivityKit.framework */,
-					A33333333333333333333333 /* BackgroundTasks.framework */,
-					BF012C08E644A48531462C32 /* MediaPlayer.framework */,
-					4AFF729BAB7DC943A3460013 /* Security.framework */,
-					ACACACACACACACACACACACAC /* WidgetKit.framework */,
-				);
-				name = Frameworks;
-				sourceTree = "<group>";
-			};
-			C0FFEE000000000000001000 /* FastScrobblerMac */ = {
-				isa = PBXGroup;
-				children = (
-					C0FFEE000000000000001001 /* FastScrobblerMacApp.swift */,
-					C0FFEE000000000000001003 /* AppleMusicNowPlayingObserver.swift */,
-					C0FFEE000000000000001004 /* PlaybackHistoryImporter.swift */,
-					C0FFEE000000000000001005 /* LiveActivityManager.swift */,
-					C0FFEE000000000000001006 /* MediaPlayerShims.swift */,
-					C0FFEE000000000000001007 /* SetupHelpView.swift */,
-					C0FFEE000000000000001009 /* BackgroundTaskManager.swift */,
-					C0FFEE000000000000001002 /* Info.plist */,
-				);
-				path = FastScrobblerMac;
-				sourceTree = "<group>";
-			};
-		/* End PBXGroup section */
+		F73C8E6C65728B69C713A67F /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				F4E62B8B7A09CE57C467842E /* iOS */,
+				89AA033CD567382217A0C32D /* AuthenticationServices.framework */,
+				ADADADADADADADADADADADAD /* ActivityKit.framework */,
+				A33333333333333333333333 /* BackgroundTasks.framework */,
+				BF012C08E644A48531462C32 /* MediaPlayer.framework */,
+				4AFF729BAB7DC943A3460013 /* Security.framework */,
+				ACACACACACACACACACACACAC /* WidgetKit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
 		745154CC70564F28AD3EBDC4 /* FastScrobblerScrobbleControl */ = {
@@ -455,49 +455,49 @@
 			productReference = D4467D7EFEDA43598A5BA2D1 /* FastScrobblerScrobbleControl.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
-			CE7CB1C03FBC72B2173F9556 /* FastScrobbler */ = {
-				isa = PBXNativeTarget;
-				buildConfigurationList = E03163BCDAD1B3C004F9318A /* Build configuration list for PBXNativeTarget "FastScrobbler" */;
-				buildPhases = (
-					B322362EEC4B36B8C5A3E265 /* Sources */,
-					28DD85509652024BFF10D4B2 /* Frameworks */,
-					E99999999999999999999999 /* Embed App Extensions */,
-					B7B806F1B0FDBACAB97FDE9E /* Resources */,
-				);
-				buildRules = (
-				);
-				dependencies = (
-					A0F0F0F0F0F0F0F0F0F0F0F0 /* PBXTargetDependency */,
-					ABF258967A1245D9AAA32DEF /* PBXTargetDependency */,
-					2192C4C8826648A69E3B5AB5 /* PBXTargetDependency */,
-				);
-				name = FastScrobbler;
-				productName = FastScrobbler;
-				productReference = 754A93811BDB1699E38AAC91 /* FastScrobbler.app */;
-				productType = "com.apple.product-type.application";
-			};
-			C0FFEE000000000000004000 /* FastScrobblerMac */ = {
-				isa = PBXNativeTarget;
-				buildConfigurationList = C0FFEE000000000000004001 /* Build configuration list for PBXNativeTarget "FastScrobblerMac" */;
-				buildPhases = (
-					C0FFEE000000000000003000 /* Sources */,
-					C0FFEE000000000000003001 /* Frameworks */,
-					C0FFEE000000000000003002 /* Resources */,
-				);
-				buildRules = (
-				);
-				dependencies = (
-				);
-				name = FastScrobblerMac;
-				productName = FastScrobblerMac;
-				productReference = C0FFEE000000000000001008 /* FastScrobblerMac.app */;
-				productType = "com.apple.product-type.application";
-			};
-			D66666666666666666666666 /* FastScrobblerLiveActivity */ = {
-				isa = PBXNativeTarget;
-				buildConfigurationList = F66666666666666666666666 /* Build configuration list for PBXNativeTarget "FastScrobblerLiveActivity" */;
-				buildPhases = (
-					E66666666666666666666666 /* Sources */,
+		C0FFEE000000000000004000 /* FastScrobblerMac */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C0FFEE000000000000004001 /* Build configuration list for PBXNativeTarget "FastScrobblerMac" */;
+			buildPhases = (
+				C0FFEE000000000000003000 /* Sources */,
+				C0FFEE000000000000003001 /* Frameworks */,
+				C0FFEE000000000000003002 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = FastScrobblerMac;
+			productName = FastScrobblerMac;
+			productReference = C0FFEE000000000000001008 /* FastScrobbler.app */;
+			productType = "com.apple.product-type.application";
+		};
+		CE7CB1C03FBC72B2173F9556 /* FastScrobbler */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E03163BCDAD1B3C004F9318A /* Build configuration list for PBXNativeTarget "FastScrobbler" */;
+			buildPhases = (
+				B322362EEC4B36B8C5A3E265 /* Sources */,
+				28DD85509652024BFF10D4B2 /* Frameworks */,
+				E99999999999999999999999 /* Embed App Extensions */,
+				B7B806F1B0FDBACAB97FDE9E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A0F0F0F0F0F0F0F0F0F0F0F0 /* PBXTargetDependency */,
+				ABF258967A1245D9AAA32DEF /* PBXTargetDependency */,
+				2192C4C8826648A69E3B5AB5 /* PBXTargetDependency */,
+			);
+			name = FastScrobbler;
+			productName = FastScrobbler;
+			productReference = 754A93811BDB1699E38AAC91 /* FastScrobbler.app */;
+			productType = "com.apple.product-type.application";
+		};
+		D66666666666666666666666 /* FastScrobblerLiveActivity */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F66666666666666666666666 /* Build configuration list for PBXNativeTarget "FastScrobblerLiveActivity" */;
+			buildPhases = (
+				E66666666666666666666666 /* Sources */,
 				E77777777777777777777777 /* Frameworks */,
 				E88888888888888888888888 /* Resources */,
 			);
@@ -530,13 +530,13 @@
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-			CAB816EF5BD05ED1EAA5470C /* Project object */ = {
-				isa = PBXProject;
-				attributes = {
-					BuildIndependentTargetsInParallel = YES;
-					LastSwiftUpdateCheck = 1600;
-					LastUpgradeCheck = 2620;
-				};
+		CAB816EF5BD05ED1EAA5470C /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 2620;
+			};
 			buildConfigurationList = 42FA34948C4FDCB3ABD3255B /* Build configuration list for PBXProject "FastScrobbler" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = en;
@@ -549,15 +549,15 @@
 			productRefGroup = 6527E7F791630133AD00B5AB /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
-				targets = (
-					CE7CB1C03FBC72B2173F9556 /* FastScrobbler */,
-					C0FFEE000000000000004000 /* FastScrobblerMac */,
-					D66666666666666666666666 /* FastScrobblerLiveActivity */,
-					745154CC70564F28AD3EBDC4 /* FastScrobblerScrobbleControl */,
-					E0B5512A4C5B4651AB3845EA /* FastScrobblerNowPlayingControl */,
-				);
-			};
-		/* End PBXProject section */
+			targets = (
+				CE7CB1C03FBC72B2173F9556 /* FastScrobbler */,
+				C0FFEE000000000000004000 /* FastScrobblerMac */,
+				D66666666666666666666666 /* FastScrobblerLiveActivity */,
+				745154CC70564F28AD3EBDC4 /* FastScrobblerScrobbleControl */,
+				E0B5512A4C5B4651AB3845EA /* FastScrobblerNowPlayingControl */,
+			);
+		};
+/* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		3B701731FA2341B0AF6F72D5 /* Resources */ = {
@@ -576,6 +576,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C0FFEE000000000000003002 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C0FFEE000000000000002030 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		C93E4B58A55C42ED8B62F018 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -583,22 +591,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-			E88888888888888888888888 /* Resources */ = {
-				isa = PBXResourcesBuildPhase;
-				buildActionMask = 2147483647;
-				files = (
-				);
-				runOnlyForDeploymentPostprocessing = 0;
-			};
-			C0FFEE000000000000003002 /* Resources */ = {
-				isa = PBXResourcesBuildPhase;
-				buildActionMask = 2147483647;
-				files = (
-					C0FFEE000000000000002030 /* Assets.xcassets in Resources (Mac) */,
-				);
-				runOnlyForDeploymentPostprocessing = 0;
-			};
-		/* End PBXResourcesBuildPhase section */
+		E88888888888888888888888 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		50F4D1BD26FC4EA692F47406 /* Sources */ = {
@@ -660,11 +660,38 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-			E66666666666666666666666 /* Sources */ = {
-				isa = PBXSourcesBuildPhase;
-				buildActionMask = 2147483647;
-				files = (
-					B66666666666666666666666 /* ScrobblingActivityAttributes.swift in Sources */,
+		C0FFEE000000000000003000 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C0FFEE000000000000002001 /* FastScrobblerMacApp.swift in Sources */,
+				C0FFEE000000000000002002 /* AppleMusicNowPlayingObserver.swift in Sources */,
+				C0FFEE000000000000002003 /* PlaybackHistoryImporter.swift in Sources */,
+				C0FFEE000000000000002004 /* LiveActivityManager.swift in Sources */,
+				C0FFEE000000000000002005 /* MediaPlayerShims.swift in Sources */,
+				C0FFEE000000000000002006 /* SetupHelpView.swift in Sources */,
+				C0FFEE000000000000002007 /* BackgroundTaskManager.swift in Sources */,
+				C0FFEE000000000000002010 /* AppModel.swift in Sources */,
+				C0FFEE000000000000002011 /* ContentView.swift in Sources */,
+				C0FFEE000000000000002012 /* SettingsView.swift in Sources */,
+				C0FFEE000000000000002013 /* MenuBarController.swift in Sources */,
+				C0FFEE000000000000002014 /* ScrobbleEngine.swift in Sources */,
+				C0FFEE000000000000002015 /* ScrobbleBacklog.swift in Sources */,
+				C0FFEE000000000000002016 /* ScrobbleLogStore.swift in Sources */,
+				C0FFEE000000000000002017 /* Track.swift in Sources */,
+				C0FFEE000000000000002018 /* LastFMAuthManager.swift in Sources */,
+				C0FFEE000000000000002019 /* LastFMClient.swift in Sources */,
+				C0FFEE000000000000002020 /* KeychainStore.swift in Sources */,
+				C0FFEE000000000000002021 /* LastFMSecrets.swift in Sources */,
+				C0FFEE000000000000002022 /* Pro.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E66666666666666666666666 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B66666666666666666666666 /* ScrobblingActivityAttributes.swift in Sources */,
 				B77777777777777777777777 /* FastScrobblerLiveActivityBundle.swift in Sources */,
 				B88888888888888888888888 /* ScrobblingLiveActivityWidget.swift in Sources */,
 				5D420CAE2853E3F84BBB26ED /* LastFMSecrets.swift in Sources */,
@@ -672,37 +699,10 @@
 				318863F67AD7C48D79F9E796 /* KeychainStore.swift in Sources */,
 				F44BF0D3255B803410B8C344 /* Track.swift in Sources */,
 				D416B0364BC3D89D256E7232 /* ScrobbleBacklog.swift in Sources */,
-				);
-				runOnlyForDeploymentPostprocessing = 0;
-			};
-			C0FFEE000000000000003000 /* Sources */ = {
-				isa = PBXSourcesBuildPhase;
-				buildActionMask = 2147483647;
-				files = (
-					C0FFEE000000000000002001 /* FastScrobblerMacApp.swift in Sources */,
-					C0FFEE000000000000002002 /* AppleMusicNowPlayingObserver.swift in Sources */,
-					C0FFEE000000000000002003 /* PlaybackHistoryImporter.swift in Sources */,
-					C0FFEE000000000000002004 /* LiveActivityManager.swift in Sources */,
-					C0FFEE000000000000002005 /* MediaPlayerShims.swift in Sources */,
-					C0FFEE000000000000002006 /* SetupHelpView.swift in Sources */,
-					C0FFEE000000000000002007 /* BackgroundTaskManager.swift in Sources */,
-					C0FFEE000000000000002010 /* AppModel.swift in Sources (Mac) */,
-					C0FFEE000000000000002011 /* ContentView.swift in Sources (Mac) */,
-					C0FFEE000000000000002012 /* SettingsView.swift in Sources (Mac) */,
-					C0FFEE000000000000002013 /* MenuBarController.swift in Sources (Mac) */,
-					C0FFEE000000000000002014 /* ScrobbleEngine.swift in Sources (Mac) */,
-					C0FFEE000000000000002015 /* ScrobbleBacklog.swift in Sources (Mac) */,
-					C0FFEE000000000000002016 /* ScrobbleLogStore.swift in Sources (Mac) */,
-					C0FFEE000000000000002017 /* Track.swift in Sources (Mac) */,
-					C0FFEE000000000000002018 /* LastFMAuthManager.swift in Sources (Mac) */,
-					C0FFEE000000000000002019 /* LastFMClient.swift in Sources (Mac) */,
-					C0FFEE000000000000002020 /* KeychainStore.swift in Sources (Mac) */,
-					C0FFEE000000000000002021 /* LastFMSecrets.swift in Sources (Mac) */,
-					C0FFEE000000000000002022 /* Pro.swift in Sources (Mac) */,
-				);
-				runOnlyForDeploymentPostprocessing = 0;
-			};
-		/* End PBXSourcesBuildPhase section */
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
 		2192C4C8826648A69E3B5AB5 /* PBXTargetDependency */ = {
@@ -822,6 +822,46 @@
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		C0FFEE000000000000005000 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIconMac;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 6SVRCQ9AH5;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = FastScrobblerMac/Info.plist;
+				MACOSX_DEPLOYMENT_TARGET = 13.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kevin.FastScrobbler.mac;
+				PRODUCT_NAME = FastScrobbler;
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		C0FFEE000000000000005001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIconMac;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 6SVRCQ9AH5;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = FastScrobblerMac/Info.plist;
+				MACOSX_DEPLOYMENT_TARGET = 13.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kevin.FastScrobbler.mac;
+				PRODUCT_NAME = FastScrobbler;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_VERSION = 5.0;
+				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
 		};
@@ -1022,10 +1062,10 @@
 			};
 			name = Debug;
 		};
-			F88888888888888888888888 /* Release */ = {
-				isa = XCBuildConfiguration;
-				buildSettings = {
-					CODE_SIGN_ENTITLEMENTS = FastScrobblerLiveActivity/FastScrobblerLiveActivity.entitlements;
+		F88888888888888888888888 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = FastScrobblerLiveActivity/FastScrobblerLiveActivity.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 6SVRCQ9AH5;
@@ -1045,56 +1085,16 @@
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
-				};
-				name = Release;
 			};
-			C0FFEE000000000000005000 /* Debug */ = {
-				isa = XCBuildConfiguration;
-				buildSettings = {
-					ASSETCATALOG_COMPILER_APPICON_NAME = AppIconMac;
-					ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-					CODE_SIGN_STYLE = Automatic;
-					CURRENT_PROJECT_VERSION = 1;
-					DEVELOPMENT_TEAM = 6SVRCQ9AH5;
-					GENERATE_INFOPLIST_FILE = NO;
-					INFOPLIST_FILE = FastScrobblerMac/Info.plist;
-					MACOSX_DEPLOYMENT_TARGET = 13.0;
-					MARKETING_VERSION = 1.0;
-					PRODUCT_BUNDLE_IDENTIFIER = com.kevin.FastScrobbler.mac;
-					PRODUCT_NAME = FastScrobbler;
-					SDKROOT = macosx;
-					SWIFT_VERSION = 5.0;
-				};
-				name = Debug;
-			};
-			C0FFEE000000000000005001 /* Release */ = {
-				isa = XCBuildConfiguration;
-				buildSettings = {
-					ASSETCATALOG_COMPILER_APPICON_NAME = AppIconMac;
-					ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-					CODE_SIGN_STYLE = Automatic;
-					CURRENT_PROJECT_VERSION = 1;
-					DEVELOPMENT_TEAM = 6SVRCQ9AH5;
-					GENERATE_INFOPLIST_FILE = NO;
-					INFOPLIST_FILE = FastScrobblerMac/Info.plist;
-					MACOSX_DEPLOYMENT_TARGET = 13.0;
-					MARKETING_VERSION = 1.0;
-					PRODUCT_BUNDLE_IDENTIFIER = com.kevin.FastScrobbler.mac;
-					PRODUCT_NAME = FastScrobbler;
-					SDKROOT = macosx;
-					SWIFT_COMPILATION_MODE = wholemodule;
-					SWIFT_VERSION = 5.0;
-					VALIDATE_PRODUCT = YES;
-				};
-				name = Release;
-			};
-	/* End XCBuildConfiguration section */
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-			07CB2F6FE81C400DBFB1AE0A /* Build configuration list for PBXNativeTarget "FastScrobblerScrobbleControl" */ = {
-				isa = XCConfigurationList;
-				buildConfigurations = (
-					B66DF6BEEA014E2AA6D2C0EF /* Release */,
+		07CB2F6FE81C400DBFB1AE0A /* Build configuration list for PBXNativeTarget "FastScrobblerScrobbleControl" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B66DF6BEEA014E2AA6D2C0EF /* Release */,
 				2986B75174A946E39805CE18 /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -1115,22 +1115,22 @@
 				5BC43730A712483A9C0D5412 /* Release */,
 				8DBA0CB2282A4A20B58E034C /* Debug */,
 			);
-				defaultConfigurationIsVisible = 0;
-				defaultConfigurationName = Release;
-			};
-			C0FFEE000000000000004001 /* Build configuration list for PBXNativeTarget "FastScrobblerMac" */ = {
-				isa = XCConfigurationList;
-				buildConfigurations = (
-					C0FFEE000000000000005001 /* Release */,
-					C0FFEE000000000000005000 /* Debug */,
-				);
-				defaultConfigurationIsVisible = 0;
-				defaultConfigurationName = Release;
-			};
-			E03163BCDAD1B3C004F9318A /* Build configuration list for PBXNativeTarget "FastScrobbler" */ = {
-				isa = XCConfigurationList;
-				buildConfigurations = (
-					E168A34AB3EFD5631FCE89E0 /* Release */,
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C0FFEE000000000000004001 /* Build configuration list for PBXNativeTarget "FastScrobblerMac" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C0FFEE000000000000005001 /* Release */,
+				C0FFEE000000000000005000 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E03163BCDAD1B3C004F9318A /* Build configuration list for PBXNativeTarget "FastScrobbler" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E168A34AB3EFD5631FCE89E0 /* Release */,
 				CDF71C21E56C1459018231D9 /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -1143,9 +1143,9 @@
 				F77777777777777777777777 /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
-				defaultConfigurationName = Release;
-			};
-		/* End XCConfigurationList section */
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
 	};
 	rootObject = CAB816EF5BD05ED1EAA5470C /* Project object */;
 }
