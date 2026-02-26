@@ -372,6 +372,16 @@ struct ContentView: View {
 #endif
 
     private func presentSetupIfNeeded() {
+#if os(macOS)
+        let shouldShow = !hasSeenSetup
+        guard shouldShow else { return }
+
+        isShowingHelp = false
+        isShowingSettings = false
+        if !isShowingSetup {
+            isShowingSetup = true
+        }
+#else
         let mediaAuthorized = (MPMediaLibrary.authorizationStatus() == .authorized)
         let shouldShow = (!hasSeenSetup || !mediaAuthorized || auth.sessionKey == nil)
         guard shouldShow else { return }
@@ -381,6 +391,7 @@ struct ContentView: View {
         if !isShowingSetup {
             isShowingSetup = true
         }
+#endif
     }
 
     private var scrobbleLogCard: some View {

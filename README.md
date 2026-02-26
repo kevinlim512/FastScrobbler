@@ -106,7 +106,3 @@ It includes:
 - macOS menu bar app: `FastScrobblerMac/`
 - Live Activity widget extension: `FastScrobblerLiveActivity/`
 - iOS 18 Control Widgets: `FastScrobblerNowPlayingControl/`, `FastScrobblerScrobbleControl/`
-
-## Notes on purchases
-
-This project previously contained support for a “Pro” in-app purchase. `FastScrobbler/Pro.swift` is now a legacy placeholder and all scrobble controls are available by default.
