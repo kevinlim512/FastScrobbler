@@ -17,6 +17,22 @@ final class LiveActivityManager {
 
     private init() {}
 
+    func handleAppBecameActive(now: Date = Date()) async {
+        guard let backgroundedAt = UserDefaults.standard.object(forKey: Self.backgroundedAtDefaultsKey) as? Date else {
+            return
+        }
+
+        defer { clearEnteredBackground() }
+
+        guard now.timeIntervalSince(backgroundedAt) >= Self.maxBackgroundSeconds else {
+            return
+        }
+
+        logger.debug("app backgrounded >= 30 minutes; ending all Live Activities")
+        await endAllActivities(except: nil)
+        activity = nil
+    }
+
     func recordEnteredBackground(at date: Date = Date()) {
         UserDefaults.standard.set(date, forKey: Self.backgroundedAtDefaultsKey)
     }
@@ -31,9 +47,8 @@ final class LiveActivityManager {
 
         for a in activities {
             let content = ActivityContent(state: a.content.state, staleDate: dismissalAt)
-            await a.end(content, dismissalPolicy: .after(dismissalAt))
+            await a.update(content)
         }
-        activity = nil
     }
 
     func clearEnteredBackground() {
@@ -135,8 +150,8 @@ final class LiveActivityManager {
         )
 
         if let backgroundedAt = UserDefaults.standard.object(forKey: Self.backgroundedAtDefaultsKey) as? Date {
-            // When the app is no longer open, schedule the Live Activity to disappear after 30 minutes.
-            // This must be scheduled while the app is still running so it works even if the app is later terminated.
+            // When the app is no longer open, mark the Live Activity content as stale after 30 minutes.
+            // Avoid `end()` here: ended activities can disappear from Dynamic Island immediately.
             let dismissalAt = backgroundedAt.addingTimeInterval(Self.maxBackgroundSeconds)
 
             if activity == nil {
@@ -147,9 +162,7 @@ final class LiveActivityManager {
             }
             guard let activity else { return }
 
-            let content = ActivityContent(state: state, staleDate: dismissalAt)
-            await activity.end(content, dismissalPolicy: .after(dismissalAt))
-            self.activity = nil
+            await activity.update(ActivityContent(state: state, staleDate: dismissalAt))
             return
         }
 

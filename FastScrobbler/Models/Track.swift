@@ -11,6 +11,7 @@ enum ProSettings {
         static let scrobbleThresholdIndex = "FastScrobbler.Pro.scrobbleThresholdIndex"
         static let useAlbumArtistForScrobbling = "FastScrobbler.Pro.useAlbumArtistForScrobbling"
         static let stripEpAndSingleSuffixFromAlbum = "FastScrobbler.Pro.stripEpAndSingleSuffixFromAlbum"
+        static let preventDuplicateScrobblesEnabled = "FastScrobbler.Pro.preventDuplicateScrobblesEnabled"
     }
 
     static let scrobbleThresholdOptions: [Double] = [0.10, 0.25, 0.50, 0.75]
@@ -29,6 +30,11 @@ enum ProSettings {
     static func stripEpAndSingleSuffixFromAlbum() -> Bool {
         if AppGroup.userDefaults.object(forKey: Keys.stripEpAndSingleSuffixFromAlbum) == nil { return false }
         return AppGroup.userDefaults.bool(forKey: Keys.stripEpAndSingleSuffixFromAlbum)
+    }
+
+    static func preventDuplicateScrobblesEnabled() -> Bool {
+        if AppGroup.userDefaults.object(forKey: Keys.preventDuplicateScrobblesEnabled) == nil { return true }
+        return AppGroup.userDefaults.bool(forKey: Keys.preventDuplicateScrobblesEnabled)
     }
 
     static func scrobbleThresholdFraction() -> Double {

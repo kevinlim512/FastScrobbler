@@ -80,7 +80,7 @@ final class PlaybackHistoryImporter {
                 guard let previousPlayCount else { return 1 }
                 let d = playCount - previousPlayCount
                 if d > 0 { return d }
-                // Sometimes `playCount` doesn't move in lock-step with `lastPlayedDate`. If we see a new play time,
+                // Sometimes `playCount` doesn't move in lock-step with `lastPlayedDate`. If the app sees a new play time,
                 // treat it as a single play even if the count didn't increment (or reset).
                 return 1
             }()
@@ -90,7 +90,7 @@ final class PlaybackHistoryImporter {
                 return d
             }()
 
-            // Cap how many plays we infer from the playCount delta to avoid spamming on library sync anomalies.
+            // Cap how many plays the app infers from the playCount delta to avoid spamming on library sync anomalies.
             let maxPlaysByTimeWindow: Int = {
                 guard let spacing = durationForSpacing else { return 1 }
                 let window = playedAt.timeIntervalSince(cutoff)
@@ -154,35 +154,14 @@ final class PlaybackHistoryImporter {
         return importedCount
     }
 
-    private func findPlaybackHistoryPlaylist() -> MPMediaPlaylist? {
-        let query = MPMediaQuery.playlists()
-        let playlists = query.collections as? [MPMediaPlaylist] ?? []
-        if playlists.isEmpty { return nil }
-
-        let candidateNames = [
-            "Playback History",
-        ]
-
-        for p in playlists {
-            let name = p.name ?? ""
-            if candidateNames.contains(name) {
-                return p
-            }
-        }
-
-        return nil
-    }
-
     private struct Candidate {
         var item: MPMediaItem
         var playedAt: Date
     }
 
     private func fetchCandidatesPlayed(after cutoff: Date) -> [Candidate] {
-        // Only import from the device's playback history playlist to avoid importing plays
-        // synced from other devices.
-        guard let playlist = findPlaybackHistoryPlaylist() else { return [] }
-        let items: [MPMediaItem] = playlist.items
+        // Listening history import is based on each item's `lastPlayedDate`.
+        let items = MPMediaQuery.songs().items ?? []
 
         guard !items.isEmpty else { return [] }
 
@@ -197,7 +176,7 @@ final class PlaybackHistoryImporter {
 
         if candidates.isEmpty { return [] }
 
-        // Keep the working set bounded; we only need the most recent plays.
+        // Keep the working set bounded; the app only needs the most recent plays.
         let hardLimit = 500
         if candidates.count > hardLimit {
             candidates.sort(by: { $0.playedAt > $1.playedAt })

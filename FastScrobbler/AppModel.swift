@@ -31,8 +31,12 @@ final class AppModel {
     func startIfNeeded() async {
         guard UserDefaults.standard.bool(forKey: Keys.hasSeenSetup) else { return }
 
-        LiveActivityManager.shared.clearEnteredBackground()
-        LiveActivityManager.shared.startIfPossible()
+#if os(iOS)
+        if #available(iOS 16.2, *) {
+            await LiveActivityManager.shared.handleAppBecameActive()
+            LiveActivityManager.shared.startIfPossible()
+        }
+#endif
         do {
             try await observer.start()
         } catch {

@@ -143,7 +143,7 @@ struct SetupHelpView: View {
         ScrollView {
             VStack(spacing: 18) {
                 header
-                    .padding(.top, 30)
+                    .padding(.top, 8)
 
                 VStack(spacing: 12) {
                     let isConnected = (auth.sessionKey != nil)
@@ -199,7 +199,7 @@ struct SetupHelpView: View {
                 .keyboardShortcut(.defaultAction)
             }
             .padding()
-            .padding(.top, MacFloatingBarLayout.contentTopPadding)
+            .padding(.top, MacFloatingBarLayout.circleButtonContentTopPadding)
         }
         .background(Color(nsColor: .windowBackgroundColor))
         .onAppear { refreshStatuses() }

@@ -5,8 +5,6 @@ enum KeychainStore {
     // Keychain access groups include the Team ID prefix:
     //   <TEAMID>.<group-identifier>
     //
-    // This template intentionally does NOT embed a Team ID so it is safe to commit.
-    //
     // If you want the app + extensions to share Keychain items, set the same access group
     // string for each target (entitlements + Info.plist):
     //   - Add it to each target's `keychain-access-groups` entitlement

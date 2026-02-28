@@ -1,7 +1,7 @@
 import Foundation
 import SwiftUI
 
-/// Legacy placeholder: Pro is no longer sold and all scrobble controls are available to everyone.
+/// Legacy placeholder: Pro is not currently implemented in the app, so all scrobble controls are currently available for all users.
 @MainActor
 final class ProPurchaseManager: ObservableObject {
     static let shared = ProPurchaseManager()

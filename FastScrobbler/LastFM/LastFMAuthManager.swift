@@ -81,7 +81,7 @@ final class LastFMAuthManager: NSObject, ObservableObject {
         do {
             try await refreshUserInfo()
         } catch {
-            // Non-fatal: we can still scrobble without a cached username.
+            // Non-fatal: the app can still scrobble without a cached username.
         }
     }
 

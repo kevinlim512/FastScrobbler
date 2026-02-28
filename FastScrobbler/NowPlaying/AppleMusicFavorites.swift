@@ -3,8 +3,6 @@ import MediaPlayer
 
 enum AppleMusicFavorites {
     /// iOS Music currently surfaces the user's "Favorite Songs" as a smart playlist.
-    /// Unfortunately, `MPMediaItem` does not expose a first-class "isFavorite" property,
-    /// so we infer it by membership in that playlist (plus a legacy `rating` fallback).
     private static let candidatePlaylistNames: Set<String> = [
         "Favorite Songs",
         "Favourite Songs",

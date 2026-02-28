@@ -106,3 +106,7 @@ It includes:
 - macOS menu bar app: `FastScrobblerMac/`
 - Live Activity widget extension: `FastScrobblerLiveActivity/`
 - iOS 18 Control Widgets: `FastScrobblerNowPlayingControl/`, `FastScrobblerScrobbleControl/`
+
+## License
+
+FastScrobbler is licensed under the GNU General Public License v3.0 (`GPL-3.0-only`).

@@ -341,7 +341,7 @@ struct SetupHelpView: View {
     }
 
     private var liveActivitiesDelayNote: some View {
-        Text("Note: Live Activities don’t update immediately after you run a Shortcut action or use a Control Center button.")
+        Text("Note: The Live Activity will not update immediately after you run a Shortcut action or use a Control Center button.")
             .font(.footnote)
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, alignment: .leading)

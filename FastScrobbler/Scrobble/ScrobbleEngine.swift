@@ -194,7 +194,7 @@ final class ScrobbleEngine: ObservableObject {
             )
         } else if session?.track != current, var s = session {
             // Metadata can change mid-play (e.g. duration becomes available). Keep the session stable to avoid
-            // double-scrobbling, but update the track metadata we display / scrobble.
+            // double-scrobbling, but update the track metadata it displays / scrobbles.
             s.track = current
             session = s
         }
@@ -218,9 +218,9 @@ final class ScrobbleEngine: ObservableObject {
             }
         }
 
-        // If we just returned from a long suspension, the first playbackTime sample can be stale (e.g. 0),
+        // If the app just returned from a long suspension, the first playbackTime sample can be stale (e.g. 0),
         // then "snap" to the real value on the next tick. During a short resume window, trust playbackTime
-        // as a floor so we don't miss the scrobble threshold due to sampling glitches.
+        // as a floor so it doesn't miss the scrobble threshold due to sampling glitches.
         if let endsAt = s.resumeWindowEndsAt, now <= endsAt {
             if playbackTime > s.accumulatedPlaySeconds {
                 if playbackTime - s.accumulatedPlaySeconds > 5 {
@@ -288,7 +288,11 @@ final class ScrobbleEngine: ObservableObject {
         let trackToScrobble = trackForScrobble(current)
         let shouldLoveOnLastFM = observer.track?.favoriteID == current.favoriteID && observer.isNowPlayingLovedInAppleMusic == true
 
-        if let s = session, s.track.dedupeKey == current.dedupeKey, s.hasScrobbled {
+        if ProSettings.preventDuplicateScrobblesEnabled(),
+           let s = session,
+           s.track.dedupeKey == current.dedupeKey,
+           s.hasScrobbled
+        {
             statusText = "Already scrobbled."
             await LiveActivityManager.shared.update(
                 status: statusText,
@@ -316,9 +320,14 @@ final class ScrobbleEngine: ObservableObject {
         let ts = Int(startedAt.timeIntervalSince1970.rounded(.down))
         let dedupeToleranceSeconds = 10
 
-        let alreadyHandled =
-            await backlog.containsSimilar(track: trackToScrobble, around: ts, toleranceSeconds: dedupeToleranceSeconds) ||
-            scrobbleLog.containsSimilar(track: trackToScrobble, around: ts, toleranceSeconds: dedupeToleranceSeconds)
+        let alreadyHandled: Bool
+        if ProSettings.preventDuplicateScrobblesEnabled() {
+            alreadyHandled =
+                await backlog.containsSimilar(track: trackToScrobble, around: ts, toleranceSeconds: dedupeToleranceSeconds) ||
+                scrobbleLog.containsSimilar(track: trackToScrobble, around: ts, toleranceSeconds: dedupeToleranceSeconds)
+        } else {
+            alreadyHandled = false
+        }
 
         if alreadyHandled {
             if var s = session, s.track.dedupeKey == current.dedupeKey {
@@ -394,9 +403,14 @@ final class ScrobbleEngine: ObservableObject {
             )
         } catch {
             logger.warning("manual scrobble failed: \(error.localizedDescription, privacy: .public)")
-            let shouldEnqueue =
-                !(await backlog.containsSimilar(track: trackToScrobble, around: ts, toleranceSeconds: dedupeToleranceSeconds)) &&
-                !scrobbleLog.containsSimilar(track: trackToScrobble, around: ts, toleranceSeconds: dedupeToleranceSeconds)
+            let shouldEnqueue: Bool
+            if ProSettings.preventDuplicateScrobblesEnabled() {
+                shouldEnqueue =
+                    !(await backlog.containsSimilar(track: trackToScrobble, around: ts, toleranceSeconds: dedupeToleranceSeconds)) &&
+                    !scrobbleLog.containsSimilar(track: trackToScrobble, around: ts, toleranceSeconds: dedupeToleranceSeconds)
+            } else {
+                shouldEnqueue = true
+            }
             if shouldEnqueue {
                 await backlog.enqueue(track: trackToScrobble, startTimestamp: ts, origin: .live, wasAppleMusicFavorite: shouldLoveOnLastFM)
             }
@@ -483,7 +497,7 @@ final class ScrobbleEngine: ObservableObject {
         guard observer.playbackState == .playing || observer.playbackState == .paused || observer.playbackState == .stopped else { return s }
 
         guard let duration = s.track.durationSeconds, duration > 0 else { return s }
-        guard duration >= 30 else { return s } // Last.fm generally ignores very short tracks.
+        guard duration >= 30 else { return s } // Tracks that are 30 seconds or shorter are ignored.
 
         let thresholdFraction = ProSettings.scrobbleThresholdFraction()
         let threshold = duration * thresholdFraction
@@ -500,9 +514,14 @@ final class ScrobbleEngine: ObservableObject {
             let trackToScrobble = trackForScrobble(s.track)
 
             let dedupeToleranceSeconds = 10
-            let alreadyHandled =
-                await backlog.containsSimilar(track: trackToScrobble, around: ts, toleranceSeconds: dedupeToleranceSeconds) ||
-                scrobbleLog.containsSimilar(track: trackToScrobble, around: ts, toleranceSeconds: dedupeToleranceSeconds)
+            let alreadyHandled: Bool
+            if ProSettings.preventDuplicateScrobblesEnabled() {
+                alreadyHandled =
+                    await backlog.containsSimilar(track: trackToScrobble, around: ts, toleranceSeconds: dedupeToleranceSeconds) ||
+                    scrobbleLog.containsSimilar(track: trackToScrobble, around: ts, toleranceSeconds: dedupeToleranceSeconds)
+            } else {
+                alreadyHandled = false
+            }
             if alreadyHandled {
                 s.hasScrobbled = true
                 return s
@@ -538,9 +557,14 @@ final class ScrobbleEngine: ObservableObject {
             let ts = Int(s.startedAt.timeIntervalSince1970.rounded(.down))
             let trackToQueue = trackForScrobble(s.track)
             let dedupeToleranceSeconds = 10
-            let shouldEnqueue =
-                !(await backlog.containsSimilar(track: trackToQueue, around: ts, toleranceSeconds: dedupeToleranceSeconds)) &&
-                !scrobbleLog.containsSimilar(track: trackToQueue, around: ts, toleranceSeconds: dedupeToleranceSeconds)
+            let shouldEnqueue: Bool
+            if ProSettings.preventDuplicateScrobblesEnabled() {
+                shouldEnqueue =
+                    !(await backlog.containsSimilar(track: trackToQueue, around: ts, toleranceSeconds: dedupeToleranceSeconds)) &&
+                    !scrobbleLog.containsSimilar(track: trackToQueue, around: ts, toleranceSeconds: dedupeToleranceSeconds)
+            } else {
+                shouldEnqueue = true
+            }
             if shouldEnqueue {
                 await backlog.enqueue(track: trackToQueue, startTimestamp: ts, origin: .live, wasAppleMusicFavorite: shouldLoveOnLastFM)
             }
@@ -563,9 +587,9 @@ final class ScrobbleEngine: ObservableObject {
         }
 
         // Track transitions can happen between ticks (especially near the end of a song). Because play time is
-        // credited when we observe playbackTime increasing, the last ~tick interval of play can be missed.
+        // credited when it observes playbackTime increasing, the last ~tick interval of play can be missed.
         // Add a small, capped catch-up so high thresholds (e.g., 75%) still trigger when the user
-        // genuinely listened through the end.
+        // has genuinely listened through the end.
         if let lastAt = s.lastPlayObservedAt {
             let wallDelta = transitionAt.timeIntervalSince(lastAt)
             if wallDelta > 0 {

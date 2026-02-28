@@ -12,6 +12,7 @@ struct SettingsView: View {
     @AppStorage(ProSettings.Keys.scrobbleThresholdIndex, store: AppGroup.userDefaults) private var scrobbleThresholdIndex = ProSettings.defaultScrobbleThresholdIndex
     @AppStorage(ProSettings.Keys.useAlbumArtistForScrobbling, store: AppGroup.userDefaults) private var useAlbumArtistForScrobbling = true
     @AppStorage(ProSettings.Keys.stripEpAndSingleSuffixFromAlbum, store: AppGroup.userDefaults) private var stripEpAndSingleSuffixFromAlbum = false
+    @AppStorage(ProSettings.Keys.preventDuplicateScrobblesEnabled, store: AppGroup.userDefaults) private var preventDuplicateScrobblesEnabled = true
 
     @EnvironmentObject private var auth: LastFMAuthManager
     @EnvironmentObject private var engine: ScrobbleEngine
@@ -20,12 +21,15 @@ struct SettingsView: View {
 
     private enum ActiveAlert: Identifiable {
         case logoutConfirmation
+        case resetConfirmation
         case listeningHistoryScanResult(message: String)
 
         var id: String {
             switch self {
             case .logoutConfirmation:
                 return "logoutConfirmation"
+            case .resetConfirmation:
+                return "resetConfirmation"
             case .listeningHistoryScanResult(let message):
                 return "listeningHistoryScanResult-\(message)"
             }
@@ -61,6 +65,7 @@ struct SettingsView: View {
                     macGeneralCard
                     macScrobbleControlsCard
                     macAccountCard
+                    macResetCard
                 }
                 .padding()
                 .padding(.top, MacFloatingBarLayout.contentTopPadding)
@@ -114,6 +119,12 @@ struct SettingsView: View {
                 Section("Scrobble Controls") {
                     Toggle("Love Apple Music favourites on Last.fm", isOn: $loveOnFavoriteEnabled)
                     scrobbleThresholdSlider()
+                    VStack(alignment: .leading, spacing: 6) {
+                        Toggle("Prevent duplicate scrobbles", isOn: $preventDuplicateScrobblesEnabled)
+                        Text("Avoids sending the same track to Last.fm more than once within a short time window.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
                     Toggle("Use album artist when scrobbling", isOn: $useAlbumArtistForScrobbling)
                     Toggle("Remove “- EP” / “- Single” from album name", isOn: $stripEpAndSingleSuffixFromAlbum)
                 }
@@ -187,6 +198,14 @@ struct SettingsView: View {
                         .disabled(isSigningInToLastFM)
                     }
                 }
+
+                Section {
+                    Button(role: .destructive) {
+                        activeAlert = .resetConfirmation
+                    } label: {
+                        Label("Reset to Initial Settings", systemImage: "arrow.counterclockwise")
+                    }
+                }
             }
 #endif
         }
@@ -203,6 +222,13 @@ struct SettingsView: View {
                     title: Text("Sign Out of Last.fm?"),
                     message: Text("You’ll need to sign in again to scrobble."),
                     primaryButton: .destructive(Text("Sign Out"), action: performLogout),
+                    secondaryButton: .cancel()
+                )
+            case .resetConfirmation:
+                Alert(
+                    title: Text("Reset Settings?"),
+                    message: Text("This resets settings back to their initial values (your Last.fm account stays connected)."),
+                    primaryButton: .destructive(Text("Reset"), action: resetToInitialSettings),
                     secondaryButton: .cancel()
                 )
             case .listeningHistoryScanResult(let message):
@@ -276,6 +302,10 @@ struct SettingsView: View {
 
             Toggle("Love Apple Music favourites on Last.fm", isOn: $loveOnFavoriteEnabled)
             scrobbleThresholdSlider()
+            Toggle("Prevent duplicate scrobbles", isOn: $preventDuplicateScrobblesEnabled)
+            Text("Avoids sending the same track to Last.fm more than once within a short time window.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
             Toggle("Use album artist when scrobbling", isOn: $useAlbumArtistForScrobbling)
             Toggle("Remove “- EP” / “- Single” from album name", isOn: $stripEpAndSingleSuffixFromAlbum)
         }
@@ -358,6 +388,40 @@ struct SettingsView: View {
         auth.disconnect()
         engine.setUserPaused(false)
         engine.stop()
+    }
+
+    private func resetToInitialSettings() {
+#if os(iOS)
+        UserDefaults.standard.removeObject(forKey: LiveActivityManager.enabledDefaultsKey)
+        liveActivityEnabled = false
+        Task { @MainActor in
+            await LiveActivityManager.shared.stop()
+        }
+#endif
+
+        let defaults = AppGroup.userDefaults
+        defaults.removeObject(forKey: ProSettings.Keys.loveOnFavoriteEnabled)
+        defaults.removeObject(forKey: ProSettings.Keys.scrobbleThresholdIndex)
+        defaults.removeObject(forKey: ProSettings.Keys.useAlbumArtistForScrobbling)
+        defaults.removeObject(forKey: ProSettings.Keys.stripEpAndSingleSuffixFromAlbum)
+        defaults.removeObject(forKey: ProSettings.Keys.preventDuplicateScrobblesEnabled)
+
+        loveOnFavoriteEnabled = false
+        scrobbleThresholdIndex = ProSettings.defaultScrobbleThresholdIndex
+        preventDuplicateScrobblesEnabled = true
+        useAlbumArtistForScrobbling = true
+        stripEpAndSingleSuffixFromAlbum = false
+
+#if os(macOS)
+        Task { @MainActor in
+            do {
+                try StartAtLoginManager.setEnabled(false)
+            } catch {
+                startAtLoginErrorText = error.localizedDescription
+            }
+            startAtLoginEnabled = StartAtLoginManager.isEnabled
+        }
+#endif
     }
 
 #if os(iOS)
@@ -443,6 +507,32 @@ struct SettingsView: View {
     }
 
 #if os(macOS)
+    private var macResetCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Reset")
+                .font(.title3.weight(.semibold))
+
+            Button(role: .destructive) {
+                activeAlert = .resetConfirmation
+            } label: {
+                Label("Reset to Initial Settings", systemImage: "arrow.counterclockwise")
+                    .frame(maxWidth: .infinity, minHeight: 44)
+            }
+            .buttonStyle(.bordered)
+            .pillButtonBorder()
+            .tint(.red)
+
+            Text("Resets settings back to their initial values (your Last.fm account stays connected).")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding()
+        .background(.thinMaterial)
+        .cornerRadius(12)
+        .shadow(color: .black.opacity(0.12), radius: 10, x: 0, y: 5)
+    }
+
     private enum StartAtLoginManager {
         static var status: SMAppService.Status {
             SMAppService.mainApp.status

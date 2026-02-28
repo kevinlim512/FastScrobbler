@@ -572,6 +572,8 @@ extension View {
 enum MacFloatingBarLayout {
     /// Extra top padding (in addition to the view's normal padding) to keep content from sitting under the floating capsule buttons.
     static let contentTopPadding: CGFloat = 52
+    /// Reduced top padding for screens that only show a single floating circle button (e.g. a back button).
+    static let circleButtonContentTopPadding: CGFloat = 28
 }
 
 struct MacCapsuleBar<Content: View>: View {
