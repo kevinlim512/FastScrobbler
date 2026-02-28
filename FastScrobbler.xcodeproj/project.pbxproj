@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		09E7013040C0432089FB415F /* FastScrobblerNowPlayingControl.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 11EF64B3CB4E49F2AAC19D50 /* FastScrobblerNowPlayingControl.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		09E7013040C0432089FB415F /* FastScrobblerNowPlayingControl.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 11EF64B3CB4E49F2AAC19D50 /* FastScrobblerNowPlayingControl.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		0A1B2C3D4E5F60718293A4C5 /* Pro.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A1B2C3D4E5F60718293A4B /* Pro.swift */; };
 		0C549D6F43E732558BD98F36 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4AFF729BAB7DC943A3460013 /* Security.framework */; };
 		0ED2ACBEE1384A1DB2BC13F4 /* MediaPlayer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BF012C08E644A48531462C32 /* MediaPlayer.framework */; };
@@ -36,7 +36,7 @@
 		5386B64516E3437DB0BA1FE7 /* ScrobbleShortcutsIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95CFA90A67844B45AFAFF0BE /* ScrobbleShortcutsIntents.swift */; };
 		5D420CAE2853E3F84BBB26ED /* LastFMSecrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73D6C642664C98AB8890C228 /* LastFMSecrets.swift */; };
 		5D9BA41CF4D94828AF0F9ECA /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4AFF729BAB7DC943A3460013 /* Security.framework */; };
-		702E4715BF18405FB59C162E /* FastScrobblerScrobbleControl.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = D4467D7EFEDA43598A5BA2D1 /* FastScrobblerScrobbleControl.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		702E4715BF18405FB59C162E /* FastScrobblerScrobbleControl.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D4467D7EFEDA43598A5BA2D1 /* FastScrobblerScrobbleControl.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		7F9327C88A4B49F5AC1ADAAB /* ScrobbleSongControlWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDD4DC9323834789BA1D7AAD /* ScrobbleSongControlWidget.swift */; };
 		86A419E6203D47B58AFA00AC /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = ACACACACACACACACACACACAC /* WidgetKit.framework */; };
 		9909FFE89F1B42E8B9394D3E /* ScrobbleBacklog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C86E869F03F4F2EB6C64F81 /* ScrobbleBacklog.swift */; };
@@ -47,7 +47,7 @@
 		B0A0A0A0A0A0A0A0A0A0A0A0 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = ACACACACACACACACACACACAC /* WidgetKit.framework */; };
 		B0B0B0B0B0B0B0B0B0B0B0B0 /* ActivityKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = ADADADADADADADADADADADAD /* ActivityKit.framework */; };
 		B0C0C0C0C0C0C0C0C0C0C0C0 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5EC6750EA1D59565F65CDAC6 /* Foundation.framework */; };
-		B0D0D0D0D0D0D0D0D0D0D0D0 /* FastScrobblerLiveActivity.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = A99999999999999999999999 /* FastScrobblerLiveActivity.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		B0D0D0D0D0D0D0D0D0D0D0D0 /* FastScrobblerLiveActivity.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A99999999999999999999999 /* FastScrobblerLiveActivity.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		B11111111111111111111111 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11111111111111111111111 /* AppModel.swift */; };
 		B22222222222222222222222 /* BackgroundTaskManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A22222222222222222222222 /* BackgroundTaskManager.swift */; };
 		B33333333333333333333333 /* BackgroundTasks.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A33333333333333333333333 /* BackgroundTasks.framework */; };
@@ -123,17 +123,17 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		E99999999999999999999999 /* Embed App Extensions */ = {
+		E99999999999999999999999 /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				B0D0D0D0D0D0D0D0D0D0D0D0 /* FastScrobblerLiveActivity.appex in Embed App Extensions */,
-				702E4715BF18405FB59C162E /* FastScrobblerScrobbleControl.appex in Embed App Extensions */,
-				09E7013040C0432089FB415F /* FastScrobblerNowPlayingControl.appex in Embed App Extensions */,
+				B0D0D0D0D0D0D0D0D0D0D0D0 /* FastScrobblerLiveActivity.appex in Embed Foundation Extensions */,
+				702E4715BF18405FB59C162E /* FastScrobblerScrobbleControl.appex in Embed Foundation Extensions */,
+				09E7013040C0432089FB415F /* FastScrobblerNowPlayingControl.appex in Embed Foundation Extensions */,
 			);
-			name = "Embed App Extensions";
+			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -478,7 +478,7 @@
 			buildPhases = (
 				B322362EEC4B36B8C5A3E265 /* Sources */,
 				28DD85509652024BFF10D4B2 /* Frameworks */,
-				E99999999999999999999999 /* Embed App Extensions */,
+				E99999999999999999999999 /* Embed Foundation Extensions */,
 				B7B806F1B0FDBACAB97FDE9E /* Resources */,
 			);
 			buildRules = (
@@ -535,7 +535,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastSwiftUpdateCheck = 1600;
-				LastUpgradeCheck = 2620;
+				LastUpgradeCheck = 2630;
 			};
 			buildConfigurationList = 42FA34948C4FDCB3ABD3255B /* Build configuration list for PBXProject "FastScrobbler" */;
 			compatibilityVersion = "Xcode 3.2";
@@ -830,6 +830,8 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIconMac;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				AUTOMATION_APPLE_EVENTS = YES;
+				CODE_SIGN_ENTITLEMENTS = FastScrobblerMac/FastScrobblerMac.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 6SVRCQ9AH5;
@@ -861,6 +863,8 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIconMac;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				AUTOMATION_APPLE_EVENTS = YES;
+				CODE_SIGN_ENTITLEMENTS = FastScrobblerMac/FastScrobblerMac.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 6SVRCQ9AH5;

@@ -36,6 +36,16 @@ final class AppleMusicNowPlayingObserver: ObservableObject {
         authorizationStatus = MPMediaLibrary.authorizationStatus()
     }
 
+    func requestMediaLibraryAuthorization() async -> MPMediaLibraryAuthorizationStatus {
+        let status = await withCheckedContinuation { cont in
+            MPMediaLibrary.requestAuthorization { s in
+                cont.resume(returning: s)
+            }
+        }
+        authorizationStatus = status
+        return status
+    }
+
     func refreshOnceIfAuthorized() {
         let status = MPMediaLibrary.authorizationStatus()
         authorizationStatus = status
@@ -152,8 +162,9 @@ final class AppleMusicNowPlayingObserver: ObservableObject {
 
         favoritesIndexRefreshTask = Task.detached(priority: .utility) { [weak self] in
             let index = AppleMusicFavorites.buildIndex()
+            let weakSelf = self
             await MainActor.run {
-                guard let self else { return }
+                guard let self = weakSelf else { return }
                 self.favoritesIndex = index
                 self.favoritesIndexDirty = false
                 self.favoritesIndexRefreshTask = nil

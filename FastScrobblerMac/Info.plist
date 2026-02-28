@@ -24,6 +24,8 @@
 	<string>public.app-category.music</string>
 	<key>LSUIElement</key>
 	<true/>
+	<key>NSAppleMusicUsageDescription</key>
+	<string>FastScrobbler needs permission to access your Media Library for scrobbling.</string>
 	<key>NSAppleEventsUsageDescription</key>
 	<string>FastScrobbler needs permission to control the Music app to read now-playing track metadata.</string>
 </dict>

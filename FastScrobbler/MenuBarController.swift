@@ -1,10 +1,14 @@
-#if os(macOS)
-import AppKit
-import SwiftUI
+	#if os(macOS)
+	import AppKit
+	import SwiftUI
 
-@MainActor
-final class MenuBarController: NSObject, NSPopoverDelegate {
-    static let shared = MenuBarController()
+	extension Notification.Name {
+	    static let fastScrobblerPopoverWillShow = Notification.Name("FastScrobbler.popover.willShow")
+	}
+
+	@MainActor
+	final class MenuBarController: NSObject, NSPopoverDelegate {
+	    static let shared = MenuBarController()
 
     private let statusItem: NSStatusItem
     private let popover: NSPopover
@@ -79,11 +83,15 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
         }
     }
 
-    private func showPopover() {
-        guard let button = statusItem.button else { return }
-        NSApp.activate(ignoringOtherApps: true)
-        popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-    }
+	    private func showPopover() {
+	        guard let button = statusItem.button else { return }
+	        NSApp.activate(ignoringOtherApps: true)
+	        popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+	        // Post after presenting so any refresh work can't delay the popover from appearing.
+	        DispatchQueue.main.async {
+	            NotificationCenter.default.post(name: .fastScrobblerPopoverWillShow, object: nil)
+	        }
+	    }
 
     @objc private func quit() {
         NSApp.terminate(nil)

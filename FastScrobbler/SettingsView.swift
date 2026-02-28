@@ -10,7 +10,7 @@ struct SettingsView: View {
     @AppStorage(LiveActivityManager.enabledDefaultsKey) private var liveActivityEnabled = false
     @AppStorage(ProSettings.Keys.loveOnFavoriteEnabled, store: AppGroup.userDefaults) private var loveOnFavoriteEnabled = false
     @AppStorage(ProSettings.Keys.scrobbleThresholdIndex, store: AppGroup.userDefaults) private var scrobbleThresholdIndex = ProSettings.defaultScrobbleThresholdIndex
-    @AppStorage(ProSettings.Keys.useAlbumArtistForScrobbling, store: AppGroup.userDefaults) private var useAlbumArtistForScrobbling = true
+    @AppStorage(ProSettings.Keys.useAlbumArtistForScrobbling, store: AppGroup.userDefaults) private var useAlbumArtistForScrobbling = false
     @AppStorage(ProSettings.Keys.stripEpAndSingleSuffixFromAlbum, store: AppGroup.userDefaults) private var stripEpAndSingleSuffixFromAlbum = false
     @AppStorage(ProSettings.Keys.preventDuplicateScrobblesEnabled, store: AppGroup.userDefaults) private var preventDuplicateScrobblesEnabled = true
 
@@ -203,7 +203,7 @@ struct SettingsView: View {
                     Button(role: .destructive) {
                         activeAlert = .resetConfirmation
                     } label: {
-                        Label("Reset to Initial Settings", systemImage: "arrow.counterclockwise")
+                        Label("Reset Settings", systemImage: "arrow.counterclockwise")
                     }
                 }
             }
@@ -409,7 +409,7 @@ struct SettingsView: View {
         loveOnFavoriteEnabled = false
         scrobbleThresholdIndex = ProSettings.defaultScrobbleThresholdIndex
         preventDuplicateScrobblesEnabled = true
-        useAlbumArtistForScrobbling = true
+        useAlbumArtistForScrobbling = false
         stripEpAndSingleSuffixFromAlbum = false
 
 #if os(macOS)
@@ -515,16 +515,12 @@ struct SettingsView: View {
             Button(role: .destructive) {
                 activeAlert = .resetConfirmation
             } label: {
-                Label("Reset to Initial Settings", systemImage: "arrow.counterclockwise")
+                Label("Reset Settings", systemImage: "arrow.counterclockwise")
                     .frame(maxWidth: .infinity, minHeight: 44)
             }
             .buttonStyle(.bordered)
             .pillButtonBorder()
             .tint(.red)
-
-            Text("Resets settings back to their initial values (your Last.fm account stays connected).")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()

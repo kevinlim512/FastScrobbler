@@ -64,39 +64,46 @@ struct SetupHelpView: View {
         }
 
         var body: some View {
-            HStack(alignment: .top, spacing: 12) {
-                Image(systemName: icon)
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(.primary)
-                    .frame(width: 40, height: 40)
-                    .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .strokeBorder(.primary.opacity(0.10), lineWidth: 0.5)
-                    }
+	            HStack(alignment: .top, spacing: 12) {
+	                Image(systemName: icon)
+	                    .font(.system(size: 20, weight: .semibold))
+	                    .foregroundStyle(.primary)
+	                    .frame(width: 40, height: 40)
+	                    .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+	                    .overlay {
+	                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+	                            .strokeBorder(.primary.opacity(0.10), lineWidth: 0.5)
+	                    }
 
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(alignment: .firstTextBaseline, spacing: 10) {
-                        Text(title)
-                            .font(.headline)
+	                VStack(alignment: .leading, spacing: 4) {
+	                    HStack(alignment: .top, spacing: 10) {
+	                        Text(title)
+	                            .font(.headline)
+	                            .lineLimit(2)
+	                            .fixedSize(horizontal: false, vertical: true)
+	                            .multilineTextAlignment(.leading)
+	                            .layoutPriority(1)
 
-                        Spacer(minLength: 0)
+	                        Spacer(minLength: 8)
 
-                        if isChecked {
-                            HStack(spacing: 6) {
-                                Image(systemName: "checkmark.circle.fill")
-                                Text("Enabled")
-                            }
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.green)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 5)
-                            .background(.green.opacity(0.12), in: Capsule())
-                        }
-                    }
+	                        if isChecked {
+	                            HStack(spacing: 6) {
+	                                Image(systemName: "checkmark.circle.fill")
+	                                Text("Enabled")
+	                                    .lineLimit(1)
+	                            }
+	                            .font(.caption.weight(.semibold))
+	                            .foregroundStyle(.green)
+	                            .padding(.horizontal, 10)
+	                            .padding(.vertical, 5)
+	                            .background(.green.opacity(0.12), in: Capsule())
+	                            .fixedSize(horizontal: true, vertical: false)
+	                            .layoutPriority(2)
+	                        }
+	                    }
 
-                    Text(subtitle)
-                        .font(.subheadline)
+	                    Text(subtitle)
+	                        .font(.subheadline)
                         .foregroundStyle(.secondary)
 
                     if let actionTitle, let action {
@@ -163,26 +170,48 @@ struct SetupHelpView: View {
                     HelpRow(
                         icon: "music.note",
                         title: "Allow Music Control",
-                        subtitle: "When macOS asks to let FastScrobbler control Music, click Allow — this lets FastScrobbler read what’s playing for scrobbling.",
+                        subtitle: "When macOS asks to let FastScrobbler control Music, click Allow. This lets FastScrobbler read what’s playing for scrobbling.",
                         isChecked: musicControlAllowed,
                         actionTitle: musicControlAllowed ? nil : "Open System Settings",
                         action: musicControlAllowed ? nil : { openPrivacySettings(kind: .automation) }
                     )
 
                     let mediaAllowed = (mediaLibraryStatus == .authorized)
+                    let mediaActionTitle: String? = {
+                        guard !mediaAllowed else { return nil }
+                        switch mediaLibraryStatus {
+                        case .notDetermined:
+                            return "Request Access"
+                        case .denied, .restricted:
+                            return "Open Media Library Settings"
+                        case .authorized:
+                            return nil
+                        }
+                    }()
+                    let mediaAction: (() -> Void)? = {
+                        guard !mediaAllowed else { return nil }
+                        switch mediaLibraryStatus {
+                        case .notDetermined:
+                            return requestMediaLibraryPermission
+                        case .denied, .restricted:
+                            return { openPrivacySettings(kind: .media) }
+                        case .authorized:
+                            return nil
+                        }
+                    }()
                     HelpRow(
                         icon: "music.note.list",
                         title: "Media Library Permission",
                         subtitle: "If Media Library access is off, enable it in System Settings.",
                         isChecked: mediaAllowed,
-                        actionTitle: mediaAllowed ? nil : "Open Media Library Settings",
-                        action: mediaAllowed ? nil : { openPrivacySettings(kind: .media) }
+                        actionTitle: mediaActionTitle,
+                        action: mediaAction
                     )
 
                     HelpRow(
                         icon: "play.circle.fill",
                         title: "Start Playing Music",
-                        subtitle: "Start playing music — FastScrobbler will show Now Playing and scrobble when eligible."
+                        subtitle: "Start playing music! FastScrobbler will show Now Playing and scrobble when eligible."
                     )
                 }
 
@@ -272,6 +301,17 @@ struct SetupHelpView: View {
     private func refreshStatuses() {
         mediaLibraryStatus = MPMediaLibrary.authorizationStatus()
         observer.refreshOnceIfAuthorized()
+    }
+
+    private func requestMediaLibraryPermission() {
+        Task { @MainActor in
+            _ = await withCheckedContinuation { cont in
+                MPMediaLibrary.requestAuthorization { _ in
+                    cont.resume(returning: ())
+                }
+            }
+            refreshStatuses()
+        }
     }
 
     private func signInToLastFM() {

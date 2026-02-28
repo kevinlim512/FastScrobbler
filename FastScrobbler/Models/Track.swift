@@ -23,7 +23,7 @@ enum ProSettings {
     }
 
     static func useAlbumArtistForScrobbling() -> Bool {
-        if AppGroup.userDefaults.object(forKey: Keys.useAlbumArtistForScrobbling) == nil { return true }
+        if AppGroup.userDefaults.object(forKey: Keys.useAlbumArtistForScrobbling) == nil { return false }
         return AppGroup.userDefaults.bool(forKey: Keys.useAlbumArtistForScrobbling)
     }
 
@@ -49,7 +49,7 @@ enum ProSettings {
     }
 }
 
-struct Track: Codable, Equatable, Hashable {
+struct Track: Codable, Equatable, Hashable, Sendable {
     var artist: String
     var title: String
     var album: String?

@@ -22,31 +22,42 @@ struct ContentView: View {
     @State private var isShowingSetup = false
     @State private var isShowingHelp = false
     @State private var isShowingSettings = false
-
-    var body: some View {
-        Group {
 #if os(macOS)
-            // On macOS, `NavigationView` defaults to a split view (sidebar + detail).
-            // Use a single-column stack to avoid the empty detail column.
-            NavigationStack {
-                mainContent
-            }
-#else
-            NavigationView {
-                mainContent
-            }
+    @State private var mediaLibraryStatus: MPMediaLibraryAuthorizationStatus = MPMediaLibrary.authorizationStatus()
 #endif
-        }
-        .onAppear {
-            presentSetupIfNeeded()
-        }
-        .onChange(of: scenePhase) { phase in
-            guard phase == .active else { return }
-            presentSetupIfNeeded()
-        }
-        .onChange(of: observer.authorizationStatus) { _ in
-            presentSetupIfNeeded()
-        }
+
+	    var body: some View {
+	        Group {
+#if os(macOS)
+	            // On macOS, `NavigationView` defaults to a split view (sidebar + detail).
+	            // Use a single-column stack to avoid the empty detail column.
+	            NavigationStack {
+	                mainContent
+	            }
+#else
+	            NavigationView {
+	                mainContent
+	            }
+#endif
+	        }
+	#if os(macOS)
+	        .onReceive(NotificationCenter.default.publisher(for: .fastScrobblerPopoverWillShow)) { _ in
+	            refreshMediaLibraryStatusIfNeeded()
+	        }
+	#endif
+	        .onAppear {
+	            refreshMediaLibraryStatusIfNeeded()
+	            presentSetupIfNeeded()
+	        }
+	        .onChange(of: scenePhase) { phase in
+	            guard phase == .active else { return }
+	            refreshMediaLibraryStatusIfNeeded()
+	            presentSetupIfNeeded()
+	        }
+	        .onChange(of: observer.authorizationStatus) { _ in
+	            refreshMediaLibraryStatusIfNeeded()
+	            presentSetupIfNeeded()
+	        }
 #if os(macOS)
         .overlay {
             macModalOverlay
@@ -314,51 +325,77 @@ struct ContentView: View {
         .frame(maxWidth: .infinity, alignment: .center)
     }
 
-#if os(macOS)
-    @ViewBuilder
-    private var macAttentionBanner: some View {
-        let isLoggedOut = (auth.sessionKey == nil)
-        let isPermissionOff = (observer.authorizationStatus != .authorized)
-        if isLoggedOut || isPermissionOff {
-            VStack(alignment: .leading, spacing: 10) {
-                if isLoggedOut {
-                    Label(
-                        "You’re signed out of Last.fm.",
+	#if os(macOS)
+	    @ViewBuilder
+	    private var macAttentionBanner: some View {
+	        let isLoggedOut = (auth.sessionKey == nil)
+	        let isMediaLibraryPermissionOff = (mediaLibraryStatus != .authorized)
+	        let isMusicControlPermissionOff = (observer.authorizationStatus != .authorized)
+	        if isLoggedOut || isMediaLibraryPermissionOff || isMusicControlPermissionOff {
+	            VStack(alignment: .leading, spacing: 10) {
+	                if isLoggedOut {
+	                    Label(
+	                        "You’re signed out of Last.fm.",
                         systemImage: "person.crop.circle.badge.exclamationmark"
                     )
-                    .font(.subheadline.weight(.semibold))
-                }
+	                    .font(.subheadline.weight(.semibold))
+	                }
 
-                if isPermissionOff {
-                    Label(
-                        "Music permission is off. Enable it in System Settings → Privacy & Security.",
-                        systemImage: "exclamationmark.triangle.fill"
-                    )
-                    .font(.subheadline.weight(.semibold))
-                }
+	                if isMusicControlPermissionOff {
+	                    Label(
+	                        "Music control permission is off. Enable it in System Settings → Privacy & Security → Automation.",
+	                        systemImage: "exclamationmark.triangle.fill"
+	                    )
+	                    .font(.subheadline.weight(.semibold))
+	                }
 
-                HStack(spacing: 10) {
-                    if isLoggedOut {
-                        Button("Sign In") {
-                            isShowingSettings = true
+	                if isMediaLibraryPermissionOff {
+	                    Label(
+	                        "Media Library permission is off. Request it here or enable it in System Settings → Privacy & Security.",
+	                        systemImage: "exclamationmark.triangle.fill"
+	                    )
+	                    .font(.subheadline.weight(.semibold))
+	                }
+
+	                HStack(spacing: 10) {
+	                    if isLoggedOut {
+	                        Button("Sign In") {
+	                            isShowingSettings = true
                         }
                         .buttonStyle(.bordered)
-                        .tint(.white)
-                    }
+	                        .tint(.white)
+	                    }
 
-                    if isPermissionOff {
-                        Button("Open System Settings") {
-                            if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security") {
-                                openURL(url)
-                            }
-                        }
-                        .buttonStyle(.bordered)
-                        .tint(.white)
-                    }
+	                    if isMediaLibraryPermissionOff {
+	                        Button("Request Media Library Access") {
+	                            Task { @MainActor in
+	                                let status: MPMediaLibraryAuthorizationStatus = await withCheckedContinuation { cont in
+	                                    MPMediaLibrary.requestAuthorization { s in
+                                        cont.resume(returning: s)
+                                    }
+                                }
+                                mediaLibraryStatus = status
+                                guard status == .authorized else { return }
+	                                await AppModel.shared.startIfNeeded()
+	                            }
+	                        }
+	                        .buttonStyle(.bordered)
+	                        .tint(.white)
+	                    }
 
-                    Spacer(minLength: 0)
-                }
-            }
+	                    if isMusicControlPermissionOff {
+	                        Button("Request Music Control Access") {
+	                            Task { @MainActor in
+	                                await observer.requestMusicControlPermission()
+	                            }
+	                        }
+	                        .buttonStyle(.bordered)
+	                        .tint(.white)
+	                    }
+
+	                    Spacer(minLength: 0)
+	                }
+	            }
             .foregroundStyle(.white)
             .padding(12)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -367,9 +404,9 @@ struct ContentView: View {
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .strokeBorder(.white.opacity(0.18), lineWidth: 1)
             }
-        }
-    }
-#endif
+	        }
+	    }
+	#endif
 
     private func presentSetupIfNeeded() {
 #if os(macOS)
@@ -393,6 +430,21 @@ struct ContentView: View {
         }
 #endif
     }
+
+#if os(macOS)
+	    private func refreshMediaLibraryStatusIfNeeded() {
+	        mediaLibraryStatus = MPMediaLibrary.authorizationStatus()
+	        observer.refreshOnceIfAuthorized()
+
+	        if hasSeenSetup, auth.sessionKey != nil, observer.authorizationStatus == .authorized {
+	            Task { @MainActor in
+	                await AppModel.shared.startIfNeeded()
+	            }
+	        }
+	    }
+#else
+	    private func refreshMediaLibraryStatusIfNeeded() {}
+#endif
 
     private var scrobbleLogCard: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -645,7 +697,6 @@ extension ContentView {
                     .shadow(color: .black.opacity(0.22), radius: 18, x: 0, y: 10)
                     .padding(12)
                     .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-                    .onTapGesture {}
             }
             .transition(.opacity)
             .animation(.easeOut(duration: 0.15), value: isPresented)
