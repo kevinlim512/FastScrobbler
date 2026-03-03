@@ -70,12 +70,55 @@ final class ScrobbleLogStore: ObservableObject {
     }
 
     private func load() {
-        let url = fileURL()
-        do {
-            let data = try Data(contentsOf: url)
-            entries = try JSONDecoder().decode([Entry].self, from: data)
-        } catch {
-            entries = []
+        let fm = FileManager.default
+        let legacyURL = legacyFileURL()
+        let sharedURL = sharedFileURL()
+
+        func readEntries(from url: URL) -> [Entry] {
+            do {
+                let data = try Data(contentsOf: url)
+                return try JSONDecoder().decode([Entry].self, from: data)
+            } catch {
+                return []
+            }
+        }
+
+        if let sharedURL {
+            let sharedEntries = readEntries(from: sharedURL)
+            let legacyEntries = readEntries(from: legacyURL)
+
+            var map: [String: Entry] = [:]
+            for e in sharedEntries {
+                map["\(e.startTimestamp)|\(e.track.dedupeKey)"] = e
+            }
+            for e in legacyEntries {
+                let key = "\(e.startTimestamp)|\(e.track.dedupeKey)"
+                if let existing = map[key] {
+                    if e.scrobbledAt > existing.scrobbledAt {
+                        map[key] = e
+                    }
+                } else {
+                    map[key] = e
+                }
+            }
+
+            var merged = Array(map.values)
+            merged.sort(by: { $0.scrobbledAt > $1.scrobbledAt })
+            if merged.count > maxEntries {
+                merged.removeLast(merged.count - maxEntries)
+            }
+            entries = merged
+
+            // Persist into the shared container so app + extensions share the same dedupe history.
+            do {
+                let data = try JSONEncoder().encode(merged)
+                try fm.createDirectory(at: sharedURL.deletingLastPathComponent(), withIntermediateDirectories: true, attributes: nil)
+                try data.write(to: sharedURL, options: [.atomic])
+            } catch {
+                logger.warning("failed to persist merged scrobble log: \(error.localizedDescription, privacy: .public)")
+            }
+        } else {
+            entries = readEntries(from: legacyURL)
         }
     }
 
@@ -95,6 +138,16 @@ final class ScrobbleLogStore: ObservableObject {
     }
 
     private func fileURL() -> URL {
+        sharedFileURL() ?? legacyFileURL()
+    }
+
+    private func sharedFileURL() -> URL? {
+        FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: AppGroup.id)?
+            .appendingPathComponent("FastScrobblerShared", isDirectory: true)
+            .appendingPathComponent("scrobble_log.json")
+    }
+
+    private func legacyFileURL() -> URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first ?? {
             logger.warning("applicationSupportDirectory unavailable; falling back to temporaryDirectory")
             return FileManager.default.temporaryDirectory

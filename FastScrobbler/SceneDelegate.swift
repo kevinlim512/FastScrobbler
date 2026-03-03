@@ -10,6 +10,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         let model = AppModel.shared
         Task { @MainActor in
             await model.startIfNeeded()
+            await ProPurchaseManager.shared.startIfNeeded()
         }
 
         let contentView = ContentView()
@@ -17,6 +18,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             .environmentObject(model.observer)
             .environmentObject(model.engine)
             .environmentObject(model.scrobbleLog)
+            .environmentObject(ProPurchaseManager.shared)
 
         let window = UIWindow(windowScene: windowScene)
         window.rootViewController = UIHostingController(rootView: contentView)

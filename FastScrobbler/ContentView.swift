@@ -12,6 +12,7 @@ struct ContentView: View {
     @EnvironmentObject private var observer: AppleMusicNowPlayingObserver
     @EnvironmentObject private var engine: ScrobbleEngine
     @EnvironmentObject private var scrobbleLog: ScrobbleLogStore
+    @EnvironmentObject private var pro: ProPurchaseManager
 
     @Environment(\.openURL) private var openURL
     @Environment(\.scenePhase) private var scenePhase
@@ -22,6 +23,9 @@ struct ContentView: View {
     @State private var isShowingSetup = false
     @State private var isShowingHelp = false
     @State private var isShowingSettings = false
+#if os(iOS)
+    @State private var isShowingProUpgrade = false
+#endif
 #if os(macOS)
     @State private var mediaLibraryStatus: MPMediaLibraryAuthorizationStatus = MPMediaLibrary.authorizationStatus()
 #endif
@@ -99,6 +103,9 @@ struct ContentView: View {
                     }
             }
         }
+        .sheet(isPresented: $isShowingProUpgrade) {
+            ProUpgradeView()
+        }
 #endif
     }
 
@@ -138,6 +145,14 @@ struct ContentView: View {
 #if os(iOS)
             ToolbarItemGroup(placement: .navigationBarTrailing) {
                 Button {
+                    isShowingProUpgrade = true
+                } label: {
+                    proButtonLabel
+                }
+                .padding(.trailing, -8)
+                .accessibilityLabel("FastScrobbler Pro")
+
+                Button {
                     isShowingSettings = true
                 } label: {
                     Image(systemName: "gearshape")
@@ -154,6 +169,17 @@ struct ContentView: View {
 #endif
         }
     }
+
+#if os(iOS)
+    private var proButtonLabel: some View {
+        Text("Pro")
+            .font(.title3.weight(.bold))
+            .foregroundStyle(.primary)
+            .padding(.leading, 10)
+            .padding(.trailing, 4)
+            .padding(.vertical, 6)
+    }
+#endif
 
 #if os(macOS)
     private var macPopoverTopButtons: some View {

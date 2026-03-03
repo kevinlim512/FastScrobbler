@@ -72,7 +72,7 @@ final class AppModel {
         // Foreground transitions can leave Timers paused or invalidated.
         engine.start()
 
-        // Ensure we immediately re-sync state on foreground transitions (Timers pause while backgrounded).
+        // Ensure the app immediately re-sync state on foreground transitions (Timers pause while backgrounded).
         await engine.tickAsync()
     }
 

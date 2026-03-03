@@ -38,6 +38,7 @@ actor ScrobbleBacklog {
 
     private let logger = Logger(subsystem: "FastScrobbler", category: "ScrobbleBacklog")
     private var isLoaded = false
+    private var isFlushing = false
     private var items: [Item] = []
 
     private init() {}
@@ -91,9 +92,16 @@ actor ScrobbleBacklog {
 
     func flush(sessionKey: String, maxItems: Int = 25, ignoreBackoff: Bool) async -> FlushResult {
         await loadIfNeeded()
+        guard !isFlushing else {
+            logger.debug("flush skipped (already in progress)")
+            return FlushResult(sentCount: 0, skippedCount: 0, remainingCount: items.count, sentItems: [])
+        }
         guard !items.isEmpty else {
             return FlushResult(sentCount: 0, skippedCount: 0, remainingCount: 0, sentItems: [])
         }
+
+        isFlushing = true
+        defer { isFlushing = false }
 
         let loveOnFavoriteEnabled = ProSettings.loveOnFavoriteEnabled()
 
@@ -141,12 +149,24 @@ actor ScrobbleBacklog {
                             lovedOnLastFM: lovedOnLastFM
                         )
                     )
-                    items.remove(at: idx)
+                    if idx < items.count, items[idx].id == item.id {
+                        items.remove(at: idx)
+                    } else if let currentIndex = items.firstIndex(where: { $0.id == item.id }) {
+                        items.remove(at: currentIndex)
+                    } else {
+                        // Item was already removed (or the backlog was mutated unexpectedly while awaiting).
+                    }
                     sentCount += 1
                 } catch {
                     item.attemptCount += 1
                     item.lastAttemptAt = now
-                    items[idx] = item
+                    if idx < items.count, items[idx].id == item.id {
+                        items[idx] = item
+                    } else if let currentIndex = items.firstIndex(where: { $0.id == item.id }) {
+                        items[currentIndex] = item
+                    } else {
+                        // Item was already removed (or the backlog was mutated unexpectedly while awaiting).
+                    }
                     logger.warning("backlog scrobble failed: \(error.localizedDescription, privacy: .public)")
                     break
                 }

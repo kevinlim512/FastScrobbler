@@ -63,6 +63,12 @@ It includes:
    - This repo’s `FastScrobbler/LastFM/KeychainStore.swift` includes a hard-coded access group string; you’ll likely need to update it for your Team ID if you want app+extensions Keychain sharing.
      - Alternative: replace it with `FastScrobbler/LastFM/KeychainStore_template.swift` and provide the access group via Info.plist.
 
+## Pro upgrade (In‑App Purchase)
+
+- The app expects a **non-consumable** IAP with product ID `com.kevin.FastScrobbler.pro` (see `FastScrobbler/Models/Track.swift` and `FastScrobbler/Pro.swift`).
+- You **don’t set $1.99 in code** — pricing is configured in **App Store Connect** for the IAP product.
+- Local/dev testing uses the included StoreKit configuration `FastScrobbler.storekit` (wired into the `FastScrobbler` scheme’s Run action).
+
 ### Run on iOS
 
 - Build/run the `FastScrobbler` scheme on a device.

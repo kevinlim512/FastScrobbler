@@ -139,9 +139,7 @@ final class PlaybackHistoryImporter {
             state.playCountByPersistentID[pid] = playCount
             state.lastSeenPlayedAtByPersistentID[pid] = playedAt
 
-            if newestPlayedAt == nil || playedAt > newestPlayedAt! {
-                newestPlayedAt = playedAt
-            }
+            newestPlayedAt = max(newestPlayedAt ?? playedAt, playedAt)
         }
 
         if let newestPlayedAt {

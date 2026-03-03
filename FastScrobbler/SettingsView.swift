@@ -16,6 +16,7 @@ struct SettingsView: View {
 
     @EnvironmentObject private var auth: LastFMAuthManager
     @EnvironmentObject private var engine: ScrobbleEngine
+    @EnvironmentObject private var pro: ProPurchaseManager
     @Environment(\.openURL) private var openURL
     @Environment(\.dismiss) private var dismiss
 
@@ -117,16 +118,37 @@ struct SettingsView: View {
 #endif
 
                 Section("Scrobble Controls") {
-                    Toggle("Love Apple Music favourites on Last.fm", isOn: $loveOnFavoriteEnabled)
-                    scrobbleThresholdSlider()
                     VStack(alignment: .leading, spacing: 6) {
                         Toggle("Prevent duplicate scrobbles", isOn: $preventDuplicateScrobblesEnabled)
                         Text("Avoids sending the same track to Last.fm more than once within a short time window.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     }
-                    Toggle("Use album artist when scrobbling", isOn: $useAlbumArtistForScrobbling)
-                    Toggle("Remove “- EP” / “- Single” from album name", isOn: $stripEpAndSingleSuffixFromAlbum)
+                    scrobbleThresholdSlider()
+                    Toggle(isOn: proLockedBoolBinding($loveOnFavoriteEnabled, unlockedDefault: false)) {
+                        HStack {
+                            Text("Love Apple Music favourites on Last.fm")
+                            Spacer()
+                            ProFeatureBadge()
+                        }
+                    }
+                    .disabled(!pro.isPro)
+                    Toggle(isOn: proLockedBoolBinding($useAlbumArtistForScrobbling, unlockedDefault: false)) {
+                        HStack {
+                            Text("Use album artist when scrobbling")
+                            Spacer()
+                            ProFeatureBadge()
+                        }
+                    }
+                    .disabled(!pro.isPro)
+                    Toggle(isOn: proLockedBoolBinding($stripEpAndSingleSuffixFromAlbum, unlockedDefault: false)) {
+                        HStack {
+                            Text("Remove “- EP” / “- Single” from album name")
+                            Spacer()
+                            ProFeatureBadge()
+                        }
+                    }
+                    .disabled(!pro.isPro)
                 }
 
 #if os(iOS)
@@ -300,14 +322,35 @@ struct SettingsView: View {
             Text("Scrobble Controls")
                 .font(.title3.weight(.semibold))
 
-            Toggle("Love Apple Music favourites on Last.fm", isOn: $loveOnFavoriteEnabled)
+            Toggle(isOn: proLockedBoolBinding($loveOnFavoriteEnabled, unlockedDefault: false)) {
+                HStack {
+                    Text("Love Apple Music favourites on Last.fm")
+                    Spacer()
+                    ProFeatureBadge()
+                }
+            }
+            .disabled(!pro.isPro)
             scrobbleThresholdSlider()
             Toggle("Prevent duplicate scrobbles", isOn: $preventDuplicateScrobblesEnabled)
             Text("Avoids sending the same track to Last.fm more than once within a short time window.")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
-            Toggle("Use album artist when scrobbling", isOn: $useAlbumArtistForScrobbling)
-            Toggle("Remove “- EP” / “- Single” from album name", isOn: $stripEpAndSingleSuffixFromAlbum)
+            Toggle(isOn: proLockedBoolBinding($useAlbumArtistForScrobbling, unlockedDefault: false)) {
+                HStack {
+                    Text("Use album artist when scrobbling")
+                    Spacer()
+                    ProFeatureBadge()
+                }
+            }
+            .disabled(!pro.isPro)
+            Toggle(isOn: proLockedBoolBinding($stripEpAndSingleSuffixFromAlbum, unlockedDefault: false)) {
+                HStack {
+                    Text("Remove “- EP” / “- Single” from album name")
+                    Spacer()
+                    ProFeatureBadge()
+                }
+            }
+            .disabled(!pro.isPro)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
@@ -436,7 +479,7 @@ struct SettingsView: View {
         if imported > 0 {
             activeAlert = .listeningHistoryScanResult(message: "Imported \(imported) play\(imported == 1 ? "" : "s").")
         } else {
-            activeAlert = .listeningHistoryScanResult(message: "No new plays found. Listening History only imports plays from this device.")
+            activeAlert = .listeningHistoryScanResult(message: "No new plays found. Scrobbling from Listening History only works for songs added to your Library.")
         }
     }
 #endif
@@ -459,19 +502,28 @@ struct SettingsView: View {
 
     @ViewBuilder
     private func scrobbleThresholdSlider() -> some View {
-        let percentText = ProSettings.scrobbleThresholdPercentText(index: scrobbleThresholdIndex)
+        let effectiveIndex = pro.isPro ? scrobbleThresholdIndex : ProSettings.defaultScrobbleThresholdIndex
+        let percentText = ProSettings.scrobbleThresholdPercentText(index: effectiveIndex)
         let sliderValue = Binding<Double>(
-            get: { Double(scrobbleThresholdIndex) },
-            set: { scrobbleThresholdIndex = Int($0.rounded()) }
+            get: { Double(effectiveIndex) },
+            set: {
+                guard pro.isPro else { return }
+                scrobbleThresholdIndex = Int($0.rounded())
+            }
         )
 
         VStack(alignment: .leading, spacing: 6) {
-            Text("Scrobble at \(percentText) of duration")
+            HStack {
+                Text("Scrobble at \(percentText) of duration")
+                Spacer()
+                ProFeatureBadge()
+            }
             Slider(value: sliderValue, in: 0...Double(ProSettings.scrobbleThresholdOptions.count - 1), step: 1)
+                .disabled(!pro.isPro)
             sliderStepMarkers(
                 count: ProSettings.scrobbleThresholdOptions.count,
-                activeIndex: scrobbleThresholdIndex,
-                locked: false
+                activeIndex: effectiveIndex,
+                locked: !pro.isPro
             )
             HStack {
                 Text("10%")
@@ -504,6 +556,16 @@ struct SettingsView: View {
         } else {
             return Color.primary.opacity(0.14)
         }
+    }
+
+    private func proLockedBoolBinding(_ storage: Binding<Bool>, unlockedDefault: Bool) -> Binding<Bool> {
+        Binding(
+            get: { pro.isPro ? storage.wrappedValue : unlockedDefault },
+            set: { newValue in
+                guard pro.isPro else { return }
+                storage.wrappedValue = newValue
+            }
+        )
     }
 
 #if os(macOS)
@@ -552,6 +614,23 @@ struct SettingsView: View {
         }
     }
 #endif
+}
+
+struct ProFeatureBadge: View {
+    var body: some View {
+#if os(macOS)
+        EmptyView()
+#else
+        Text("Pro")
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(.black)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(Color.yellow)
+            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+            .accessibilityLabel("Pro")
+#endif
+    }
 }
 
 private struct LogoutConfirmationView: View {

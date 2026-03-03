@@ -15,13 +15,13 @@
   ],
   "products" : [
     {
-      "displayPrice" : "1.99",
+      "displayPrice" : "$1.99",
       "familyShareable" : true,
       "internalID" : "7A7E481C",
       "localizations" : [
         {
-          "description" : "",
-          "displayName" : "",
+          "description" : "Unlock scrobble controls and support development.",
+          "displayName" : "FastScrobbler Pro",
           "locale" : "en_US"
         }
       ],

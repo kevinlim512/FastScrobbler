@@ -6,6 +6,8 @@ struct LastFMClient {
         case missingApiKey
         case missingApiSecret
         case missingSessionKey
+        case invalidBaseURL
+        case invalidRequestURL
         case invalidResponse
         case apiError(code: Int, message: String)
 
@@ -14,6 +16,8 @@ struct LastFMClient {
             case .missingApiKey: return "Missing Last.fm API key."
             case .missingApiSecret: return "Missing Last.fm API secret."
             case .missingSessionKey: return "Not connected to Last.fm (missing session key)."
+            case .invalidBaseURL: return "Invalid Last.fm base URL."
+            case .invalidRequestURL: return "Invalid Last.fm request URL."
             case .invalidResponse: return "Invalid response from Last.fm."
             case .apiError(_, let message): return message
             }
@@ -22,13 +26,17 @@ struct LastFMClient {
 
     private let apiKey: String
     private let apiSecret: String
-    private let baseURL = URL(string: "https://ws.audioscrobbler.com/2.0/")!
+    private let baseURL: URL
 
     init(apiKey: String = LastFMSecrets.apiKey, apiSecret: String = LastFMSecrets.apiSecret) throws {
         guard !apiKey.isEmpty else { throw ClientError.missingApiKey }
         guard !apiSecret.isEmpty else { throw ClientError.missingApiSecret }
         self.apiKey = apiKey
         self.apiSecret = apiSecret
+        guard let baseURL = URL(string: "https://ws.audioscrobbler.com/2.0/") else {
+            throw ClientError.invalidBaseURL
+        }
+        self.baseURL = baseURL
     }
 
     func getToken() async throws -> String {
@@ -137,11 +145,14 @@ struct LastFMClient {
         var request: URLRequest
         switch httpMethod.uppercased() {
         case "GET":
-            var comps = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)!
+            guard var comps = URLComponents(url: baseURL, resolvingAgainstBaseURL: false) else {
+                throw ClientError.invalidBaseURL
+            }
             comps.queryItems = allParams
                 .sorted(by: { $0.key < $1.key })
                 .map { URLQueryItem(name: $0.key, value: $0.value) }
-            request = URLRequest(url: comps.url!)
+            guard let url = comps.url else { throw ClientError.invalidRequestURL }
+            request = URLRequest(url: url)
             request.httpMethod = "GET"
         default:
             request = URLRequest(url: baseURL)
@@ -150,7 +161,18 @@ struct LastFMClient {
             request.httpBody = formURLEncoded(allParams)
         }
 
-        request.setValue("FastScrobbler/1.0 (iOS)", forHTTPHeaderField: "User-Agent")
+        #if os(iOS)
+        let platform = "iOS"
+        #elseif os(macOS)
+        let platform = "macOS"
+        #elseif os(watchOS)
+        let platform = "watchOS"
+        #elseif os(tvOS)
+        let platform = "tvOS"
+        #else
+        let platform = "Apple"
+        #endif
+        request.setValue("FastScrobbler/1.0 (\(platform))", forHTTPHeaderField: "User-Agent")
 
         let (data, _) = try await URLSession.shared.data(for: request)
         let obj = try JSONSerialization.jsonObject(with: data)

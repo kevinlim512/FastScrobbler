@@ -170,11 +170,11 @@ struct SetupHelpView: View {
     @State private var lastFMErrorText: String?
 
     var body: some View {
-        ZStack(alignment: .topTrailing) {
+        NavigationStack {
             ScrollView {
                 VStack(spacing: 18) {
                     header
-                        .padding(.top, 30)
+                        .padding(.top, mode == .help ? 12 : 30)
 
                     VStack(spacing: 12) {
                         lastFMRow
@@ -182,6 +182,8 @@ struct SetupHelpView: View {
                         backgroundRefreshRow
                         liveActivitiesRow
                         shortcutsAndControlCenterRow
+                        listeningHistoryLibraryOnlyNoteRow
+                        autoMixListeningHistoryNoteRow
                         liveActivitiesDelayNote
                     }
 
@@ -201,18 +203,22 @@ struct SetupHelpView: View {
                 .padding(.bottom, 24)
             }
             .background(Color(.systemGroupedBackground).ignoresSafeArea())
-
-            if mode == .help {
-                Button {
-                    onDone()
-                } label: {
-                    IOSCloseButtonLabel()
-                        .padding(18)
+            .navigationTitle("")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                if mode == .help {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button(role: .cancel) {
+                            onDone()
+                        } label: {
+                            Image(systemName: "xmark")
+                        }
+                        .accessibilityLabel("Close")
+                    }
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Close")
             }
         }
+        .toolbar(mode == .help ? .visible : .hidden, for: .navigationBar)
         .interactiveDismissDisabled(mode == .onboarding)
         .alert(
             "Last.fm Sign-in",
@@ -356,6 +362,30 @@ struct SetupHelpView: View {
             subtitle: "Add Shortcut actions and Control Center buttons to scrobble or control playback without opening the app.",
             badgeText: "Tip",
             badgeLevel: .good,
+            actionTitle: nil,
+            action: nil
+        )
+    }
+
+    private var listeningHistoryLibraryOnlyNoteRow: some View {
+        SettingRow(
+            icon: "clock",
+            title: "Listening History",
+            subtitle: "Scrobbling from Listening History only works for songs added to your Library.",
+            badgeText: "Note",
+            badgeLevel: .warning,
+            actionTitle: nil,
+            action: nil
+        )
+    }
+
+    private var autoMixListeningHistoryNoteRow: some View {
+        SettingRow(
+            icon: "shuffle.circle",
+            title: "AutoMix",
+            subtitle: "Scrobbling from Listening History may be affected when AutoMix is on.",
+            badgeText: "Note",
+            badgeLevel: .warning,
             actionTitle: nil,
             action: nil
         )

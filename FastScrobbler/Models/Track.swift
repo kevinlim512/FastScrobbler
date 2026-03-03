@@ -5,6 +5,29 @@ enum AppGroup {
     static let userDefaults = UserDefaults(suiteName: id) ?? .standard
 }
 
+enum ProEntitlement {
+    static let productID = "com.kevin.FastScrobbler.pro"
+
+    private static let purchasedDefaultsKey = "FastScrobbler.Pro.purchased"
+
+    static var isPro: Bool {
+        get {
+#if os(macOS)
+            true
+#else
+            AppGroup.userDefaults.bool(forKey: purchasedDefaultsKey)
+#endif
+        }
+        set {
+#if os(macOS)
+            // Pro is always enabled on macOS.
+#else
+            AppGroup.userDefaults.set(newValue, forKey: purchasedDefaultsKey)
+#endif
+        }
+    }
+}
+
 enum ProSettings {
     enum Keys {
         static let loveOnFavoriteEnabled = "FastScrobbler.Pro.loveOnFavoriteEnabled"
@@ -18,16 +41,19 @@ enum ProSettings {
     static let defaultScrobbleThresholdIndex: Int = 2
 
     static func loveOnFavoriteEnabled() -> Bool {
+        guard ProEntitlement.isPro else { return false }
         if AppGroup.userDefaults.object(forKey: Keys.loveOnFavoriteEnabled) == nil { return false }
         return AppGroup.userDefaults.bool(forKey: Keys.loveOnFavoriteEnabled)
     }
 
     static func useAlbumArtistForScrobbling() -> Bool {
+        guard ProEntitlement.isPro else { return false }
         if AppGroup.userDefaults.object(forKey: Keys.useAlbumArtistForScrobbling) == nil { return false }
         return AppGroup.userDefaults.bool(forKey: Keys.useAlbumArtistForScrobbling)
     }
 
     static func stripEpAndSingleSuffixFromAlbum() -> Bool {
+        guard ProEntitlement.isPro else { return false }
         if AppGroup.userDefaults.object(forKey: Keys.stripEpAndSingleSuffixFromAlbum) == nil { return false }
         return AppGroup.userDefaults.bool(forKey: Keys.stripEpAndSingleSuffixFromAlbum)
     }
@@ -38,6 +64,7 @@ enum ProSettings {
     }
 
     static func scrobbleThresholdFraction() -> Double {
+        guard ProEntitlement.isPro else { return scrobbleThresholdOptions[defaultScrobbleThresholdIndex] }
         let idx = AppGroup.userDefaults.object(forKey: Keys.scrobbleThresholdIndex) as? Int ?? defaultScrobbleThresholdIndex
         let clamped = min(max(idx, 0), scrobbleThresholdOptions.count - 1)
         return scrobbleThresholdOptions[clamped]

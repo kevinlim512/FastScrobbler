@@ -9,6 +9,9 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
     ) -> Bool {
         // Ensure shared objects exist for background task launches (no UI scene).
         _ = AppModel.shared
+        Task { @MainActor in
+            await ProPurchaseManager.shared.startIfNeeded()
+        }
         BackgroundTaskManager.shared.registerIfNeeded()
         BackgroundTaskManager.shared.scheduleAppRefresh()
         BackgroundTaskManager.shared.scheduleProcessingIfNeeded()

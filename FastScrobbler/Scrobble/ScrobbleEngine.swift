@@ -207,6 +207,40 @@ final class ScrobbleEngine: ObservableObject {
             logger.debug("Execution gap detected (\(gapSeconds, privacy: .public)s). Enabling resume window.")
         }
 
+        // When "Prevent duplicate scrobbles" is OFF, treat a loop/restart of the same track as a new
+        // playback session so it can be scrobbled again. Apple Music looping doesn't always emit a
+        // now-playing item change for the same track, so the app detects a wrap by watching playbackTime.
+        if !ProSettings.preventDuplicateScrobblesEnabled(),
+           s.resumeWindowEndsAt == nil,
+           (gapSeconds.map { $0 <= 12 } ?? true),
+           let lastPlaybackTime = s.lastPlayObservedPlaybackTimeSeconds,
+           lastPlaybackTime > 15,
+           playbackTime <= 5,
+           lastPlaybackTime > playbackTime
+        {
+            let drop = lastPlaybackTime - playbackTime
+            let duration = s.track.durationSeconds ?? 0
+            let dropThreshold: TimeInterval = duration > 0 ? max(10, duration * 0.5) : 30
+
+            if drop >= dropThreshold {
+                let restartedAt = now.addingTimeInterval(-playbackTime)
+                var newSession = PlaybackSession(track: s.track, startedAt: restartedAt)
+                newSession.accumulatedPlaySeconds = playbackTime
+                newSession.lastPlayObservedAt = now
+                newSession.lastPlayObservedPlaybackTimeSeconds = playbackTime
+                s = newSession
+
+                lastLiveActivityEventAt = now
+                await LiveActivityManager.shared.update(
+                    status: "Track restarted",
+                    track: s.track,
+                    lastEventAt: lastLiveActivityEventAt,
+                    isActivelyScrobbling: true,
+                    throttleSeconds: 0
+                )
+            }
+        }
+
         if let lastAt = s.lastPlayObservedAt, let lastPlaybackTime = s.lastPlayObservedPlaybackTimeSeconds {
             let wallDelta = now.timeIntervalSince(lastAt)
             let playbackDelta = playbackTime - lastPlaybackTime
@@ -215,6 +249,24 @@ final class ScrobbleEngine: ObservableObject {
                 // Use playback progression, capped by wall time, to handle normal playback and background/suspension gaps.
                 // This avoids being gamed by seeking (large playback jumps in small wall time).
                 s.accumulatedPlaySeconds += min(playbackDelta, wallDelta)
+            }
+        }
+
+        // After a cold start / long suspension, Apple Music can report an initial playbackTime of 0 that then
+        // "snaps" to the real value on a subsequent tick. If the app created the session from that stale sample,
+        // its startedAt (and therefore scrobble timestamp) will be wrong and can cause duplicate scrobbles.
+        let sessionAge = max(0, now.timeIntervalSince(s.startedAt))
+        if sessionAge < 20, playbackTime > sessionAge + 15 {
+            let candidateStartedAt = now.addingTimeInterval(-playbackTime)
+            let correctionSeconds = s.startedAt.timeIntervalSince(candidateStartedAt)
+            if correctionSeconds > 10 {
+                logger.debug(
+                    "Correcting startedAt by \(correctionSeconds, privacy: .public)s (age \(sessionAge, privacy: .public)s, playback \(playbackTime, privacy: .public)s)."
+                )
+                s.startedAt = candidateStartedAt
+                if playbackTime > s.accumulatedPlaySeconds {
+                    s.accumulatedPlaySeconds = playbackTime
+                }
             }
         }
 
@@ -348,6 +400,13 @@ final class ScrobbleEngine: ObservableObject {
             let client = try LastFMClient()
             if force {
                 try await client.scrobble(track: trackToScrobble, sessionKey: sessionKey, startTimestamp: ts)
+                if observer.playbackState == .playing, observer.track?.dedupeKey == current.dedupeKey {
+                    do {
+                        try await client.updateNowPlaying(track: trackToScrobble, sessionKey: sessionKey)
+                    } catch {
+                        logger.warning("updateNowPlaying (post-manual-scrobble) failed: \(error.localizedDescription, privacy: .public)")
+                    }
+                }
             } else if var s = session, s.track == current {
                 s = await maybeScrobble(s, sessionKey: sessionKey, client: client)
                 session = s
@@ -475,7 +534,7 @@ final class ScrobbleEngine: ObservableObject {
         s.lastNowPlayingAttemptAt = now
 
         do {
-            try await client.updateNowPlaying(track: s.track, sessionKey: sessionKey)
+            try await client.updateNowPlaying(track: trackForScrobble(s.track), sessionKey: sessionKey)
             s.hasSentNowPlaying = true
             lastLiveActivityEventAt = Date()
             await LiveActivityManager.shared.update(
@@ -537,6 +596,14 @@ final class ScrobbleEngine: ObservableObject {
                 isActivelyScrobbling: true,
                 throttleSeconds: 0
             )
+
+            if observer.playbackState == .playing, observer.track?.dedupeKey == s.track.dedupeKey {
+                do {
+                    try await client.updateNowPlaying(track: trackToScrobble, sessionKey: sessionKey)
+                } catch {
+                    logger.warning("updateNowPlaying (post-scrobble) failed: \(error.localizedDescription, privacy: .public)")
+                }
+            }
 
             s = await maybeLoveOnLastFMAfterScrobble(
                 s,
@@ -601,7 +668,7 @@ final class ScrobbleEngine: ObservableObject {
             }
         }
 
-        // If the user changed tracks and we've already hit the threshold, attempt a last scrobble.
+        // If the user changed tracks and the app has already hit the threshold, attempt a last scrobble.
         do {
             let client = try LastFMClient()
             _ = await maybeScrobble(s, sessionKey: sessionKey, client: client)

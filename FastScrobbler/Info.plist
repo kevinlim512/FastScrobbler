@@ -36,6 +36,8 @@
 	</array>
 	<key>CFBundleVersion</key>
 	<string>1</string>
+	<key>FastScrobblerKeychainAccessGroup</key>
+	<string>$(AppIdentifierPrefix)com.kevin.FastScrobbler.shared</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSAppleMusicUsageDescription</key>
