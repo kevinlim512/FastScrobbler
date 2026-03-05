@@ -22,9 +22,9 @@ It includes:
 ## Mac Screenshots
 
 <p align="center">
-  <img src="Screenshots/Mac 1.PNG" height="240" alt="FastScrobbler main screen" />
-  <img src="Screenshots/Mac 2.PNG" height="240" alt="FastScrobbler settings screen" />
-  <img src="Screenshots/Mac 3.PNG" height="240" alt="FastScrobbler setup screen" />
+  <img src="Screenshots/Mac 1.png" height="240" alt="FastScrobbler main screen" />
+  <img src="Screenshots/Mac 2.png" height="240" alt="FastScrobbler settings screen" />
+  <img src="Screenshots/Mac 3.png" height="240" alt="FastScrobbler setup screen" />
 </p>
 
 ## Features
