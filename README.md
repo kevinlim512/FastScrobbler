@@ -11,6 +11,22 @@ It includes:
 - A macOS menu bar app (`FastScrobblerMac/`)
 - iOS extensions (Live Activity + iOS 18 Control Center widgets)
 
+## iOS Screenshots
+
+<p align="center">
+  <img src="Screenshots/iPhone 1.PNG" width="180" alt="FastScrobbler main screen" />
+  <img src="Screenshots/iPhone 2.PNG" width="180" alt="FastScrobbler settings screen" />
+  <img src="Screenshots/iPhone 3.PNG" width="180" alt="FastScrobbler setup screen" />
+</p>
+
+## Mac Screenshots
+
+<p align="center">
+  <img src="Screenshots/Mac 1.PNG" height="240" alt="FastScrobbler main screen" />
+  <img src="Screenshots/Mac 2.PNG" height="240" alt="FastScrobbler settings screen" />
+  <img src="Screenshots/Mac 3.PNG" height="240" alt="FastScrobbler setup screen" />
+</p>
+
 ## Features
 
 - **Now Playing → Last.fm**: sends now playing as soon as playback is detected.
