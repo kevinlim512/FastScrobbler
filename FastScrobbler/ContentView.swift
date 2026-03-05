@@ -140,7 +140,7 @@ struct ContentView: View {
                 .padding(.trailing, 10)
 #endif
         }
-        .navigationTitle("FastScrobbler")
+        .navigationTitle("")
         .toolbar {
 #if os(iOS)
             ToolbarItemGroup(placement: .navigationBarTrailing) {
