@@ -36,22 +36,23 @@ final class ProPurchaseManager: ObservableObject {
         startListeningForTransactionUpdates()
     }
 
-    func purchase() async {
+    @discardableResult
+    func purchase() async -> Bool {
         lastErrorMessage = nil
 
 #if os(macOS)
         setIsPro(true)
-        return
+        return true
 #endif
         if product == nil {
             await loadProductIfNeeded()
         }
         guard let product else {
             lastErrorMessage = "Unable to load FastScrobbler Pro."
-            return
+            return false
         }
 
-        guard !isPurchasing else { return }
+        guard !isPurchasing else { return false }
         isPurchasing = true
         defer { isPurchasing = false }
 
@@ -61,27 +62,31 @@ final class ProPurchaseManager: ObservableObject {
             case .success(let verification):
                 guard case .verified(let transaction) = verification else {
                     lastErrorMessage = "Purchase couldn’t be verified."
-                    return
+                    return false
                 }
                 // Optimistically enable Pro immediately after verification, then re-check entitlements.
-                if transaction.productID == ProEntitlement.productID {
+                let isProTransaction = transaction.productID == ProEntitlement.productID
+                if isProTransaction {
                     setIsPro(true)
                 }
                 await transaction.finish()
                 await refreshEntitlements()
+                return isProTransaction
 
             case .userCancelled:
-                break
+                return false
 
             case .pending:
                 lastErrorMessage = "Purchase pending approval."
+                return false
 
             @unknown default:
-                break
+                return false
             }
         } catch {
-            if error is CancellationError { return }
+            if error is CancellationError { return false }
             lastErrorMessage = error.localizedDescription
+            return false
         }
     }
 
@@ -154,6 +159,8 @@ struct ProUpgradeView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var pro: ProPurchaseManager
 
+    @State private var showThankYou = false
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -207,6 +214,9 @@ struct ProUpgradeView: View {
         .task {
             await pro.startIfNeeded()
         }
+        .sheet(isPresented: $showThankYou, onDismiss: { dismiss() }) {
+            ProThankYouView()
+        }
         .alert("FastScrobbler Pro", isPresented: Binding(
             get: { pro.lastErrorMessage != nil },
             set: { isPresented in
@@ -238,12 +248,21 @@ struct ProUpgradeView: View {
 
     @ViewBuilder
     private var purchaseSection: some View {
-        let priceText = pro.product.map { $0.price.formatted($0.priceFormatStyle) } ?? "$1.99"
-        let purchaseTitle = pro.isPro ? "Purchased" : "Upgrade for \(priceText)"
+        let priceText = pro.product?.displayPrice
+        let purchaseTitle: String = {
+            if pro.isPro { return "Purchased" }
+            if let priceText { return "Upgrade for \(priceText)" }
+            return "Upgrade"
+        }()
 
         VStack(spacing: 12) {
             Button {
-                Task { await pro.purchase() }
+                Task {
+                    let didPurchase = await pro.purchase()
+                    if didPurchase {
+                        showThankYou = true
+                    }
+                }
             } label: {
                 Text(purchaseTitle)
                     .font(.subheadline.weight(.semibold))
@@ -254,6 +273,14 @@ struct ProUpgradeView: View {
             .tint(pro.isPro ? .gray.opacity(0.35) : .blue)
             .disabled(pro.isPro || pro.isPurchasing)
 
+            if !pro.isPro {
+                Text("One-time purchase. Not a subscription.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+            }
+
             if pro.isPro {
                 Text("You’re upgraded.")
                     .font(.subheadline.weight(.semibold))
@@ -262,7 +289,7 @@ struct ProUpgradeView: View {
             Button {
                 Task { await pro.restorePurchases() }
             } label: {
-                Text(pro.isRestoring ? "Restoring…" : "Restore Purchases")
+                Text(pro.isRestoring ? "Restoring…" : "Restore Purchase")
                     .font(.subheadline.weight(.semibold))
                     .frame(maxWidth: .infinity, minHeight: 46)
             }
@@ -270,6 +297,82 @@ struct ProUpgradeView: View {
             .controlSize(.regular)
             .tint(.red)
             .disabled(pro.isRestoring)
+        }
+    }
+}
+
+private struct ProThankYouView: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        ZStack {
+            Color(.systemBackground)
+                .ignoresSafeArea()
+
+            LinearGradient(
+                colors: [
+                    Color.pink.opacity(0.20),
+                    Color.blue.opacity(0.16),
+                    Color.mint.opacity(0.14),
+                    Color.purple.opacity(0.12)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+
+            Group {
+                Circle()
+                    .fill(Color.orange.opacity(0.20))
+                    .frame(width: 280, height: 280)
+                    .blur(radius: 60)
+                    .offset(x: -140, y: -220)
+
+                Circle()
+                    .fill(Color.cyan.opacity(0.18))
+                    .frame(width: 320, height: 320)
+                    .blur(radius: 70)
+                    .offset(x: 180, y: -160)
+
+                Circle()
+                    .fill(Color.pink.opacity(0.16))
+                    .frame(width: 360, height: 360)
+                    .blur(radius: 80)
+                    .offset(x: 120, y: 260)
+            }
+            .allowsHitTesting(false)
+
+            VStack(spacing: 16) {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 44, weight: .semibold))
+                    .foregroundStyle(.primary)
+                    .padding(.top, 6)
+
+                VStack(spacing: 8) {
+                    Text("Thank you!")
+                        .font(.largeTitle.weight(.bold))
+                        .multilineTextAlignment(.center)
+
+                    Text("You’ve unlocked FastScrobbler Pro! Your support helps support future development of FastScrobbler.")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: 420)
+                }
+
+                Button {
+                    dismiss()
+                } label: {
+                    Text("Done")
+                        .font(.subheadline.weight(.semibold))
+                        .frame(maxWidth: 260, minHeight: 46)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.blue)
+                .padding(.top, 6)
+            }
+            .padding(.horizontal, 28)
+            .padding(.vertical, 28)
         }
     }
 }

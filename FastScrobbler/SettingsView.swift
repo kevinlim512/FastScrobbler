@@ -128,6 +128,7 @@ struct SettingsView: View {
                     Toggle(isOn: proLockedBoolBinding($loveOnFavoriteEnabled, unlockedDefault: false)) {
                         HStack {
                             Text("Love Apple Music favourites on Last.fm")
+                                .foregroundStyle(pro.isPro ? .primary : .secondary)
                             Spacer()
                             ProFeatureBadge()
                         }
@@ -136,6 +137,7 @@ struct SettingsView: View {
                     Toggle(isOn: proLockedBoolBinding($useAlbumArtistForScrobbling, unlockedDefault: false)) {
                         HStack {
                             Text("Use album artist when scrobbling")
+                                .foregroundStyle(pro.isPro ? .primary : .secondary)
                             Spacer()
                             ProFeatureBadge()
                         }
@@ -144,6 +146,7 @@ struct SettingsView: View {
                     Toggle(isOn: proLockedBoolBinding($stripEpAndSingleSuffixFromAlbum, unlockedDefault: false)) {
                         HStack {
                             Text("Remove “- EP” / “- Single” from album name")
+                                .foregroundStyle(pro.isPro ? .primary : .secondary)
                             Spacer()
                             ProFeatureBadge()
                         }
@@ -322,22 +325,24 @@ struct SettingsView: View {
             Text("Scrobble Controls")
                 .font(.title3.weight(.semibold))
 
+            Toggle("Prevent duplicate scrobbles", isOn: $preventDuplicateScrobblesEnabled)
+            Text("Avoids sending the same track to Last.fm more than once within a short time window.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+            scrobbleThresholdSlider()
             Toggle(isOn: proLockedBoolBinding($loveOnFavoriteEnabled, unlockedDefault: false)) {
                 HStack {
                     Text("Love Apple Music favourites on Last.fm")
+                        .foregroundStyle(pro.isPro ? .primary : .secondary)
                     Spacer()
                     ProFeatureBadge()
                 }
             }
             .disabled(!pro.isPro)
-            scrobbleThresholdSlider()
-            Toggle("Prevent duplicate scrobbles", isOn: $preventDuplicateScrobblesEnabled)
-            Text("Avoids sending the same track to Last.fm more than once within a short time window.")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
             Toggle(isOn: proLockedBoolBinding($useAlbumArtistForScrobbling, unlockedDefault: false)) {
                 HStack {
                     Text("Use album artist when scrobbling")
+                        .foregroundStyle(pro.isPro ? .primary : .secondary)
                     Spacer()
                     ProFeatureBadge()
                 }
@@ -346,6 +351,7 @@ struct SettingsView: View {
             Toggle(isOn: proLockedBoolBinding($stripEpAndSingleSuffixFromAlbum, unlockedDefault: false)) {
                 HStack {
                     Text("Remove “- EP” / “- Single” from album name")
+                        .foregroundStyle(pro.isPro ? .primary : .secondary)
                     Spacer()
                     ProFeatureBadge()
                 }
@@ -518,6 +524,7 @@ struct SettingsView: View {
                 Spacer()
                 ProFeatureBadge()
             }
+            .foregroundStyle(pro.isPro ? .primary : .secondary)
             Slider(value: sliderValue, in: 0...Double(ProSettings.scrobbleThresholdOptions.count - 1), step: 1)
                 .disabled(!pro.isPro)
             sliderStepMarkers(

@@ -1,4 +1,3 @@
-import ActivityKit
 import MediaPlayer
 import SwiftUI
 import UIKit
@@ -13,6 +12,7 @@ struct SetupHelpView: View {
         case good
         case warning
         case bad
+        case tip
     }
 
     private struct StatusBadge: View {
@@ -34,6 +34,7 @@ struct SetupHelpView: View {
             case .good: return .green
             case .warning: return .orange
             case .bad: return .red
+            case .tip: return .blue
             }
         }
 
@@ -42,6 +43,7 @@ struct SetupHelpView: View {
             case .good: return .green.opacity(0.12)
             case .warning: return .orange.opacity(0.12)
             case .bad: return .red.opacity(0.12)
+            case .tip: return .blue.opacity(0.12)
             }
         }
     }
@@ -165,7 +167,6 @@ struct SetupHelpView: View {
 
     @State private var mediaStatus: MPMediaLibraryAuthorizationStatus = .notDetermined
     @State private var backgroundRefreshStatus: UIBackgroundRefreshStatus = .restricted
-    @State private var liveActivitiesEnabled: Bool? = nil
     @State private var isSigningInToLastFM = false
     @State private var lastFMErrorText: String?
 
@@ -180,11 +181,11 @@ struct SetupHelpView: View {
                         lastFMRow
                         mediaLibraryRow
                         backgroundRefreshRow
-                        liveActivitiesRow
                         shortcutsAndControlCenterRow
+                        liveActivitiesRow
+                        liveActivitiesDelayNote
                         listeningHistoryLibraryOnlyNoteRow
                         autoMixListeningHistoryNoteRow
-                        liveActivitiesDelayNote
                     }
 
                     Button {
@@ -323,7 +324,7 @@ struct SetupHelpView: View {
         return SettingRow(
             icon: "arrow.triangle.2.circlepath",
             title: "Background App Refresh",
-            subtitle: "Recommended for timely syncing while the app is in the background.",
+            subtitle: "Recommended to periodically sync when the app is in the background.",
             badgeText: badgeText,
             badgeLevel: badgeLevel,
             actionTitle: showAction ? "Open Settings" : nil,
@@ -332,17 +333,14 @@ struct SetupHelpView: View {
     }
 
     private var liveActivitiesRow: some View {
-        let (badgeText, badgeLevel) = badgeForLiveActivities(liveActivitiesEnabled)
-        let showAction = (liveActivitiesEnabled == false)
-
         return SettingRow(
             icon: "bolt.horizontal.circle",
             title: "Live Activities",
             subtitle: "Optional, but recommended so you can see scrobbling status on the Lock Screen.",
-            badgeText: badgeText,
-            badgeLevel: badgeLevel,
-            actionTitle: showAction ? "Open Settings" : nil,
-            action: showAction ? openAppSettings : nil
+            badgeText: "Tip",
+            badgeLevel: .tip,
+            actionTitle: nil,
+            action: nil
         )
     }
 
@@ -361,7 +359,7 @@ struct SetupHelpView: View {
             title: "Shortcuts & Control Center",
             subtitle: "Add Shortcut actions and Control Center buttons to scrobble or control playback without opening the app.",
             badgeText: "Tip",
-            badgeLevel: .good,
+            badgeLevel: .tip,
             actionTitle: nil,
             action: nil
         )
@@ -394,11 +392,6 @@ struct SetupHelpView: View {
     private func refreshStatuses() {
         mediaStatus = MPMediaLibrary.authorizationStatus()
         backgroundRefreshStatus = UIApplication.shared.backgroundRefreshStatus
-        if #available(iOS 16.1, *) {
-            liveActivitiesEnabled = ActivityAuthorizationInfo().areActivitiesEnabled
-        } else {
-            liveActivitiesEnabled = nil
-        }
     }
 
     private func requestMediaLibraryPermission() async {
@@ -445,8 +438,4 @@ struct SetupHelpView: View {
         }
     }
 
-    private func badgeForLiveActivities(_ enabled: Bool?) -> (String, StatusLevel) {
-        guard let enabled else { return ("Unsupported", .warning) }
-        return enabled ? ("On", .good) : ("Off", .bad)
-    }
 }

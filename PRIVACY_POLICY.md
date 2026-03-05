@@ -2,7 +2,7 @@
 
 **Effective date:** February 26, 2026
 
-FastScrobbler is an iOS app (plus a macOS menu bar app) that helps you submit (“scrobble”) your Apple Music / Music app listening activity to your Last.fm account. This policy explains what information the app accesses, stores, and shares.
+FastScrobbler is an iOS and macOS app that helps you submit (“scrobble”) your Apple Music / Music app listening activity to your Last.fm account. This policy explains what information the app accesses, stores, and shares.
 
 ## Summary
 

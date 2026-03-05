@@ -149,7 +149,7 @@ struct ContentView: View {
                 } label: {
                     proButtonLabel
                 }
-                .padding(.trailing, -8)
+                .padding(.trailing, -6)
                 .accessibilityLabel("FastScrobbler Pro")
 
                 Button {
@@ -173,11 +173,11 @@ struct ContentView: View {
 #if os(iOS)
     private var proButtonLabel: some View {
         Text("Pro")
-            .font(.title3.weight(.bold))
-            .foregroundStyle(.primary)
-            .padding(.leading, 10)
-            .padding(.trailing, 4)
-            .padding(.vertical, 6)
+            .font(.subheadline.weight(.bold))
+            .foregroundStyle(.black)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 4)
+            .background(Color.yellow, in: Capsule())
     }
 #endif
 
