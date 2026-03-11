@@ -63,7 +63,11 @@ final class AppModel {
 
         if let sessionKey = auth.sessionKey {
             await auth.refreshUserInfoIfNeeded()
-            let imported = await PlaybackHistoryImporter.shared.importIntoBacklog(backlog: backlog, scrobbleLog: scrobbleLog)
+            let imported = await PlaybackHistoryImporter.shared.importIntoBacklog(
+                backlog: backlog,
+                scrobbleLog: scrobbleLog,
+                maxItems: 200
+            )
             UserDefaults.standard.removeObject(forKey: Keys.lastEnteredBackgroundAt)
             await flushBacklogIfNeeded(sessionKey: sessionKey, force: imported > 0)
             BackgroundTaskManager.shared.scheduleProcessingIfNeeded()

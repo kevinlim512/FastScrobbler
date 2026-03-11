@@ -2,6 +2,9 @@ import AppKit
 #if canImport(MediaPlayer)
 import MediaPlayer
 #endif
+#if os(macOS)
+import ServiceManagement
+#endif
 import SwiftUI
 
 struct SetupHelpView: View {
@@ -21,6 +24,7 @@ struct SetupHelpView: View {
     @Environment(\.scenePhase) private var scenePhase
 
     @State private var mediaLibraryStatus: MPMediaLibraryAuthorizationStatus = MPMediaLibrary.authorizationStatus()
+    @State private var startAtLoginEnabled = Self.isStartAtLoginEnabled
     @State private var isSigningInToLastFM = false
     @State private var lastFMErrorText: String?
 
@@ -76,7 +80,7 @@ struct SetupHelpView: View {
 	                    }
 
 	                VStack(alignment: .leading, spacing: 4) {
-	                    HStack(alignment: .top, spacing: 10) {
+	                    HStack(alignment: .center, spacing: 10) {
 	                        Text(title)
 	                            .font(.headline)
 	                            .lineLimit(2)
@@ -213,6 +217,13 @@ struct SetupHelpView: View {
                         title: "Start Playing Music",
                         subtitle: "Start playing music! FastScrobbler will show Now Playing and scrobble when eligible."
                     )
+
+                    HelpRow(
+                        icon: "power.circle",
+                        title: "Start at Login",
+                        subtitle: "Optional: turn this on in Settings if you want FastScrobbler to launch when you sign in to your Mac.",
+                        isChecked: startAtLoginEnabled
+                    )
                 }
 
                 Button {
@@ -220,7 +231,7 @@ struct SetupHelpView: View {
                 } label: {
                     Text(mode == .onboarding ? "Continue" : "Done")
                         .font(.body.weight(.bold))
-                        .frame(maxWidth: .infinity, minHeight: 52)
+                        .frame(maxWidth: .infinity, minHeight: 40)
                 }
                 .buttonStyle(.borderedProminent)
                 .pillButtonBorder()
@@ -300,7 +311,17 @@ struct SetupHelpView: View {
 
     private func refreshStatuses() {
         mediaLibraryStatus = MPMediaLibrary.authorizationStatus()
+        startAtLoginEnabled = Self.isStartAtLoginEnabled
         observer.refreshOnceIfAuthorized()
+    }
+
+    private static var isStartAtLoginEnabled: Bool {
+        switch SMAppService.mainApp.status {
+        case .enabled, .requiresApproval:
+            return true
+        default:
+            return false
+        }
     }
 
     private func requestMediaLibraryPermission() {

@@ -1,6 +1,9 @@
 #if canImport(MediaPlayer)
 import MediaPlayer
 #endif
+#if os(iOS)
+import SafariServices
+#endif
 import SwiftUI
 
 struct ContentView: View {
@@ -25,6 +28,7 @@ struct ContentView: View {
     @State private var isShowingSettings = false
 #if os(iOS)
     @State private var isShowingProUpgrade = false
+    @State private var inAppBrowserURL: URL?
 #endif
 #if os(macOS)
     @State private var mediaLibraryStatus: MPMediaLibraryAuthorizationStatus = MPMediaLibrary.authorizationStatus()
@@ -57,6 +61,11 @@ struct ContentView: View {
 	            guard phase == .active else { return }
 	            refreshMediaLibraryStatusIfNeeded()
 	            presentSetupIfNeeded()
+	            if hasSeenSetup {
+	                Task { @MainActor in
+	                    await AppModel.shared.startIfNeeded()
+	                }
+	            }
 	        }
 	        .onChange(of: observer.authorizationStatus) { _ in
 	            refreshMediaLibraryStatusIfNeeded()
@@ -105,6 +114,19 @@ struct ContentView: View {
         }
         .sheet(isPresented: $isShowingProUpgrade) {
             ProUpgradeView()
+        }
+        .sheet(isPresented: Binding(
+            get: { inAppBrowserURL != nil },
+            set: { isPresented in
+                if !isPresented {
+                    inAppBrowserURL = nil
+                }
+            }
+        )) {
+            if let url = inAppBrowserURL {
+                InAppSafariView(url: url)
+                    .ignoresSafeArea()
+            }
         }
 #endif
     }
@@ -335,7 +357,11 @@ struct ContentView: View {
             if auth.sessionKey != nil {
                 Button {
                     if let url = auth.profileURL {
+#if os(iOS)
+                        inAppBrowserURL = url
+#else
                         openURL(url)
+#endif
                     }
                 } label: {
                     Label("View Profile in Last.fm", systemImage: "person.circle")
@@ -630,6 +656,20 @@ struct IOSCloseButtonLabel: View {
         }
     }
 }
+
+#if os(iOS)
+private struct InAppSafariView: UIViewControllerRepresentable {
+    let url: URL
+
+    func makeUIViewController(context: Context) -> SFSafariViewController {
+        let controller = SFSafariViewController(url: url)
+        controller.dismissButtonStyle = .close
+        return controller
+    }
+
+    func updateUIViewController(_ uiViewController: SFSafariViewController, context: Context) {}
+}
+#endif
 
 extension View {
     @ViewBuilder

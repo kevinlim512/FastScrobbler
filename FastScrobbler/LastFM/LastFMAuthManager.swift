@@ -64,7 +64,6 @@ final class LastFMAuthManager: NSObject, ObservableObject {
             }
 
             session.presentationContextProvider = self
-            session.prefersEphemeralWebBrowserSession = true
             self.webAuth = session
             _ = session.start()
         }

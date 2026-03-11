@@ -57,9 +57,27 @@ actor ScrobbleBacklog {
     }
 
     func enqueue(track: Track, startTimestamp: Int, origin: Origin?, wasAppleMusicFavorite: Bool?) async {
+        await enqueue(
+            track: track,
+            startTimestamp: startTimestamp,
+            origin: origin,
+            wasAppleMusicFavorite: wasAppleMusicFavorite,
+            allowExactDuplicates: false
+        )
+    }
+
+    func enqueue(
+        track: Track,
+        startTimestamp: Int,
+        origin: Origin?,
+        wasAppleMusicFavorite: Bool?,
+        allowExactDuplicates: Bool
+    ) async {
         await loadIfNeeded()
 
-        if items.contains(where: { $0.startTimestamp == startTimestamp && $0.track.dedupeKey == track.dedupeKey }) {
+        if !allowExactDuplicates,
+           items.contains(where: { $0.startTimestamp == startTimestamp && $0.track.dedupeKey == track.dedupeKey })
+        {
             return
         }
 

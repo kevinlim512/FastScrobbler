@@ -29,11 +29,11 @@ final class ProPurchaseManager: ObservableObject {
 #if os(macOS)
         // Pro is always enabled on macOS; no StoreKit flow.
         setIsPro(true)
-        return
-#endif
+#else
         await loadProductIfNeeded()
         await refreshEntitlements()
         startListeningForTransactionUpdates()
+#endif
     }
 
     @discardableResult
@@ -43,7 +43,7 @@ final class ProPurchaseManager: ObservableObject {
 #if os(macOS)
         setIsPro(true)
         return true
-#endif
+#else
         if product == nil {
             await loadProductIfNeeded()
         }
@@ -88,18 +88,20 @@ final class ProPurchaseManager: ObservableObject {
             lastErrorMessage = error.localizedDescription
             return false
         }
+#endif
     }
 
     func restorePurchases() async {
         lastErrorMessage = nil
-        guard !isRestoring else { return }
-        isRestoring = true
-        defer { isRestoring = false }
 
 #if os(macOS)
         setIsPro(true)
         return
-#endif
+#else
+        guard !isRestoring else { return }
+        isRestoring = true
+        defer { isRestoring = false }
+
         do {
             try await AppStore.sync()
             await refreshEntitlements()
@@ -107,6 +109,7 @@ final class ProPurchaseManager: ObservableObject {
             if error is CancellationError { return }
             lastErrorMessage = error.localizedDescription
         }
+#endif
     }
 
     private func setIsPro(_ newValue: Bool) {
@@ -353,7 +356,7 @@ private struct ProThankYouView: View {
                         .font(.largeTitle.weight(.bold))
                         .multilineTextAlignment(.center)
 
-                    Text("You’ve unlocked FastScrobbler Pro! Your support helps support future development of FastScrobbler.")
+                    Text("You’ve unlocked FastScrobbler Pro!\nYour upgrade helps support future development of FastScrobbler.")
                         .font(.callout)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)

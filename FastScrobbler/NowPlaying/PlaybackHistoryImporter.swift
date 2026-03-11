@@ -31,6 +31,8 @@ final class PlaybackHistoryImporter {
         guard MPMediaLibrary.authorizationStatus() == .authorized else { return 0 }
 
         let favoritesIndex = AppleMusicFavorites.buildIndex()
+        let preventDuplicates = ProSettings.preventDuplicateScrobblesEnabled()
+        let dedupeToleranceSeconds = preventDuplicates ? 10 : 0
 
         var state = loadState()
         if state.lastImportAt == nil {
@@ -76,6 +78,7 @@ final class PlaybackHistoryImporter {
             let playCount = item.playCount
             let pid = item.persistentID
             let previousPlayCount = state.playCountByPersistentID[pid]
+            let previousSeenPlayedAt = state.lastSeenPlayedAtByPersistentID[pid]
             let delta: Int = {
                 guard let previousPlayCount else { return 1 }
                 let d = playCount - previousPlayCount
@@ -85,14 +88,34 @@ final class PlaybackHistoryImporter {
                 return 1
             }()
 
-            let durationForSpacing: TimeInterval? = {
-                guard let d = track.durationSeconds, d >= 30, d <= 60 * 60 else { return nil }
+            let durationForStartTimestamp: TimeInterval? = {
+                guard let d = track.durationSeconds, d > 0, d <= 60 * 60 else { return nil }
                 return d
+            }()
+
+            let spacingForInference: TimeInterval? = {
+                if let d = durationForStartTimestamp {
+                    if preventDuplicates {
+                        guard d >= 30 else { return nil }
+                        return d
+                    }
+                    guard d >= 5 else { return nil }
+                    return d
+                }
+
+                // When duplicate prevention is OFF, infer multiple consecutive plays even when duration metadata
+                // isn't reliable/available by spacing them out within the observed time window.
+                guard !preventDuplicates, delta > 1 else { return nil }
+                let windowStart = max(previousSeenPlayedAt ?? cutoff, cutoff)
+                let window = playedAt.timeIntervalSince(windowStart)
+                if window <= 0 { return 5 }
+                let candidate = window / Double(delta)
+                return min(max(candidate, 5), 60)
             }()
 
             // Cap how many plays the app infers from the playCount delta to avoid spamming on library sync anomalies.
             let maxPlaysByTimeWindow: Int = {
-                guard let spacing = durationForSpacing else { return 1 }
+                guard let spacing = spacingForInference else { return 1 }
                 let window = playedAt.timeIntervalSince(cutoff)
                 if window <= 0 { return 1 }
                 return max(1, Int((window / spacing).rounded(.down)) + 1)
@@ -106,7 +129,7 @@ final class PlaybackHistoryImporter {
                 guard importedCount < maxItems else { break }
 
                 let inferredPlayedAt: Date = {
-                    guard let spacing = durationForSpacing else { return playedAt }
+                    guard let spacing = spacingForInference else { return playedAt }
                     return playedAt.addingTimeInterval(-spacing * Double(idx))
                 }()
                 guard inferredPlayedAt > cutoff else { continue }
@@ -114,7 +137,7 @@ final class PlaybackHistoryImporter {
                 let startTimestamp: Int = {
                     // The Music app writes listening history at (or after) track end.
                     // Use end time minus duration when available to approximate the start timestamp.
-                    if let d = durationForSpacing {
+                    if let d = durationForStartTimestamp {
                         let startAt = inferredPlayedAt.addingTimeInterval(-d)
                         return Int(startAt.timeIntervalSince1970.rounded(.down))
                     }
@@ -122,8 +145,8 @@ final class PlaybackHistoryImporter {
                 }()
 
                 let isDuplicate =
-                    await backlog.containsSimilar(track: scrobbleTrack, around: startTimestamp, toleranceSeconds: 10) ||
-                    scrobbleLog.containsSimilar(track: scrobbleTrack, around: startTimestamp, toleranceSeconds: 10)
+                    await backlog.containsSimilar(track: scrobbleTrack, around: startTimestamp, toleranceSeconds: dedupeToleranceSeconds) ||
+                    scrobbleLog.containsSimilar(track: scrobbleTrack, around: startTimestamp, toleranceSeconds: dedupeToleranceSeconds)
 
                 if !isDuplicate {
                     await backlog.enqueue(

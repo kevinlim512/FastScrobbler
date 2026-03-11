@@ -36,6 +36,13 @@ final class AppleMusicNowPlayingObserver: ObservableObject {
         authorizationStatus = MPMediaLibrary.authorizationStatus()
     }
 
+    func requestMediaLibraryAuthorizationIfNeeded() async -> MPMediaLibraryAuthorizationStatus {
+        let currentStatus = MPMediaLibrary.authorizationStatus()
+        authorizationStatus = currentStatus
+        guard currentStatus == .notDetermined else { return currentStatus }
+        return await requestMediaLibraryAuthorization()
+    }
+
     func requestMediaLibraryAuthorization() async -> MPMediaLibraryAuthorizationStatus {
         let status = await withCheckedContinuation { cont in
             MPMediaLibrary.requestAuthorization { s in

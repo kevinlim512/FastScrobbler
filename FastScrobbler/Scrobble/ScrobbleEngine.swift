@@ -37,6 +37,8 @@ final class ScrobbleEngine: ObservableObject {
     private let observer: AppleMusicNowPlayingObserver
     private let backlog: ScrobbleBacklog
     private let scrobbleLog: ScrobbleLogStore
+    private var lastManualScrobbleTrackKey: String?
+    private var lastManualScrobbleTimestamp: Int?
 
     init(
         auth: LastFMAuthManager,
@@ -369,7 +371,7 @@ final class ScrobbleEngine: ObservableObject {
             if let s = session, s.track.dedupeKey == current.dedupeKey { return s.startedAt }
             return now.addingTimeInterval(-playbackTime)
         }()
-        let ts = Int(startedAt.timeIntervalSince1970.rounded(.down))
+        let ts = manualScrobbleTimestamp(for: trackToScrobble, startedAt: startedAt, now: now)
         let dedupeToleranceSeconds = 10
 
         let alreadyHandled: Bool
@@ -492,6 +494,35 @@ final class ScrobbleEngine: ObservableObject {
         if s.hasScrobbled { bits.append("scrobbled") }
         if s.hasLovedOnThisSession { bits.append("loved") }
         return bits.joined(separator: " | ")
+    }
+
+    private func manualScrobbleTimestamp(for track: Track, startedAt: Date, now: Date) -> Int {
+        let baseTimestamp = Int(startedAt.timeIntervalSince1970.rounded(.down))
+        guard !ProSettings.preventDuplicateScrobblesEnabled() else {
+            lastManualScrobbleTrackKey = nil
+            lastManualScrobbleTimestamp = nil
+            return baseTimestamp
+        }
+
+        let nowTimestamp = Int(now.timeIntervalSince1970.rounded(.down))
+        let preferredTimestamp = max(baseTimestamp, nowTimestamp)
+
+        let timestamp: Int
+        if lastManualScrobbleTrackKey == track.dedupeKey,
+           let lastTimestamp = lastManualScrobbleTimestamp
+        {
+            if preferredTimestamp > lastTimestamp {
+                timestamp = preferredTimestamp
+            } else {
+                timestamp = max(1, lastTimestamp - 1)
+            }
+        } else {
+            timestamp = preferredTimestamp
+        }
+
+        lastManualScrobbleTrackKey = track.dedupeKey
+        lastManualScrobbleTimestamp = timestamp
+        return timestamp
     }
 
     private func maybeLoveOnLastFMAfterScrobble(

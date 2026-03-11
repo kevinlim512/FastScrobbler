@@ -1,3 +1,4 @@
+import MediaPlayer
 import SwiftUI
 import UIKit
 
@@ -24,6 +25,10 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         window.rootViewController = UIHostingController(rootView: contentView)
         self.window = window
         window.makeKeyAndVisible()
+
+        Task { @MainActor in
+            _ = await model.observer.requestMediaLibraryAuthorizationIfNeeded()
+        }
     }
 
     func sceneDidEnterBackground(_ scene: UIScene) {
