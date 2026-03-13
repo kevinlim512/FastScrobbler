@@ -5,11 +5,15 @@ FastScrobbler is a lightweight scrobbler for Apple Music that sends:
 - `track.updateNowPlaying` (shows as “currently playing” on Last.fm)
 - `track.scrobble` once you’ve listened long enough (threshold is configurable)
 
-It includes:
-
+It comprises:
 - An iOS app (`FastScrobbler/`)
 - A macOS menu bar app (`FastScrobblerMac/`)
 - iOS extensions (Live Activity + iOS 18 Control Center widgets)
+
+## App Store
+
+**Download on the iOS and macOS App Store:**
+https://apps.apple.com/sg/app/fastscrobbler-for-last-fm/id6759501541
 
 ## iOS Screenshots
 
