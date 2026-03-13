@@ -13,6 +13,7 @@ struct SettingsView: View {
     @AppStorage(ProSettings.Keys.useAlbumArtistForScrobbling, store: AppGroup.userDefaults) private var useAlbumArtistForScrobbling = false
     @AppStorage(ProSettings.Keys.stripEpAndSingleSuffixFromAlbum, store: AppGroup.userDefaults) private var stripEpAndSingleSuffixFromAlbum = false
     @AppStorage(ProSettings.Keys.preventDuplicateScrobblesEnabled, store: AppGroup.userDefaults) private var preventDuplicateScrobblesEnabled = true
+    @AppStorage(ProSettings.Keys.scrobbleListeningHistoryFromAllDevicesEnabled, store: AppGroup.userDefaults) private var scrobbleListeningHistoryFromAllDevicesEnabled = false
 
     @EnvironmentObject private var auth: LastFMAuthManager
     @EnvironmentObject private var engine: ScrobbleEngine
@@ -156,6 +157,8 @@ struct SettingsView: View {
 
 #if os(iOS)
                 Section("Listening History") {
+                    let allDevicesEnabled = pro.isPro && scrobbleListeningHistoryFromAllDevicesEnabled
+
                     Button {
                         Task { await scanListeningHistoryTapped() }
                     } label: {
@@ -165,11 +168,22 @@ struct SettingsView: View {
                         )
                         .foregroundStyle(auth.sessionKey != nil ? .primary : .secondary)
                     }
+                    .padding(.vertical, 8)
                     .disabled(auth.sessionKey == nil || isScanningListeningHistory)
 
-                    Text("Imports plays from Apple Music Playback History (this device only).")
+                    Text("Imports plays from Apple Music Playback History (\(allDevicesEnabled ? "all devices" : "this device only")).")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
+
+                    Toggle(isOn: proLockedBoolBinding($scrobbleListeningHistoryFromAllDevicesEnabled, unlockedDefault: false)) {
+                        HStack {
+                            Text("Scrobble Listening History from all devices")
+                                .foregroundStyle(pro.isPro ? .primary : .secondary)
+                            Spacer()
+                            ProFeatureBadge()
+                        }
+                    }
+                    .disabled(!pro.isPro)
                 }
 #endif
 
@@ -454,12 +468,14 @@ struct SettingsView: View {
         defaults.removeObject(forKey: ProSettings.Keys.useAlbumArtistForScrobbling)
         defaults.removeObject(forKey: ProSettings.Keys.stripEpAndSingleSuffixFromAlbum)
         defaults.removeObject(forKey: ProSettings.Keys.preventDuplicateScrobblesEnabled)
+        defaults.removeObject(forKey: ProSettings.Keys.scrobbleListeningHistoryFromAllDevicesEnabled)
 
         loveOnFavoriteEnabled = false
         scrobbleThresholdIndex = ProSettings.defaultScrobbleThresholdIndex
         preventDuplicateScrobblesEnabled = true
         useAlbumArtistForScrobbling = false
         stripEpAndSingleSuffixFromAlbum = false
+        scrobbleListeningHistoryFromAllDevicesEnabled = false
 
 #if os(macOS)
         Task { @MainActor in

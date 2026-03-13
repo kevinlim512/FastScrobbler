@@ -169,7 +169,7 @@ struct ProUpgradeView: View {
             ScrollView {
                 VStack(spacing: 18) {
                     header
-                        .padding(.top, 24)
+                        .padding(.top, 16)
 
                     VStack(spacing: 12) {
                         ProBenefitCard(
@@ -186,6 +186,11 @@ struct ProUpgradeView: View {
                             systemImage: "person.2",
                             title: "Clean up scrobble metadata",
                             subtitle: "Use album artist when scrobbling, and remove “- EP” / “- Single” from album names."
+                        )
+                        ProBenefitCard(
+                            systemImage: "clock.arrow.circlepath",
+                            title: "Scrobble Listening History from all devices",
+                            subtitle: "Allow Listening History imports to include plays synced from your other devices."
                         )
                         ProBenefitCard(
                             systemImage: "heart.circle",

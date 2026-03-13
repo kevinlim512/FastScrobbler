@@ -4,3 +4,7 @@ Images/AppIcon.psd
 Images/AppIcon2.psd
 Images/AppIcon3.psd
 Images/music_note.png
+build/
+FastScrobblerMac/DerivedData/
+FastScrobbler.storekit/
+.DS_Store

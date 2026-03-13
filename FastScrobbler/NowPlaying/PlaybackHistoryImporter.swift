@@ -32,6 +32,7 @@ final class PlaybackHistoryImporter {
 
         let favoritesIndex = AppleMusicFavorites.buildIndex()
         let preventDuplicates = ProSettings.preventDuplicateScrobblesEnabled()
+        let allowAllDevicesListeningHistory = ProSettings.scrobbleListeningHistoryFromAllDevicesEnabled()
         let dedupeToleranceSeconds = preventDuplicates ? 10 : 0
 
         var state = loadState()
@@ -40,9 +41,15 @@ final class PlaybackHistoryImporter {
             state.lastImportAt = AppGroup.userDefaults.object(forKey: ImportKeys.lastImportAt) as? Date
         }
 
+        let priorLastImportAt = state.lastImportAt
         let cutoff = state.lastImportAt ?? Date(timeIntervalSinceNow: -24 * 60 * 60)
+        let fetchCutoff: Date = {
+            guard allowAllDevicesListeningHistory else { return cutoff }
+            let lookback = Date(timeIntervalSinceNow: -7 * 24 * 60 * 60)
+            return min(cutoff, lookback)
+        }()
 
-        let candidates = fetchCandidatesPlayed(after: cutoff)
+        let candidates = fetchCandidatesPlayed(after: fetchCutoff)
         guard !candidates.isEmpty else {
             // Persist migrated state even if nothing new was found.
             saveState(state)
@@ -58,7 +65,15 @@ final class PlaybackHistoryImporter {
             guard importedCount < maxItems else { break }
             let item = c.item
             let playedAt = c.playedAt
-            guard playedAt > cutoff else { continue }
+            let pid = item.persistentID
+            let previousSeenPlayedAt = state.lastSeenPlayedAtByPersistentID[pid]
+            let playCutoff: Date = {
+                if allowAllDevicesListeningHistory {
+                    return max(fetchCutoff, previousSeenPlayedAt ?? fetchCutoff)
+                }
+                return cutoff
+            }()
+            guard playedAt > playCutoff else { continue }
 
             let artist = item.artist ?? ""
             let title = item.title ?? ""
@@ -76,9 +91,7 @@ final class PlaybackHistoryImporter {
             let wasAppleMusicFavorite = AppleMusicFavorites.isFavorited(item, index: favoritesIndex)
 
             let playCount = item.playCount
-            let pid = item.persistentID
             let previousPlayCount = state.playCountByPersistentID[pid]
-            let previousSeenPlayedAt = state.lastSeenPlayedAtByPersistentID[pid]
             let delta: Int = {
                 guard let previousPlayCount else { return 1 }
                 let d = playCount - previousPlayCount
@@ -106,7 +119,7 @@ final class PlaybackHistoryImporter {
                 // When duplicate prevention is OFF, infer multiple consecutive plays even when duration metadata
                 // isn't reliable/available by spacing them out within the observed time window.
                 guard !preventDuplicates, delta > 1 else { return nil }
-                let windowStart = max(previousSeenPlayedAt ?? cutoff, cutoff)
+                let windowStart = max(previousSeenPlayedAt ?? playCutoff, playCutoff)
                 let window = playedAt.timeIntervalSince(windowStart)
                 if window <= 0 { return 5 }
                 let candidate = window / Double(delta)
@@ -116,7 +129,7 @@ final class PlaybackHistoryImporter {
             // Cap how many plays the app infers from the playCount delta to avoid spamming on library sync anomalies.
             let maxPlaysByTimeWindow: Int = {
                 guard let spacing = spacingForInference else { return 1 }
-                let window = playedAt.timeIntervalSince(cutoff)
+                let window = playedAt.timeIntervalSince(playCutoff)
                 if window <= 0 { return 1 }
                 return max(1, Int((window / spacing).rounded(.down)) + 1)
             }()
@@ -132,7 +145,7 @@ final class PlaybackHistoryImporter {
                     guard let spacing = spacingForInference else { return playedAt }
                     return playedAt.addingTimeInterval(-spacing * Double(idx))
                 }()
-                guard inferredPlayedAt > cutoff else { continue }
+                guard inferredPlayedAt > playCutoff else { continue }
 
                 let startTimestamp: Int = {
                     // The Music app writes listening history at (or after) track end.
@@ -166,8 +179,12 @@ final class PlaybackHistoryImporter {
         }
 
         if let newestPlayedAt {
-            state.lastImportAt = newestPlayedAt
-            AppGroup.userDefaults.set(newestPlayedAt, forKey: ImportKeys.lastImportAt) // legacy / debugging
+            if let priorLastImportAt {
+                state.lastImportAt = max(priorLastImportAt, newestPlayedAt)
+            } else {
+                state.lastImportAt = newestPlayedAt
+            }
+            AppGroup.userDefaults.set(state.lastImportAt, forKey: ImportKeys.lastImportAt) // legacy / debugging
         }
 
         pruneState(&state)
