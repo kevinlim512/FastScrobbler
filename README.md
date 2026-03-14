@@ -54,7 +54,7 @@ https://apps.apple.com/sg/app/fastscrobbler-for-last-fm/id6759501541
 ## Requirements
 
 - Xcode (recent) and an Apple Developer signing setup
-- Recommended: a physical iPhone for reliable Apple Music now-playing metadata
+- Recommended: a physical iPhone with the Apple Music app installed
 - iOS targets:
   - App: iOS 16.6+
   - Live Activity extension: iOS 16.1+
@@ -87,7 +87,6 @@ https://apps.apple.com/sg/app/fastscrobbler-for-last-fm/id6759501541
 
 - The app expects a **non-consumable** IAP with product ID `com.kevin.FastScrobbler.pro` (see `FastScrobbler/Models/Track.swift` and `FastScrobbler/Pro.swift`).
 - You **don’t set $1.99 in code** — pricing is configured in **App Store Connect** for the IAP product.
-- Local/dev testing uses the included StoreKit configuration `FastScrobbler.storekit` (wired into the `FastScrobbler` scheme’s Run action).
 
 ### Run on iOS
 
@@ -123,6 +122,7 @@ https://apps.apple.com/sg/app/fastscrobbler-for-last-fm/id6759501541
 
 - **No track detected (iOS)**: make sure Apple Music is playing and Media Library permission is granted.
 - **No scrobbles while locked/backgrounded (iOS)**: keep the app open occasionally; ensure Background App Refresh is enabled.
+- - **Issue scrobbling looped songs**: ensure that "Prevent duplicate scrobbles" is turned off in the app's settings 
 - **macOS shows “permission” errors**: enable Automation permission for Music in System Settings.
 - **Auth callback issues**: `LastFMSecrets.callbackScheme` must match `CFBundleURLTypes` in `FastScrobbler/Info.plist`.
 
