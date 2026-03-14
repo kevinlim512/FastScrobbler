@@ -135,4 +135,4 @@ https://apps.apple.com/sg/app/fastscrobbler-for-last-fm/id6759501541
 
 ## License
 
-FastScrobbler is licensed under the GNU General Public License v3.0 (`GPL-3.0-only`).
+You may view and modify the code for personal use. Redistribution or publishing this software or derivatives on the Apple App Store or any commercial marketplace is prohibited without explicit permission.
