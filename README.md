@@ -83,11 +83,6 @@ https://apps.apple.com/sg/app/fastscrobbler-for-last-fm/id6759501541
    - This repo’s `FastScrobbler/LastFM/KeychainStore.swift` includes a hard-coded access group string; you’ll likely need to update it for your Team ID if you want app+extensions Keychain sharing.
      - Alternative: replace it with `FastScrobbler/LastFM/KeychainStore_template.swift` and provide the access group via Info.plist.
 
-## Pro upgrade (In‑App Purchase)
-
-- The app expects a **non-consumable** IAP with product ID `com.kevin.FastScrobbler.pro` (see `FastScrobbler/Models/Track.swift` and `FastScrobbler/Pro.swift`).
-- You **don’t set $1.99 in code** — pricing is configured in **App Store Connect** for the IAP product.
-
 ### Run on iOS
 
 - Build/run the `FastScrobbler` scheme on a device.
@@ -112,19 +107,19 @@ https://apps.apple.com/sg/app/fastscrobbler-for-last-fm/id6759501541
 - Listening History import uses the device’s “Playback History” playlist; it’s best-effort and intentionally avoids importing plays synced from other devices.
 - Live Activities, Shortcuts, and Control Center widgets may update with a delay (iOS can throttle background/intent execution).
 
+## Troubleshooting
+
+- **No track detected (iOS)**: make sure Apple Music is playing and Media Library permission is granted.
+- **No scrobbles while locked/backgrounded (iOS)**: keep the app open occasionally; ensure Background App Refresh is enabled.
+- **Issue scrobbling looped songs**: ensure that "Prevent duplicate scrobbles" is turned off in the app's settings 
+- **macOS shows “permission” errors**: enable Automation permission for Music in System Settings.
+- **Auth callback issues**: `LastFMSecrets.callbackScheme` must match `CFBundleURLTypes` in `FastScrobbler/Info.plist`.
+
 ## Privacy
 
 - FastScrobbler has no developer-run backend.
 - Network traffic goes directly from your device to Last.fm (`ws.audioscrobbler.com`) after you connect your account.
 - More details: `PRIVACY_POLICY.md`.
-
-## Troubleshooting
-
-- **No track detected (iOS)**: make sure Apple Music is playing and Media Library permission is granted.
-- **No scrobbles while locked/backgrounded (iOS)**: keep the app open occasionally; ensure Background App Refresh is enabled.
-- - **Issue scrobbling looped songs**: ensure that "Prevent duplicate scrobbles" is turned off in the app's settings 
-- **macOS shows “permission” errors**: enable Automation permission for Music in System Settings.
-- **Auth callback issues**: `LastFMSecrets.callbackScheme` must match `CFBundleURLTypes` in `FastScrobbler/Info.plist`.
 
 ## Project layout
 
@@ -132,6 +127,11 @@ https://apps.apple.com/sg/app/fastscrobbler-for-last-fm/id6759501541
 - macOS app: `FastScrobblerMac/`
 - Live Activity widget extension: `FastScrobblerLiveActivity/`
 - iOS 18 Control Center widgets: `FastScrobblerNowPlayingControl/`, `FastScrobblerScrobbleControl/`
+
+## Pro upgrade (In‑App Purchase)
+
+- The app expects a **non-consumable** IAP with product ID `com.kevin.FastScrobbler.pro` (see `FastScrobbler/Models/Track.swift` and `FastScrobbler/Pro.swift`).
+- You **don’t set $1.99 in code** — pricing is configured in **App Store Connect** for the IAP product.
 
 ## License
 
