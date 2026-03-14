@@ -129,9 +129,9 @@ https://apps.apple.com/sg/app/fastscrobbler-for-last-fm/id6759501541
 ## Project layout
 
 - iOS app: `FastScrobbler/`
-- macOS menu bar app: `FastScrobblerMac/`
+- macOS app: `FastScrobblerMac/`
 - Live Activity widget extension: `FastScrobblerLiveActivity/`
-- iOS 18 Control Widgets: `FastScrobblerNowPlayingControl/`, `FastScrobblerScrobbleControl/`
+- iOS 18 Control Center widgets: `FastScrobblerNowPlayingControl/`, `FastScrobblerScrobbleControl/`
 
 ## License
 

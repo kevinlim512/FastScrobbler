@@ -8,3 +8,4 @@ build/
 FastScrobblerMac/DerivedData/
 FastScrobbler.storekit/
 .DS_Store
+FastScrobbler.xcodeproj
