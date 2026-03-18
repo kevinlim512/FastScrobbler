@@ -68,84 +68,78 @@ struct SetupHelpView: View {
         }
 
         var body: some View {
-	            HStack(alignment: .top, spacing: 12) {
-	                Image(systemName: icon)
-	                    .font(.system(size: 20, weight: .semibold))
-	                    .foregroundStyle(.primary)
-	                    .frame(width: 40, height: 40)
-	                    .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-	                    .overlay {
-	                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-	                            .strokeBorder(.primary.opacity(0.10), lineWidth: 0.5)
-	                    }
-
-	                VStack(alignment: .leading, spacing: 4) {
-	                    HStack(alignment: .center, spacing: 10) {
-	                        Text(title)
-	                            .font(.headline)
-	                            .lineLimit(2)
-	                            .fixedSize(horizontal: false, vertical: true)
-	                            .multilineTextAlignment(.leading)
-	                            .layoutPriority(1)
-
-	                        Spacer(minLength: 8)
-
-	                        if isChecked {
-	                            HStack(spacing: 6) {
-	                                Image(systemName: "checkmark.circle.fill")
-	                                Text("Enabled")
-	                                    .lineLimit(1)
-	                            }
-	                            .font(.caption.weight(.semibold))
-	                            .foregroundStyle(.green)
-	                            .padding(.horizontal, 10)
-	                            .padding(.vertical, 5)
-	                            .background(.green.opacity(0.12), in: Capsule())
-	                            .fixedSize(horizontal: true, vertical: false)
-	                            .layoutPriority(2)
-	                        }
-	                    }
-
-	                    Text(subtitle)
-	                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-
-                    if let actionTitle, let action {
-                        Group {
-                            if let actionTint {
-                                Group {
-                                    if actionProminent {
-                                        Button(actionTitle) { action() }
-                                            .buttonStyle(.borderedProminent)
-                                    } else {
-                                        Button(actionTitle) { action() }
-                                    }
-                                }
-                                .tint(actionTint)
-                            } else {
-                                Group {
-                                    if actionProminent {
-                                        Button(actionTitle) { action() }
-                                            .buttonStyle(.borderedProminent)
-                                    } else {
-                                        Button(actionTitle) { action() }
-                                    }
-                                }
-                            }
+            ZStack(alignment: .topTrailing) {
+                HStack(alignment: .top, spacing: 16) {
+                    Image(systemName: icon)
+                        .font(.system(size: 24, weight: .semibold))
+                        .foregroundStyle(.primary)
+                        .frame(width: 56, height: 56)
+                        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                .strokeBorder(.primary.opacity(0.10), lineWidth: 0.5)
                         }
-                        .disabled(actionDisabled)
-                        .font(.subheadline.weight(.semibold))
-                        .padding(.top, 6)
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(title)
+                            .font(.headline)
+                            .multilineTextAlignment(.leading)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.trailing, isChecked ? 88 : 0)
+
+                        Text(subtitle)
+                            .font(.subheadline)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .foregroundStyle(.secondary)
+
+                        if let actionTitle, let action {
+                            actionButton(title: actionTitle, action: action)
+                                .disabled(actionDisabled)
+                                .font(.subheadline.weight(.semibold))
+                                .padding(.top, 4)
+                        }
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 2)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
+
+                if isChecked {
+                    statusBadge
+                }
             }
-            .padding()
+            .padding(20)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .strokeBorder(.primary.opacity(0.10), lineWidth: 0.5)
+            }
+        }
+
+        private var statusBadge: some View {
+            HStack(spacing: 6) {
+                Image(systemName: "checkmark.circle.fill")
+                Text("Enabled")
+                    .lineLimit(1)
+            }
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(.green)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(.green.opacity(0.12), in: Capsule())
+            .fixedSize(horizontal: true, vertical: false)
+        }
+
+        @ViewBuilder
+        private func actionButton(title: String, action: @escaping () -> Void) -> some View {
+            if actionProminent {
+                Button(title) { action() }
+                    .buttonStyle(.borderedProminent)
+                    .tint(actionTint)
+            } else {
+                Button(title) { action() }
+                    .tint(actionTint)
             }
         }
     }
@@ -160,10 +154,10 @@ struct SetupHelpView: View {
                     let isConnected = (auth.sessionKey != nil)
                     HelpRow(
                         icon: "person.crop.circle",
-                        title: "Connect Last.fm",
-                        subtitle: "Connect your account in Settings to start scrobbling.",
+                        title: NSLocalizedString("Connect Last.fm", comment: ""),
+                        subtitle: NSLocalizedString("Connect your account in Settings to start scrobbling.", comment: ""),
                         isChecked: isConnected,
-                        actionTitle: isConnected ? nil : (isSigningInToLastFM ? "Signing In…" : "Sign In to Last.fm"),
+                        actionTitle: isConnected ? nil : (isSigningInToLastFM ? NSLocalizedString("Signing In…", comment: "") : NSLocalizedString("Sign In to Last.fm", comment: "")),
                         action: isConnected ? nil : signInToLastFM,
                         actionTint: .red,
                         actionProminent: true,
@@ -173,10 +167,10 @@ struct SetupHelpView: View {
                     let musicControlAllowed = (observer.authorizationStatus == .authorized)
                     HelpRow(
                         icon: "music.note",
-                        title: "Allow Music Control",
-                        subtitle: "When macOS asks to let FastScrobbler control Music, click Allow. This lets FastScrobbler read what’s playing for scrobbling.",
+                        title: NSLocalizedString("Allow Music Control", comment: ""),
+                        subtitle: NSLocalizedString("When macOS asks to let FastScrobbler control Music, click Allow. This lets FastScrobbler read what’s playing for scrobbling.", comment: ""),
                         isChecked: musicControlAllowed,
-                        actionTitle: musicControlAllowed ? nil : "Open System Settings",
+                        actionTitle: musicControlAllowed ? nil : NSLocalizedString("Open System Settings", comment: ""),
                         action: musicControlAllowed ? nil : { openPrivacySettings(kind: .automation) }
                     )
 
@@ -185,9 +179,9 @@ struct SetupHelpView: View {
                         guard !mediaAllowed else { return nil }
                         switch mediaLibraryStatus {
                         case .notDetermined:
-                            return "Request Access"
+                            return NSLocalizedString("Request Access", comment: "")
                         case .denied, .restricted:
-                            return "Open Media Library Settings"
+                            return NSLocalizedString("Open Media Library Settings", comment: "")
                         case .authorized:
                             return nil
                         }
@@ -205,8 +199,8 @@ struct SetupHelpView: View {
                     }()
                     HelpRow(
                         icon: "music.note.list",
-                        title: "Media Library Permission",
-                        subtitle: "If Media Library access is off, enable it in System Settings.",
+                        title: NSLocalizedString("Media Library Permission", comment: ""),
+                        subtitle: NSLocalizedString("If Media Library access is off, enable it in System Settings.", comment: ""),
                         isChecked: mediaAllowed,
                         actionTitle: mediaActionTitle,
                         action: mediaAction
@@ -214,14 +208,14 @@ struct SetupHelpView: View {
 
                     HelpRow(
                         icon: "play.circle.fill",
-                        title: "Start Playing Music",
-                        subtitle: "Start playing music! FastScrobbler will show Now Playing and scrobble when eligible."
+                        title: NSLocalizedString("Start Playing Music", comment: ""),
+                        subtitle: NSLocalizedString("Start playing music! FastScrobbler will show Now Playing and scrobble when eligible.", comment: "")
                     )
 
                     HelpRow(
                         icon: "power.circle",
-                        title: "Start at Login",
-                        subtitle: "Optional: turn this on in Settings if you want FastScrobbler to launch when you sign in to your Mac.",
+                        title: NSLocalizedString("Start at Login", comment: ""),
+                        subtitle: NSLocalizedString("Optional: turn this on in Settings if you want FastScrobbler to launch when you sign in to your Mac.", comment: ""),
                         isChecked: startAtLoginEnabled
                     )
                 }
@@ -229,7 +223,7 @@ struct SetupHelpView: View {
                 Button {
                     onDone()
                 } label: {
-                    Text(mode == .onboarding ? "Continue" : "Done")
+                    Text(mode == .onboarding ? NSLocalizedString("Continue", comment: "") : NSLocalizedString("Done", comment: ""))
                         .font(.body.weight(.bold))
                         .frame(maxWidth: .infinity, minHeight: 40)
                 }
@@ -243,11 +237,11 @@ struct SetupHelpView: View {
         }
         .background(Color(nsColor: .windowBackgroundColor))
         .onAppear { refreshStatuses() }
-        .onChange(of: scenePhase) { phase in
+        .onValueChange(of: scenePhase) { phase in
             guard phase == .active else { return }
             refreshStatuses()
         }
-        .alert("Couldn't sign in to Last.fm", isPresented: Binding(
+        .alert(NSLocalizedString("Couldn't sign in to Last.fm", comment: ""), isPresented: Binding(
             get: { lastFMErrorText != nil },
             set: { isPresented in
                 if !isPresented {
@@ -255,15 +249,15 @@ struct SetupHelpView: View {
                 }
             }
         )) {
-            Button("OK", role: .cancel) {}
+            Button(NSLocalizedString("OK", comment: ""), role: .cancel) {}
         } message: {
             Text(lastFMErrorText ?? "")
         }
         .overlay(alignment: .topLeading) {
             MacFloatingCircleButton(
                 systemImage: "chevron.left",
-                help: "Back",
-                accessibilityLabel: "Back",
+                help: NSLocalizedString("Back", comment: ""),
+                accessibilityLabel: NSLocalizedString("Back", comment: ""),
                 action: onDone
             )
             .padding(.top, 10)

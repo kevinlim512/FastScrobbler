@@ -18,6 +18,17 @@
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
 	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>lastfm-auth</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>lastfmscrobble</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>FastScrobblerKeychainAccessGroup</key>
@@ -26,9 +37,9 @@
 	<string>public.app-category.music</string>
 	<key>LSUIElement</key>
 	<true/>
-	<key>NSAppleMusicUsageDescription</key>
-	<string>FastScrobbler needs permission to access your Media Library for scrobbling.</string>
 	<key>NSAppleEventsUsageDescription</key>
 	<string>FastScrobbler needs permission to control the Music app to read now-playing track metadata.</string>
+	<key>NSAppleMusicUsageDescription</key>
+	<string>FastScrobbler needs permission to access your Media Library for scrobbling.</string>
 </dict>
 </plist>

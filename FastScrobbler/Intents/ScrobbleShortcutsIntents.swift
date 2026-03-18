@@ -12,13 +12,13 @@ enum ShortcutsIntentError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .notConnected:
-            return "Connect Last.fm to scrobble."
+            return NSLocalizedString("Connect Last.fm to scrobble.", comment: "")
         case .mediaLibraryDenied:
-            return "Media Library access is required to read now-playing metadata."
+            return NSLocalizedString("Media Library access is required to read now-playing metadata.", comment: "")
         case .noNowPlaying:
-            return "No now-playing track."
+            return NSLocalizedString("No now-playing track.", comment: "")
         case .invalidNowPlayingMetadata:
-            return "Now-playing track metadata was incomplete."
+            return NSLocalizedString("Now-playing track metadata was incomplete.", comment: "")
         }
     }
 }
@@ -113,7 +113,15 @@ struct SendNowPlayingIntent: AppIntent {
 
         do {
             try await client.updateNowPlaying(track: trackToSend, sessionKey: sessionKey)
-            return .result(dialog: "Sent now playing: \(trackToSend.artist) — \(trackToSend.title)")
+            return .result(
+                dialog: IntentDialog(
+                    stringLiteral: String.localizedStringWithFormat(
+                        NSLocalizedString("Sent now playing: %@ — %@", comment: ""),
+                        trackToSend.artist,
+                        trackToSend.title
+                    )
+                )
+            )
         } catch {
             logger.warning("updateNowPlaying failed: \(error.localizedDescription, privacy: .public)")
             throw error
@@ -147,7 +155,15 @@ struct ScrobbleSongIntent: AppIntent {
             await MainActor.run {
                 ScrobbleLogStore.shared.record(track: scrobbleTrack, startTimestamp: ts, source: .live)
             }
-            return .result(dialog: "Scrobbled: \(scrobbleTrack.artist) — \(scrobbleTrack.title)")
+            return .result(
+                dialog: IntentDialog(
+                    stringLiteral: String.localizedStringWithFormat(
+                        NSLocalizedString("Scrobbled: %@ — %@", comment: ""),
+                        scrobbleTrack.artist,
+                        scrobbleTrack.title
+                    )
+                )
+            )
         } catch {
             logger.warning("manual scrobble failed: \(error.localizedDescription, privacy: .public)")
             await ScrobbleBacklog.shared.enqueue(track: scrobbleTrack, startTimestamp: ts)

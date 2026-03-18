@@ -43,4 +43,13 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             await AppModel.shared.startIfNeeded()
         }
     }
+
+    func sceneDidBecomeActive(_ scene: UIScene) {
+#if os(iOS)
+        guard let windowScene = scene as? UIWindowScene else { return }
+        Task { @MainActor in
+            AppReviewManager.shared.recordAppDidBecomeActive(in: windowScene)
+        }
+#endif
+    }
 }

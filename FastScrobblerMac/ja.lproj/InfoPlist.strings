@@ -1,0 +1,12 @@
+/* Bundle display name */
+"CFBundleDisplayName" = "FastScrobbler";
+
+/* Bundle name */
+"CFBundleName" = "FastScrobblerMac";
+
+/* Privacy - AppleEvents Sending Usage Description */
+"NSAppleEventsUsageDescription" = "FastScrobblerが再生中の曲のメタデータを読むには、ミュージックアプリを操作する権限が必要です。";
+
+/* Privacy - Media Library Usage Description */
+"NSAppleMusicUsageDescription" = "FastScrobblerがスクロブルするには、メディアライブラリへのアクセス権限が必要です。";
+

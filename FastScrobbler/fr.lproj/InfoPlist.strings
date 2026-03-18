@@ -1,0 +1,9 @@
+/* Bundle display name */
+"CFBundleDisplayName" = "FastScrobbler";
+
+/* Bundle name */
+"CFBundleName" = "FastScrobbler";
+
+/* Privacy - Media Library Usage Description */
+"NSAppleMusicUsageDescription" = "Cette app a besoin d’accéder à votre bibliothèque multimédia pour lire les métadonnées du morceau en cours de lecture dans Apple Music.";
+

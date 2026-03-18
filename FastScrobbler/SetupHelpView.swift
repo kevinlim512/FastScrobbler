@@ -94,11 +94,16 @@ struct SetupHelpView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
                 VStack(alignment: .leading, spacing: 4) {
-                    HStack(alignment: .firstTextBaseline) {
+                    HStack(alignment: .top, spacing: 8) {
                         Text(title)
                             .font(.headline)
-                        Spacer()
+                            .multilineTextAlignment(.leading)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .layoutPriority(1)
+
                         StatusBadge(text: badgeText, level: badgeLevel)
+                            .hidden()
+                            .fixedSize(horizontal: true, vertical: false)
                     }
 
                     Text(subtitle)
@@ -131,6 +136,11 @@ struct SetupHelpView: View {
             .padding()
             .background(Color(.secondarySystemGroupedBackground))
             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(alignment: .topTrailing) {
+                StatusBadge(text: badgeText, level: badgeLevel)
+                    .fixedSize(horizontal: true, vertical: false)
+                    .padding()
+            }
         }
     }
 
@@ -186,12 +196,13 @@ struct SetupHelpView: View {
                         liveActivitiesDelayNote
                         listeningHistoryLibraryOnlyNoteRow
                         autoMixListeningHistoryNoteRow
+                        scrobblingIssuesNoteRow
                     }
 
                     Button {
                         onDone()
                     } label: {
-                        Label(mode == .onboarding ? "Continue" : "Done", systemImage: "checkmark.circle.fill")
+                        Label(mode == .onboarding ? NSLocalizedString("Continue", comment: "") : NSLocalizedString("Done", comment: ""), systemImage: "checkmark.circle.fill")
                             .font(.headline.weight(mode == .help ? .bold : .semibold))
                             .frame(maxWidth: .infinity, minHeight: 52)
                     }
@@ -222,7 +233,7 @@ struct SetupHelpView: View {
         .toolbar(mode == .help ? .visible : .hidden, for: .navigationBar)
         .interactiveDismissDisabled(mode == .onboarding)
         .alert(
-            "Last.fm Sign-in",
+            NSLocalizedString("Last.fm Sign-in", comment: ""),
             isPresented: Binding(
                 get: { lastFMErrorText != nil },
                 set: { if !$0 { lastFMErrorText = nil } }
@@ -233,7 +244,7 @@ struct SetupHelpView: View {
             Text(lastFMErrorText ?? "")
         }
         .onAppear { refreshStatuses() }
-        .onChange(of: scenePhase) { newValue in
+        .onValueChange(of: scenePhase) { newValue in
             if newValue == .active {
                 refreshStatuses()
             }
@@ -257,16 +268,16 @@ struct SetupHelpView: View {
 
     private var lastFMRow: some View {
         let isConnected = (auth.sessionKey != nil)
-        let badgeText = isConnected ? "Connected" : "Required"
+        let badgeText = isConnected ? NSLocalizedString("Connected", comment: "") : NSLocalizedString("Required", comment: "")
         let badgeLevel: StatusLevel = isConnected ? .good : .bad
 
         return SettingRow(
             icon: "person.crop.circle",
-            title: "Last.fm",
-            subtitle: "Sign in to start scrobbling to your Last.fm account.",
+            title: NSLocalizedString("Last.fm", comment: ""),
+            subtitle: NSLocalizedString("Sign in to start scrobbling to your Last.fm account.", comment: ""),
             badgeText: badgeText,
             badgeLevel: badgeLevel,
-            actionTitle: isConnected ? nil : (isSigningInToLastFM ? "Signing In…" : "Sign In to Last.fm"),
+            actionTitle: isConnected ? nil : (isSigningInToLastFM ? NSLocalizedString("Signing In…", comment: "") : NSLocalizedString("Sign In to Last.fm", comment: "")),
             action: isConnected ? nil : {
                 guard !isSigningInToLastFM else { return }
                 isSigningInToLastFM = true
@@ -297,19 +308,19 @@ struct SetupHelpView: View {
             actionTitle = nil
         case .notDetermined:
             action = { Task { await requestMediaLibraryPermission() } }
-            actionTitle = "Enable Media Library"
+            actionTitle = NSLocalizedString("Enable Media Library", comment: "")
         case .denied, .restricted:
             action = openAppSettings
-            actionTitle = "Open Settings"
+            actionTitle = NSLocalizedString("Open Settings", comment: "")
         @unknown default:
             action = openAppSettings
-            actionTitle = "Open Settings"
+            actionTitle = NSLocalizedString("Open Settings", comment: "")
         }
 
         return SettingRow(
             icon: "music.note.list",
-            title: "Media Library",
-            subtitle: "Required to read Apple Music now-playing metadata.",
+            title: NSLocalizedString("Media Library", comment: ""),
+            subtitle: NSLocalizedString("Required to read Apple Music now-playing metadata.", comment: ""),
             badgeText: badgeText,
             badgeLevel: badgeLevel,
             actionTitle: actionTitle,
@@ -323,11 +334,11 @@ struct SetupHelpView: View {
 
         return SettingRow(
             icon: "arrow.triangle.2.circlepath",
-            title: "Background App Refresh",
-            subtitle: "Recommended to periodically sync when the app is in the background.",
+            title: NSLocalizedString("Background App Refresh", comment: ""),
+            subtitle: NSLocalizedString("Recommended to periodically sync when the app is in the background.", comment: ""),
             badgeText: badgeText,
             badgeLevel: badgeLevel,
-            actionTitle: showAction ? "Open Settings" : nil,
+            actionTitle: showAction ? NSLocalizedString("Open Settings", comment: "") : nil,
             action: showAction ? openAppSettings : nil
         )
     }
@@ -335,9 +346,9 @@ struct SetupHelpView: View {
     private var liveActivitiesRow: some View {
         return SettingRow(
             icon: "bolt.horizontal.circle",
-            title: "Live Activities",
-            subtitle: "Optional, but recommended so you can see scrobbling status on the Lock Screen.",
-            badgeText: "Tip",
+            title: NSLocalizedString("Live Activities", comment: ""),
+            subtitle: NSLocalizedString("Optional, but recommended so you can see scrobbling status on the Lock Screen.", comment: ""),
+            badgeText: NSLocalizedString("Tip", comment: ""),
             badgeLevel: .tip,
             actionTitle: nil,
             action: nil
@@ -356,9 +367,9 @@ struct SetupHelpView: View {
     private var shortcutsAndControlCenterRow: some View {
         SettingRow(
             icon: "memories.badge.plus",
-            title: "Shortcuts & Control Center",
-            subtitle: "Add Shortcut actions and Control Center buttons to scrobble or control playback without opening the app.",
-            badgeText: "Tip",
+            title: NSLocalizedString("Shortcuts & Control Center", comment: ""),
+            subtitle: NSLocalizedString("Add Shortcut actions and Control Center buttons to scrobble or control playback without opening the app.", comment: ""),
+            badgeText: NSLocalizedString("Tip", comment: ""),
             badgeLevel: .tip,
             actionTitle: nil,
             action: nil
@@ -368,9 +379,9 @@ struct SetupHelpView: View {
     private var listeningHistoryLibraryOnlyNoteRow: some View {
         SettingRow(
             icon: "clock",
-            title: "Listening History",
-            subtitle: "Scrobbling from Listening History only works for songs added to your Library.",
-            badgeText: "Note",
+            title: NSLocalizedString("Listening History", comment: ""),
+            subtitle: NSLocalizedString("Scrobbling from Listening History only works for songs added to your Library.", comment: ""),
+            badgeText: NSLocalizedString("Note", comment: ""),
             badgeLevel: .warning,
             actionTitle: nil,
             action: nil
@@ -380,9 +391,21 @@ struct SetupHelpView: View {
     private var autoMixListeningHistoryNoteRow: some View {
         SettingRow(
             icon: "shuffle.circle",
-            title: "AutoMix",
-            subtitle: "Scrobbling from Listening History may be affected when AutoMix is on.",
-            badgeText: "Note",
+            title: NSLocalizedString("AutoMix", comment: ""),
+            subtitle: NSLocalizedString("Scrobbling from Listening History may be affected when AutoMix is on.", comment: ""),
+            badgeText: NSLocalizedString("Note", comment: ""),
+            badgeLevel: .warning,
+            actionTitle: nil,
+            action: nil
+        )
+    }
+
+    private var scrobblingIssuesNoteRow: some View {
+        SettingRow(
+            icon: "exclamationmark.circle",
+            title: NSLocalizedString("Issues Scrobbling?", comment: ""),
+            subtitle: NSLocalizedString("Try signing out of Last.fm and signing in again.", comment: ""),
+            badgeText: NSLocalizedString("Note", comment: ""),
             badgeLevel: .warning,
             actionTitle: nil,
             action: nil
@@ -413,28 +436,28 @@ struct SetupHelpView: View {
     private func badge(for status: MPMediaLibraryAuthorizationStatus) -> (String, StatusLevel) {
         switch status {
         case .authorized:
-            return ("On", .good)
+            return (NSLocalizedString("On", comment: ""), .good)
         case .notDetermined:
-            return ("Not Set", .warning)
+            return (NSLocalizedString("Not Set", comment: ""), .warning)
         case .denied:
-            return ("Off", .bad)
+            return (NSLocalizedString("Off", comment: ""), .bad)
         case .restricted:
-            return ("Restricted", .bad)
+            return (NSLocalizedString("Restricted", comment: ""), .bad)
         @unknown default:
-            return ("Unknown", .warning)
+            return (NSLocalizedString("Unknown", comment: ""), .warning)
         }
     }
 
     private func badge(for status: UIBackgroundRefreshStatus) -> (String, StatusLevel) {
         switch status {
         case .available:
-            return ("On", .good)
+            return (NSLocalizedString("On", comment: ""), .good)
         case .denied:
-            return ("Off", .bad)
+            return (NSLocalizedString("Off", comment: ""), .bad)
         case .restricted:
-            return ("Restricted", .bad)
+            return (NSLocalizedString("Restricted", comment: ""), .bad)
         @unknown default:
-            return ("Unknown", .warning)
+            return (NSLocalizedString("Unknown", comment: ""), .warning)
         }
     }
 

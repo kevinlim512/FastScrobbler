@@ -69,6 +69,21 @@ final class ScrobbleLogStore: ObservableObject {
         })
     }
 
+    func containsPlaybackHistoryMatch(track: Track, playedAt: Date, endTimestampToleranceSeconds: Int) -> Bool {
+        let playedAtTimestamp = Int(playedAt.timeIntervalSince1970.rounded(.down))
+        let tol = max(0, endTimestampToleranceSeconds)
+
+        return entries.contains(where: { entry in
+            guard entry.track.dedupeKey == track.dedupeKey else { return false }
+            guard let durationSeconds = playbackDurationSeconds(for: entry.track, fallbackTrack: track) else {
+                return abs(entry.startTimestamp - playedAtTimestamp) <= tol
+            }
+
+            let expectedEndTimestamp = entry.startTimestamp + durationSeconds
+            return abs(expectedEndTimestamp - playedAtTimestamp) <= tol
+        })
+    }
+
     private func load() {
         let fm = FileManager.default
         let legacyURL = legacyFileURL()
@@ -135,6 +150,15 @@ final class ScrobbleLogStore: ObservableObject {
         } catch {
             logger.warning("failed to persist scrobble log: \(error.localizedDescription, privacy: .public)")
         }
+    }
+
+    private func playbackDurationSeconds(for storedTrack: Track, fallbackTrack: Track) -> Int? {
+        let candidates = [storedTrack.durationSeconds, fallbackTrack.durationSeconds]
+        for candidate in candidates {
+            guard let candidate, candidate > 0 else { continue }
+            return Int(candidate.rounded(.down))
+        }
+        return nil
     }
 
     private func fileURL() -> URL {

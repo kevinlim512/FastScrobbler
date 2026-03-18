@@ -1,0 +1,8 @@
+/* Bundle display name */
+"CFBundleDisplayName" = "FastScrobbler";
+
+/* Bundle name */
+"CFBundleName" = "FastScrobbler";
+
+/* Privacy - Media Library Usage Description */
+"NSAppleMusicUsageDescription" = "此应用需要访问你的媒体资料库，以读取 Apple Music 当前播放歌曲的元数据。";

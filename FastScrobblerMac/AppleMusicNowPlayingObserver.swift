@@ -11,9 +11,9 @@ final class AppleMusicNowPlayingObserver: ObservableObject {
         var errorDescription: String? {
             switch self {
             case .musicAutomationDenied:
-                return "Permission is required to control the Music app and read now-playing metadata."
+                return NSLocalizedString("Permission is required to control the Music app and read now-playing metadata.", comment: "")
             case .noNowPlayingItem:
-                return "No now-playing item found."
+                return NSLocalizedString("No now-playing item found.", comment: "")
             }
         }
     }
@@ -91,6 +91,7 @@ final class AppleMusicNowPlayingObserver: ObservableObject {
             playbackState = snapshot.playbackState
             playbackTimeSeconds = snapshot.playbackTimeSeconds
             track = snapshot.track
+            isNowPlayingLovedInAppleMusic = snapshot.isTrackFavorited
         } catch let error as AppleScriptError {
             if error.number == -1743 {
                 // Not authorized to send Apple Events.
@@ -98,6 +99,7 @@ final class AppleMusicNowPlayingObserver: ObservableObject {
                 track = nil
                 playbackState = .stopped
                 playbackTimeSeconds = 0
+                isNowPlayingLovedInAppleMusic = nil
                 return
             }
             if error.number == -600 {
@@ -106,17 +108,20 @@ final class AppleMusicNowPlayingObserver: ObservableObject {
                 track = nil
                 playbackState = .stopped
                 playbackTimeSeconds = 0
+                isNowPlayingLovedInAppleMusic = nil
                 return
             }
             logger.debug("AppleScript error: \(error.message, privacy: .public) (\(error.number, privacy: .public))")
             track = nil
             playbackState = .stopped
             playbackTimeSeconds = 0
+            isNowPlayingLovedInAppleMusic = nil
         } catch {
             logger.debug("Music snapshot error: \(error.localizedDescription, privacy: .public)")
             track = nil
             playbackState = .stopped
             playbackTimeSeconds = 0
+            isNowPlayingLovedInAppleMusic = nil
         }
     }
 
@@ -124,6 +129,7 @@ final class AppleMusicNowPlayingObserver: ObservableObject {
         var playbackState: MPMusicPlaybackState
         var playbackTimeSeconds: TimeInterval
         var track: Track?
+        var isTrackFavorited: Bool?
     }
 
     private struct AppleScriptError: Error, Sendable {
@@ -151,6 +157,8 @@ final class AppleMusicNowPlayingObserver: ObservableObject {
             set aa to ""
             set d to 0
             set streamTitle to ""
+            set fav to ""
+            set pid to ""
 
             try
                 set t to current track
@@ -169,6 +177,12 @@ final class AppleMusicNowPlayingObserver: ObservableObject {
                 try
                     set d to duration of t
                 end try
+                try
+                    set fav to (favorited of t) as string
+                end try
+                try
+                    set pid to (persistent ID of t) as string
+                end try
             end try
 
             try
@@ -177,7 +191,7 @@ final class AppleMusicNowPlayingObserver: ObservableObject {
                 set streamTitle to ""
             end try
 
-            return ps & sep & a & sep & n & sep & al & sep & d & sep & pos & sep & aa & sep & streamTitle
+            return ps & sep & a & sep & n & sep & al & sep & d & sep & pos & sep & aa & sep & streamTitle & sep & fav & sep & pid
         end tell
         """#
 
@@ -199,6 +213,8 @@ final class AppleMusicNowPlayingObserver: ObservableObject {
         let position = parts.count > 5 ? TimeInterval(parts[5]) ?? 0 : 0
         let albumArtist = parts.count > 6 ? parts[6] : ""
         let streamTitle = parts.count > 7 ? parts[7] : ""
+        let isFavorited = parts.count > 8 ? parseAppleScriptBool(parts[8]) : nil
+        let persistentID = parts.count > 9 ? parsePersistentID(parts[9]) : nil
 
         var resolvedArtist = artist
         var resolvedTitle = title
@@ -233,11 +249,16 @@ final class AppleMusicNowPlayingObserver: ObservableObject {
                 album: resolvedAlbum.isEmpty ? nil : resolvedAlbum,
                 albumArtist: albumArtist.isEmpty ? nil : albumArtist,
                 durationSeconds: duration > 0 ? duration : nil,
-                persistentID: 0
+                persistentID: persistentID
             )
         }
 
-        return MusicSnapshot(playbackState: playbackState, playbackTimeSeconds: max(0, position), track: track)
+        return MusicSnapshot(
+            playbackState: playbackState,
+            playbackTimeSeconds: max(0, position),
+            track: track,
+            isTrackFavorited: track == nil ? nil : isFavorited
+        )
     }
 
     nonisolated private static func readMusicSnapshotAsync() async throws -> MusicSnapshot {
@@ -307,5 +328,22 @@ final class AppleMusicNowPlayingObserver: ObservableObject {
         }
 
         return nil
+    }
+
+    nonisolated private static func parseAppleScriptBool(_ value: String) -> Bool? {
+        switch value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+        case "true":
+            return true
+        case "false":
+            return false
+        default:
+            return nil
+        }
+    }
+
+    nonisolated private static func parsePersistentID(_ value: String) -> UInt64? {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        return UInt64(trimmed, radix: 16)
     }
 }

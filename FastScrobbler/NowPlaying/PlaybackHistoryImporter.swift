@@ -9,6 +9,12 @@ final class PlaybackHistoryImporter {
         static let stateData = "FastScrobbler.PlaybackHistoryImporter.stateData"
     }
 
+    private enum Constants {
+        static let maxImportLookbackDays = 7
+        static let exactDuplicateToleranceSeconds = 10
+        static let playedAtMatchToleranceSeconds = 45
+    }
+
     static let shared = PlaybackHistoryImporter()
 
     private let logger = Logger(subsystem: "FastScrobbler", category: "PlaybackHistoryImporter")
@@ -33,7 +39,8 @@ final class PlaybackHistoryImporter {
         let favoritesIndex = AppleMusicFavorites.buildIndex()
         let preventDuplicates = ProSettings.preventDuplicateScrobblesEnabled()
         let allowAllDevicesListeningHistory = ProSettings.scrobbleListeningHistoryFromAllDevicesEnabled()
-        let dedupeToleranceSeconds = preventDuplicates ? 10 : 0
+        let dedupeToleranceSeconds = preventDuplicates ? Constants.exactDuplicateToleranceSeconds : 0
+        let playedAtMatchToleranceSeconds = preventDuplicates ? Constants.playedAtMatchToleranceSeconds : 0
 
         var state = loadState()
         if state.lastImportAt == nil {
@@ -44,9 +51,11 @@ final class PlaybackHistoryImporter {
         let priorLastImportAt = state.lastImportAt
         let cutoff = state.lastImportAt ?? Date(timeIntervalSinceNow: -24 * 60 * 60)
         let fetchCutoff: Date = {
-            guard allowAllDevicesListeningHistory else { return cutoff }
-            let lookback = Date(timeIntervalSinceNow: -7 * 24 * 60 * 60)
-            return min(cutoff, lookback)
+            // Keep listening-history scans bounded even if the import cursor is stale.
+            // This avoids re-walking a large library just to re-check older plays that are
+            // very likely already scrobbled.
+            let lookback = Date(timeIntervalSinceNow: -Double(Constants.maxImportLookbackDays) * 24 * 60 * 60)
+            return max(cutoff, lookback)
         }()
 
         let candidates = fetchCandidatesPlayed(after: fetchCutoff)
@@ -157,9 +166,32 @@ final class PlaybackHistoryImporter {
                     return Int(inferredPlayedAt.timeIntervalSince1970.rounded(.down))
                 }()
 
+                let backlogHasExactDuplicate = await backlog.containsSimilar(
+                    track: scrobbleTrack,
+                    around: startTimestamp,
+                    toleranceSeconds: dedupeToleranceSeconds
+                )
+                let backlogHasPlaybackHistoryMatch = await backlog.containsPlaybackHistoryMatch(
+                    track: scrobbleTrack,
+                    playedAt: inferredPlayedAt,
+                    endTimestampToleranceSeconds: playedAtMatchToleranceSeconds
+                )
+                let logHasExactDuplicate = scrobbleLog.containsSimilar(
+                    track: scrobbleTrack,
+                    around: startTimestamp,
+                    toleranceSeconds: dedupeToleranceSeconds
+                )
+                let logHasPlaybackHistoryMatch = scrobbleLog.containsPlaybackHistoryMatch(
+                    track: scrobbleTrack,
+                    playedAt: inferredPlayedAt,
+                    endTimestampToleranceSeconds: playedAtMatchToleranceSeconds
+                )
+
                 let isDuplicate =
-                    await backlog.containsSimilar(track: scrobbleTrack, around: startTimestamp, toleranceSeconds: dedupeToleranceSeconds) ||
-                    scrobbleLog.containsSimilar(track: scrobbleTrack, around: startTimestamp, toleranceSeconds: dedupeToleranceSeconds)
+                    backlogHasExactDuplicate ||
+                    backlogHasPlaybackHistoryMatch ||
+                    logHasExactDuplicate ||
+                    logHasPlaybackHistoryMatch
 
                 if !isDuplicate {
                     await backlog.enqueue(

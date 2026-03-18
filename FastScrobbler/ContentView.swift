@@ -57,20 +57,20 @@ struct ContentView: View {
 	            refreshMediaLibraryStatusIfNeeded()
 	            presentSetupIfNeeded()
 	        }
-	        .onChange(of: scenePhase) { phase in
-	            guard phase == .active else { return }
-	            refreshMediaLibraryStatusIfNeeded()
-	            presentSetupIfNeeded()
-	            if hasSeenSetup {
-	                Task { @MainActor in
+        .onValueChange(of: scenePhase) { phase in
+            guard phase == .active else { return }
+            refreshMediaLibraryStatusIfNeeded()
+            presentSetupIfNeeded()
+            if hasSeenSetup {
+                Task { @MainActor in
 	                    await AppModel.shared.startIfNeeded()
 	                }
 	            }
 	        }
-	        .onChange(of: observer.authorizationStatus) { _ in
-	            refreshMediaLibraryStatusIfNeeded()
-	            presentSetupIfNeeded()
-	        }
+        .onValueChange(of: observer.authorizationStatus) { _ in
+            refreshMediaLibraryStatusIfNeeded()
+            presentSetupIfNeeded()
+        }
 #if os(macOS)
         .overlay {
             macModalOverlay
@@ -264,7 +264,13 @@ struct ContentView: View {
                     Text(album).foregroundColor(.secondary)
                 }
                 if let d = t.durationSeconds {
-                    Text("Duration: \(Int(d))s | Playback: \(Int(observer.playbackTimeSeconds))s")
+                    Text(
+                        String.localizedStringWithFormat(
+                            NSLocalizedString("Duration: %@s | Playback: %@s", comment: ""),
+                            String(Int(d)),
+                            String(Int(observer.playbackTimeSeconds))
+                        )
+                    )
                         .font(.footnote)
                         .foregroundColor(.secondary)
                 }
@@ -313,7 +319,7 @@ struct ContentView: View {
                 } label: {
                     HStack(spacing: 8) {
                         Image(systemName: engine.isUserPaused ? "play.fill" : "pause.fill")
-                        Text(engine.isUserPaused ? "Resume" : "Pause")
+                        Text(engine.isUserPaused ? NSLocalizedString("Resume", comment: "") : NSLocalizedString("Pause", comment: ""))
                     }
                     .font(.body.weight(.bold))
                     .frame(maxWidth: .infinity, minHeight: actionButtonHeight)
@@ -343,6 +349,8 @@ struct ContentView: View {
                             Text("Scrobble Now")
                                 .multilineTextAlignment(.center)
                                 .lineLimit(2)
+                                .minimumScaleFactor(0.6)
+                                .allowsTightening(true)
                         }
                         .font(.body.weight(.bold))
                         .frame(maxWidth: .infinity, minHeight: actionButtonHeight, alignment: .center)
@@ -564,9 +572,9 @@ struct ContentView: View {
     private func sourceLabel(_ source: ScrobbleLogStore.Source) -> String {
         switch source {
         case .live: return ""
-        case .backlog: return "Backlog"
-        case .playbackHistory: return "Listening History"
-        case .recentlyPlayed: return "Recently Played"
+        case .backlog: return NSLocalizedString("Backlog", comment: "")
+        case .playbackHistory: return NSLocalizedString("Listening History", comment: "")
+        case .recentlyPlayed: return NSLocalizedString("Recently Played", comment: "")
         }
     }
 
@@ -583,13 +591,13 @@ struct ContentView: View {
 
     private func playbackStateText(_ s: MPMusicPlaybackState) -> String {
         switch s {
-        case .stopped: return "stopped"
-        case .playing: return "playing"
-        case .paused: return "paused"
-        case .interrupted: return "interrupted"
-        case .seekingForward: return "seeking forward"
-        case .seekingBackward: return "seeking backward"
-        @unknown default: return "unknown"
+        case .stopped: return NSLocalizedString("stopped", comment: "")
+        case .playing: return NSLocalizedString("playing", comment: "")
+        case .paused: return NSLocalizedString("paused", comment: "")
+        case .interrupted: return NSLocalizedString("interrupted", comment: "")
+        case .seekingForward: return NSLocalizedString("seeking forward", comment: "")
+        case .seekingBackward: return NSLocalizedString("seeking backward", comment: "")
+        @unknown default: return NSLocalizedString("unknown", comment: "")
         }
     }
 
@@ -597,12 +605,18 @@ struct ContentView: View {
         let delta = max(0, now.timeIntervalSince(date))
         let totalMinutes = Int(delta / 60)
         if totalMinutes < 60 {
-            return "\(totalMinutes)m ago"
+            return String.localizedStringWithFormat(NSLocalizedString("%lldm ago", comment: ""), Int64(totalMinutes))
         }
         let hours = totalMinutes / 60
         let minutes = totalMinutes % 60
-        if minutes == 0 { return "\(hours)h ago" }
-        return "\(hours)h \(minutes)m ago"
+        if minutes == 0 {
+            return String.localizedStringWithFormat(NSLocalizedString("%lldh ago", comment: ""), Int64(hours))
+        }
+        return String.localizedStringWithFormat(
+            NSLocalizedString("%1$lldh %2$lldm ago", comment: ""),
+            Int64(hours),
+            Int64(minutes)
+        )
     }
 
     private func engineStatusText(_ status: String) -> Text {
@@ -614,13 +628,35 @@ struct ContentView: View {
         for (idx, part) in parts.enumerated() {
             if idx > 0 { text = text + Text(" | ") }
             let segment = Text(part)
-            if part == "now playing sent" || part == "scrobbled" {
+            if part == NSLocalizedString("now playing sent", comment: "") || part == NSLocalizedString("scrobbled", comment: "") {
                 text = text + segment.fontWeight(.bold)
             } else {
                 text = text + segment
             }
         }
         return text
+    }
+}
+
+extension View {
+    @ViewBuilder
+    func onValueChange<Value: Equatable>(
+        of value: Value,
+        perform action: @escaping (_ newValue: Value) -> Void
+    ) -> some View {
+#if os(iOS)
+        onChange(of: value) { _, newValue in
+            action(newValue)
+        }
+#elseif os(macOS)
+        if #available(macOS 14.0, *) {
+            onChange(of: value) { _, newValue in
+                action(newValue)
+            }
+        } else {
+            onChange(of: value, perform: action)
+        }
+#endif
     }
 }
 

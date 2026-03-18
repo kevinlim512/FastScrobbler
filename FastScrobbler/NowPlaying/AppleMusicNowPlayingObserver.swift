@@ -10,9 +10,9 @@ final class AppleMusicNowPlayingObserver: ObservableObject {
         var errorDescription: String? {
             switch self {
             case .mediaLibraryDenied:
-                return "Media Library access is required to read Apple Music now-playing metadata."
+                return NSLocalizedString("Media Library access is required to read Apple Music now-playing metadata.", comment: "")
             case .noNowPlayingItem:
-                return "No now-playing item found."
+                return NSLocalizedString("No now-playing item found.", comment: "")
             }
         }
     }

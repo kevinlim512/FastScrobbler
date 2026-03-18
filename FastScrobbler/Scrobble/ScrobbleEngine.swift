@@ -24,7 +24,7 @@ final class ScrobbleEngine: ObservableObject {
         var lastScrobbleAttemptAt: Date?
     }
 
-    @Published private(set) var statusText: String = "Idle"
+    @Published private(set) var statusText: String = NSLocalizedString("Idle", comment: "")
     @Published private(set) var isRunning: Bool = false
     @Published private(set) var isUserPaused: Bool = UserDefaults.standard.bool(forKey: ActivityKeys.userPaused)
 
@@ -57,7 +57,7 @@ final class ScrobbleEngine: ObservableObject {
             isRunning = false
             tickTimer?.invalidate()
             tickTimer = nil
-            statusText = "Paused"
+            statusText = NSLocalizedString("Paused", comment: "")
             Task { @MainActor in
                 await LiveActivityManager.shared.update(
                     status: statusText,
@@ -79,10 +79,10 @@ final class ScrobbleEngine: ObservableObject {
 
         isRunning = true
         ensureTickTimer()
-        statusText = "Running"
+        statusText = NSLocalizedString("Running", comment: "")
         Task { @MainActor in
             await LiveActivityManager.shared.update(
-                status: "Running",
+                status: NSLocalizedString("Running", comment: ""),
                 track: observer.track,
                 lastEventAt: Date(),
                 isActivelyScrobbling: true,
@@ -99,7 +99,7 @@ final class ScrobbleEngine: ObservableObject {
         tickTimer = nil
 
         guard isRunning else { return }
-        statusText = "Backgrounded (syncs when iOS allows)"
+        statusText = NSLocalizedString("Backgrounded (syncs when iOS allows)", comment: "")
         Task { @MainActor in
             await LiveActivityManager.shared.update(
                 status: statusText,
@@ -115,7 +115,7 @@ final class ScrobbleEngine: ObservableObject {
         isRunning = false
         tickTimer?.invalidate()
         tickTimer = nil
-        statusText = "Stopped"
+        statusText = NSLocalizedString("Stopped", comment: "")
         Task { @MainActor in
             await LiveActivityManager.shared.stop()
         }
@@ -132,7 +132,7 @@ final class ScrobbleEngine: ObservableObject {
 
     func tickAsync() async {
         guard !isUserPaused else {
-            statusText = "Paused"
+            statusText = NSLocalizedString("Paused", comment: "")
             await LiveActivityManager.shared.update(
                 status: statusText,
                 track: observer.track,
@@ -144,7 +144,7 @@ final class ScrobbleEngine: ObservableObject {
         }
 
         guard let sessionKey = auth.sessionKey else {
-            statusText = "Connect Last.fm to scrobble."
+            statusText = NSLocalizedString("Connect Last.fm to scrobble.", comment: "")
             await LiveActivityManager.shared.update(
                 status: statusText,
                 track: observer.track,
@@ -161,7 +161,7 @@ final class ScrobbleEngine: ObservableObject {
 
         guard let current = observer.track else {
             await finalizeIfNeeded(sessionKey: sessionKey, transitionAt: now)
-            statusText = "No now-playing track."
+            statusText = NSLocalizedString("No now-playing track.", comment: "")
             await LiveActivityManager.shared.update(
                 status: statusText,
                 track: nil,
@@ -347,7 +347,7 @@ final class ScrobbleEngine: ObservableObject {
            s.track.dedupeKey == current.dedupeKey,
            s.hasScrobbled
         {
-            statusText = "Already scrobbled."
+            statusText = NSLocalizedString("Already scrobbled.", comment: "")
             await LiveActivityManager.shared.update(
                 status: statusText,
                 track: current,
@@ -357,7 +357,7 @@ final class ScrobbleEngine: ObservableObject {
             return
         }
 
-        statusText = "Scrobbling…"
+        statusText = NSLocalizedString("Scrobbling…", comment: "")
         await LiveActivityManager.shared.update(
             status: statusText,
             track: current,
@@ -452,9 +452,12 @@ final class ScrobbleEngine: ObservableObject {
                 source: .live,
                 lovedOnLastFM: s.hasLovedOnThisSession
             )
+#if os(iOS)
+            AppReviewManager.shared.recordSuccessfulScrobble()
+#endif
 
             lastLiveActivityEventAt = Date()
-            statusText = s.hasLovedOnThisSession ? "Loved on Last.fm" : "Scrobbled"
+            statusText = s.hasLovedOnThisSession ? NSLocalizedString("Loved on Last.fm", comment: "") : NSLocalizedString("Scrobbled", comment: "")
             await LiveActivityManager.shared.update(
                 status: statusText,
                 track: current,
@@ -477,7 +480,7 @@ final class ScrobbleEngine: ObservableObject {
             }
             BackgroundTaskManager.shared.scheduleAppRefresh()
             BackgroundTaskManager.shared.scheduleProcessingIfNeeded()
-            statusText = "Failed to scrobble now; queued for retry."
+            statusText = NSLocalizedString("Failed to scrobble now; queued for retry.", comment: "")
             await LiveActivityManager.shared.update(
                 status: statusText,
                 track: current,
@@ -489,10 +492,13 @@ final class ScrobbleEngine: ObservableObject {
 
     private func renderStatus(_ s: PlaybackSession) -> String {
         let played = Int(s.accumulatedPlaySeconds.rounded())
-        var bits = ["\(s.track.artist) - \(s.track.title)", "played \(played)s"]
-        if s.hasSentNowPlaying { bits.append("now playing sent") }
-        if s.hasScrobbled { bits.append("scrobbled") }
-        if s.hasLovedOnThisSession { bits.append("loved") }
+        var bits = [
+            "\(s.track.artist) - \(s.track.title)",
+            String.localizedStringWithFormat(NSLocalizedString("played %llds", comment: ""), Int64(played)),
+        ]
+        if s.hasSentNowPlaying { bits.append(NSLocalizedString("now playing sent", comment: "")) }
+        if s.hasScrobbled { bits.append(NSLocalizedString("scrobbled", comment: "")) }
+        if s.hasLovedOnThisSession { bits.append(NSLocalizedString("loved", comment: "")) }
         return bits.joined(separator: " | ")
     }
 
@@ -650,6 +656,9 @@ final class ScrobbleEngine: ObservableObject {
                 source: .live,
                 lovedOnLastFM: s.hasLovedOnThisSession
             )
+#if os(iOS)
+            AppReviewManager.shared.recordSuccessfulScrobble()
+#endif
         } catch {
             logger.warning("scrobble failed: \(error.localizedDescription, privacy: .public)")
             let ts = Int(s.startedAt.timeIntervalSince1970.rounded(.down))
@@ -719,7 +728,7 @@ final class ScrobbleEngine: ObservableObject {
             isRunning = false
             tickTimer?.invalidate()
             tickTimer = nil
-            statusText = "Paused"
+            statusText = NSLocalizedString("Paused", comment: "")
             Task { @MainActor in
                 await LiveActivityManager.shared.update(
                     status: statusText,

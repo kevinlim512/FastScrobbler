@@ -104,6 +104,22 @@ actor ScrobbleBacklog {
         })
     }
 
+    func containsPlaybackHistoryMatch(track: Track, playedAt: Date, endTimestampToleranceSeconds: Int) async -> Bool {
+        await loadIfNeeded()
+        let playedAtTimestamp = Int(playedAt.timeIntervalSince1970.rounded(.down))
+        let tol = max(0, endTimestampToleranceSeconds)
+
+        return items.contains(where: { item in
+            guard item.track.dedupeKey == track.dedupeKey else { return false }
+            guard let durationSeconds = playbackDurationSeconds(for: item.track, fallbackTrack: track) else {
+                return abs(item.startTimestamp - playedAtTimestamp) <= tol
+            }
+
+            let expectedEndTimestamp = item.startTimestamp + durationSeconds
+            return abs(expectedEndTimestamp - playedAtTimestamp) <= tol
+        })
+    }
+
     func flush(sessionKey: String, maxItems: Int = 25) async -> FlushResult {
         await flush(sessionKey: sessionKey, maxItems: maxItems, ignoreBackoff: false)
     }
@@ -238,6 +254,15 @@ actor ScrobbleBacklog {
         } catch {
             logger.warning("failed to persist backlog: \(error.localizedDescription, privacy: .public)")
         }
+    }
+
+    private func playbackDurationSeconds(for storedTrack: Track, fallbackTrack: Track) -> Int? {
+        let candidates = [storedTrack.durationSeconds, fallbackTrack.durationSeconds]
+        for candidate in candidates {
+            guard let candidate, candidate > 0 else { continue }
+            return Int(candidate.rounded(.down))
+        }
+        return nil
     }
 
     private func fileURL() -> URL {

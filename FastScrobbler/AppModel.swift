@@ -1,4 +1,8 @@
 import Foundation
+#if os(iOS)
+import StoreKit
+import UIKit
+#endif
 
 @MainActor
 final class AppModel {
@@ -52,7 +56,7 @@ final class AppModel {
 
         if auth.sessionKey == nil {
             await LiveActivityManager.shared.update(
-                status: "Connect Last.fm to scrobble.",
+                status: NSLocalizedString("Connect Last.fm to scrobble.", comment: ""),
                 track: observer.track,
                 lastEventAt: Date(),
                 isActivelyScrobbling: false,
@@ -112,6 +116,9 @@ final class AppModel {
                     source: scrobbleLogSource(for: item.origin),
                     lovedOnLastFM: item.lovedOnLastFM
                 )
+#if os(iOS)
+                AppReviewManager.shared.recordSuccessfulScrobble()
+#endif
             }
             if result.remainingCount > 0 || imported > 0 {
                 BackgroundTaskManager.shared.scheduleProcessingIfNeeded()
@@ -159,6 +166,9 @@ final class AppModel {
                 source: scrobbleLogSource(for: item.origin),
                 lovedOnLastFM: item.lovedOnLastFM
             )
+#if os(iOS)
+            AppReviewManager.shared.recordSuccessfulScrobble()
+#endif
         }
     }
 
@@ -173,3 +183,72 @@ final class AppModel {
         }
     }
 }
+
+#if os(iOS)
+@MainActor
+final class AppReviewManager {
+    static let shared = AppReviewManager()
+
+    private enum Keys {
+        static let firstLaunchAt = "FastScrobbler.Review.firstLaunchAt"
+        static let lastCountedSessionAt = "FastScrobbler.Review.lastCountedSessionAt"
+        static let engagedSessionCount = "FastScrobbler.Review.engagedSessionCount"
+        static let successfulScrobbleCount = "FastScrobbler.Review.successfulScrobbleCount"
+        static let lastPromptedVersion = "FastScrobbler.Review.lastPromptedVersion"
+        static let hasSeenSetup = "FastScrobbler.Setup.hasSeen"
+    }
+
+    private let defaults = UserDefaults.standard
+    private let minimumDaysSinceFirstLaunch: TimeInterval = 7 * 24 * 60 * 60
+    private let minimumSessionSpacing: TimeInterval = 4 * 60 * 60
+    private let minimumEngagedSessions = 4
+    private let minimumSuccessfulScrobbles = 10
+
+    static let writeReviewURL = URL(string: "https://apps.apple.com/app/id6759501541?action=write-review")!
+
+    private init() {
+        if defaults.object(forKey: Keys.firstLaunchAt) == nil {
+            defaults.set(Date(), forKey: Keys.firstLaunchAt)
+        }
+    }
+
+    func recordAppDidBecomeActive(in windowScene: UIWindowScene) {
+        if defaults.object(forKey: Keys.firstLaunchAt) == nil {
+            defaults.set(Date(), forKey: Keys.firstLaunchAt)
+        }
+
+        guard defaults.bool(forKey: Keys.hasSeenSetup) else { return }
+
+        let now = Date()
+        if let lastCountedSessionAt = defaults.object(forKey: Keys.lastCountedSessionAt) as? Date {
+            if now.timeIntervalSince(lastCountedSessionAt) >= minimumSessionSpacing {
+                defaults.set(now, forKey: Keys.lastCountedSessionAt)
+                defaults.set(defaults.integer(forKey: Keys.engagedSessionCount) + 1, forKey: Keys.engagedSessionCount)
+            }
+        } else {
+            defaults.set(now, forKey: Keys.lastCountedSessionAt)
+            defaults.set(1, forKey: Keys.engagedSessionCount)
+        }
+
+        requestReviewIfEligible(in: windowScene, now: now)
+    }
+
+    func recordSuccessfulScrobble() {
+        defaults.set(defaults.integer(forKey: Keys.successfulScrobbleCount) + 1, forKey: Keys.successfulScrobbleCount)
+    }
+
+    private func requestReviewIfEligible(in windowScene: UIWindowScene, now: Date) {
+        guard let firstLaunchAt = defaults.object(forKey: Keys.firstLaunchAt) as? Date else { return }
+        guard now.timeIntervalSince(firstLaunchAt) >= minimumDaysSinceFirstLaunch else { return }
+        guard defaults.integer(forKey: Keys.engagedSessionCount) >= minimumEngagedSessions else { return }
+        guard defaults.integer(forKey: Keys.successfulScrobbleCount) >= minimumSuccessfulScrobbles else { return }
+
+        let currentVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
+        guard let currentVersion, !currentVersion.isEmpty else { return }
+        guard defaults.string(forKey: Keys.lastPromptedVersion) != currentVersion else { return }
+
+        defaults.set(currentVersion, forKey: Keys.lastPromptedVersion)
+        SKStoreReviewController.requestReview(in: windowScene)
+    }
+}
+#endif

@@ -39,7 +39,7 @@ https://apps.apple.com/sg/app/fastscrobbler-for-last-fm/id6759501541
 - **Pause/Resume scrobbling**: stops all sending while paused.
 - **Offline / failure tolerant**: queues scrobbles locally and retries with exponential-ish backoff.
 - **Listening History import (iOS)**: scans the device’s Apple Music “Playback History” playlist and imports missed plays (best-effort; this device only).
-- **Apple Music favorites → Last.fm love (optional)**: when enabled, favoriting a song in Apple Music can trigger `track.love` after scrobbling.
+- **Apple Music favourites → Last.fm love (optional)**: when enabled, favouriting a song in Apple Music can trigger `track.love` after scrobbling.
 - **Scrobble metadata controls**:
   - Use **Album Artist** as scrobble artist (when available).
   - Strip “`- EP`” / “`- Single`” suffixes from album names.
@@ -50,6 +50,18 @@ https://apps.apple.com/sg/app/fastscrobbler-for-last-fm/id6759501541
 - **Control Center buttons (iOS 18+)**: Control Widgets that run the same actions without opening the app.
 - **macOS menu bar UI**: no dock icon/windows; click the menu bar icon to open the popover UI.
 - **Start at login (macOS)**: optional toggle in Settings.
+
+## Language Support
+
+FastScrobbler currently supports:
+
+- English
+- Chinese (Simplified)
+- French
+- Japanese
+- Spanish
+
+These localisations are included across the iOS app, macOS app, and Control Center widgets.
 
 ## Requirements
 

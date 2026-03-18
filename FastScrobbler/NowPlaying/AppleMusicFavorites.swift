@@ -52,8 +52,8 @@ enum AppleMusicFavorites {
     }
 
     static func isFavorited(_ item: MPMediaItem, index: Index?) -> Bool {
-        // Legacy / best-effort: some library items expose "favorite-ish" state via star rating.
-        if item.rating != 0 { return true }
+        // Only trust the Favorites playlist index. Library rating metadata can be non-zero for tracks
+        // that are merely saved in Apple Music, which causes false Last.fm loves.
         return index?.contains(item) == true
     }
 }

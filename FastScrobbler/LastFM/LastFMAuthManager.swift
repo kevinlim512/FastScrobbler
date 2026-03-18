@@ -15,9 +15,9 @@ final class LastFMAuthManager: NSObject, ObservableObject {
 
         var errorDescription: String? {
             switch self {
-            case .missingCallbackScheme: return "Missing callback URL scheme."
-            case .invalidCallbackURL: return "Invalid sign-in callback URL."
-            case .missingTokenInCallback: return "Last.fm callback did not include an auth token."
+            case .missingCallbackScheme: return NSLocalizedString("Missing callback URL scheme.", comment: "")
+            case .invalidCallbackURL: return NSLocalizedString("Invalid sign-in callback URL.", comment: "")
+            case .missingTokenInCallback: return NSLocalizedString("Last.fm callback did not include an auth token.", comment: "")
             }
         }
     }

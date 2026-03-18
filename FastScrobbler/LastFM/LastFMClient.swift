@@ -13,12 +13,12 @@ struct LastFMClient {
 
         var errorDescription: String? {
             switch self {
-            case .missingApiKey: return "Missing Last.fm API key."
-            case .missingApiSecret: return "Missing Last.fm API secret."
-            case .missingSessionKey: return "Not connected to Last.fm (missing session key)."
-            case .invalidBaseURL: return "Invalid Last.fm base URL."
-            case .invalidRequestURL: return "Invalid Last.fm request URL."
-            case .invalidResponse: return "Invalid response from Last.fm."
+            case .missingApiKey: return NSLocalizedString("Missing Last.fm API key.", comment: "")
+            case .missingApiSecret: return NSLocalizedString("Missing Last.fm API secret.", comment: "")
+            case .missingSessionKey: return NSLocalizedString("Not connected to Last.fm (missing session key).", comment: "")
+            case .invalidBaseURL: return NSLocalizedString("Invalid Last.fm base URL.", comment: "")
+            case .invalidRequestURL: return NSLocalizedString("Invalid Last.fm request URL.", comment: "")
+            case .invalidResponse: return NSLocalizedString("Invalid response from Last.fm.", comment: "")
             case .apiError(_, let message): return message
             }
         }
@@ -88,8 +88,7 @@ struct LastFMClient {
             "artist": track.artist,
             "track": track.title,
         ]
-        if let album = track.album, !album.isEmpty { params["album"] = album }
-        if let d = track.durationSeconds, d > 0 { params["duration"] = String(Int(d.rounded())) }
+        applyOptionalTrackMetadata(from: track, to: &params)
         _ = try await signedCall(
             method: "track.updateNowPlaying",
             sessionKey: sessionKey,
@@ -104,8 +103,7 @@ struct LastFMClient {
             "track": track.title,
             "timestamp": String(startTimestamp),
         ]
-        if let album = track.album, !album.isEmpty { params["album"] = album }
-        if let d = track.durationSeconds, d > 0 { params["duration"] = String(Int(d.rounded())) }
+        applyOptionalTrackMetadata(from: track, to: &params)
         _ = try await signedCall(
             method: "track.scrobble",
             sessionKey: sessionKey,
@@ -125,6 +123,25 @@ struct LastFMClient {
             params: params,
             httpMethod: "POST"
         )
+    }
+
+    private func applyOptionalTrackMetadata(from track: Track, to params: inout [String: String]) {
+        if let album = normalized(track.album) {
+            params["album"] = album
+        }
+        if let albumArtist = normalized(track.albumArtist) {
+            params["albumArtist"] = albumArtist
+        }
+        if let durationSeconds = track.durationSeconds, durationSeconds > 0 {
+            params["duration"] = String(Int(durationSeconds.rounded()))
+        }
+    }
+
+    private func normalized(_ value: String?) -> String? {
+        guard let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines), !trimmed.isEmpty else {
+            return nil
+        }
+        return trimmed
     }
 
     private func signedCall(

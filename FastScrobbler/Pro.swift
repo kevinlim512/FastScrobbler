@@ -174,28 +174,28 @@ struct ProUpgradeView: View {
                     VStack(spacing: 12) {
                         ProBenefitCard(
                             systemImage: "heart",
-                            title: "Love favourites on Last.fm",
-                            subtitle: "Favourited tracks in Apple Music are also marked as Loved on Last.fm."
+                            title: NSLocalizedString("Love favourites on Last.fm", comment: ""),
+                            subtitle: NSLocalizedString("Favourited tracks in Apple Music are also marked as Loved on Last.fm.", comment: "")
                         )
                         ProBenefitCard(
                             systemImage: "slider.horizontal.3",
-                            title: "Pick scrobble threshold",
-                            subtitle: "Choose when a track scrobbles: 10%, 25%, 50%, or 75% of the song duration."
+                            title: NSLocalizedString("Pick scrobble threshold", comment: ""),
+                            subtitle: NSLocalizedString("Choose when a track scrobbles: 10%, 25%, 50%, or 75% of the song duration.", comment: "")
                         )
                         ProBenefitCard(
                             systemImage: "person.2",
-                            title: "Clean up scrobble metadata",
-                            subtitle: "Use album artist when scrobbling, and remove “- EP” / “- Single” from album names."
+                            title: NSLocalizedString("Clean up scrobble metadata", comment: ""),
+                            subtitle: NSLocalizedString("Replace song artist with album artist when scrobbling, and remove “- EP” / “- Single” from album names.", comment: "")
                         )
                         ProBenefitCard(
                             systemImage: "clock.arrow.circlepath",
-                            title: "Scrobble Listening History from all devices",
-                            subtitle: "Allow Listening History imports to include plays synced from your other devices."
+                            title: NSLocalizedString("Scrobble Listening History from all devices", comment: ""),
+                            subtitle: NSLocalizedString("Allow Listening History imports to include plays synced from your other devices.", comment: "")
                         )
                         ProBenefitCard(
                             systemImage: "heart.circle",
-                            title: "Support development of the app",
-                            subtitle: "Your upgrade helps support future development of FastScrobbler."
+                            title: NSLocalizedString("Support development of the app", comment: ""),
+                            subtitle: NSLocalizedString("Your upgrade helps support future development of FastScrobbler.", comment: "")
                         )
                     }
 
@@ -258,9 +258,11 @@ struct ProUpgradeView: View {
     private var purchaseSection: some View {
         let priceText = pro.product?.displayPrice
         let purchaseTitle: String = {
-            if pro.isPro { return "Purchased" }
-            if let priceText { return "Upgrade for \(priceText)" }
-            return "Upgrade"
+            if pro.isPro { return NSLocalizedString("Purchased", comment: "") }
+            if let priceText {
+                return String.localizedStringWithFormat(NSLocalizedString("Upgrade for %@", comment: ""), priceText)
+            }
+            return NSLocalizedString("Upgrade", comment: "")
         }()
 
         VStack(spacing: 12) {
@@ -297,7 +299,7 @@ struct ProUpgradeView: View {
             Button {
                 Task { await pro.restorePurchases() }
             } label: {
-                Text(pro.isRestoring ? "Restoring…" : "Restore Purchase")
+                Text(pro.isRestoring ? NSLocalizedString("Restoring…", comment: "") : NSLocalizedString("Restore Purchase", comment: ""))
                     .font(.subheadline.weight(.semibold))
                     .frame(maxWidth: .infinity, minHeight: 46)
             }
@@ -357,11 +359,11 @@ private struct ProThankYouView: View {
                     .padding(.top, 6)
 
                 VStack(spacing: 8) {
-                    Text("Thank you!")
+                    Text(NSLocalizedString("Thank you!", comment: ""))
                         .font(.largeTitle.weight(.bold))
                         .multilineTextAlignment(.center)
 
-                    Text("You’ve unlocked FastScrobbler Pro!\nYour upgrade helps support future development of FastScrobbler.")
+                    Text(NSLocalizedString("You’ve unlocked FastScrobbler Pro!\nYour upgrade helps support future development of FastScrobbler.", comment: ""))
                         .font(.callout)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
@@ -371,7 +373,7 @@ private struct ProThankYouView: View {
                 Button {
                     dismiss()
                 } label: {
-                    Text("Done")
+                    Text(NSLocalizedString("Done", comment: ""))
                         .font(.subheadline.weight(.semibold))
                         .frame(maxWidth: 260, minHeight: 46)
                 }

@@ -7,6 +7,12 @@ import ServiceManagement
 import SwiftUI
 
 struct SettingsView: View {
+    private static let repositoryURL = URL(string: "https://github.com/kevinlim512/FastScrobbler")!
+    private static let writeReviewURL = URL(string: "https://apps.apple.com/app/id6759501541?action=write-review")!
+#if os(macOS)
+    private static let macSettingsButtonMinHeight: CGFloat = 34
+#endif
+
     @AppStorage(LiveActivityManager.enabledDefaultsKey) private var liveActivityEnabled = false
     @AppStorage(ProSettings.Keys.loveOnFavoriteEnabled, store: AppGroup.userDefaults) private var loveOnFavoriteEnabled = false
     @AppStorage(ProSettings.Keys.scrobbleThresholdIndex, store: AppGroup.userDefaults) private var scrobbleThresholdIndex = ProSettings.defaultScrobbleThresholdIndex
@@ -18,6 +24,9 @@ struct SettingsView: View {
     @EnvironmentObject private var auth: LastFMAuthManager
     @EnvironmentObject private var engine: ScrobbleEngine
     @EnvironmentObject private var pro: ProPurchaseManager
+#if os(macOS)
+    @EnvironmentObject private var appLanguage: AppLanguageStore
+#endif
     @Environment(\.openURL) private var openURL
     @Environment(\.dismiss) private var dismiss
 
@@ -67,34 +76,36 @@ struct SettingsView: View {
                     macGeneralCard
                     macScrobbleControlsCard
                     macAccountCard
-                    macResetCard
+                    macSupportCard
                 }
                 .padding()
                 .padding(.top, MacFloatingBarLayout.contentTopPadding)
             }
             .background(Color(nsColor: .windowBackgroundColor))
             .overlay(alignment: .topLeading) {
-                MacFloatingCircleButton(
-                    systemImage: "chevron.left",
-                    help: "Back",
-                    accessibilityLabel: "Back",
-                    action: {
-                        if let onBack {
-                            onBack()
-                        } else {
-                            dismiss()
+                if onBack != nil {
+                    MacFloatingCircleButton(
+                        systemImage: "chevron.left",
+                        help: "Back",
+                        accessibilityLabel: "Back",
+                        action: {
+                            if let onBack {
+                                onBack()
+                            } else {
+                                dismiss()
+                            }
                         }
-                    }
-                )
-                .padding(.top, 10)
-                .padding(.leading, 10)
+                    )
+                    .padding(.top, 10)
+                    .padding(.leading, 10)
+                }
             }
 #else
             Form {
 #if os(iOS)
                 Section("Live Activity (Beta)") {
                     Toggle("Show Live Activity (Beta)", isOn: $liveActivityEnabled)
-                        .onChange(of: liveActivityEnabled) { isEnabled in
+                        .onValueChange(of: liveActivityEnabled) { isEnabled in
                             if isEnabled {
                                 LiveActivityManager.shared.startIfPossible()
                             } else {
@@ -137,7 +148,7 @@ struct SettingsView: View {
                     .disabled(!pro.isPro)
                     Toggle(isOn: proLockedBoolBinding($useAlbumArtistForScrobbling, unlockedDefault: false)) {
                         HStack {
-                            Text("Use album artist when scrobbling")
+                            Text("Replace song artist with album artist when scrobbling")
                                 .foregroundStyle(pro.isPro ? .primary : .secondary)
                             Spacer()
                             ProFeatureBadge()
@@ -163,7 +174,7 @@ struct SettingsView: View {
                         Task { await scanListeningHistoryTapped() }
                     } label: {
                         Label(
-                            isScanningListeningHistory ? "Scanning…" : "Scan Listening History",
+                            isScanningListeningHistory ? NSLocalizedString("Scanning…", comment: "") : NSLocalizedString("Scan Listening History", comment: ""),
                             systemImage: "clock.arrow.circlepath"
                         )
                         .foregroundStyle(auth.sessionKey != nil ? .primary : .secondary)
@@ -171,7 +182,14 @@ struct SettingsView: View {
                     .padding(.vertical, 8)
                     .disabled(auth.sessionKey == nil || isScanningListeningHistory)
 
-                    Text("Imports plays from Apple Music Playback History (\(allDevicesEnabled ? "all devices" : "this device only")).")
+                    Text(
+                        String.localizedStringWithFormat(
+                            NSLocalizedString("Imports plays from Apple Music Playback History (%@).", comment: ""),
+                            allDevicesEnabled
+                                ? NSLocalizedString("all devices", comment: "")
+                                : NSLocalizedString("this device only", comment: "")
+                        )
+                    )
                         .font(.footnote)
                         .foregroundStyle(.secondary)
 
@@ -185,6 +203,7 @@ struct SettingsView: View {
                     }
                     .disabled(!pro.isPro)
                 }
+
 #endif
 
                 Section("Account") {
@@ -204,7 +223,7 @@ struct SettingsView: View {
                         HStack {
                             Text("Username")
                             Spacer()
-                            Text(auth.username ?? "Loading…")
+                            Text(auth.username ?? NSLocalizedString("Loading…", comment: ""))
                                 .foregroundColor(.secondary)
                                 .multilineTextAlignment(.trailing)
                                 .textSelection(.enabled)
@@ -232,13 +251,25 @@ struct SettingsView: View {
                         Button {
                             Task { await connectTapped() }
                         } label: {
-                            Label(isSigningInToLastFM ? "Signing In…" : "Sign In", systemImage: "person.crop.circle")
+                            Label(isSigningInToLastFM ? NSLocalizedString("Signing In…", comment: "") : NSLocalizedString("Sign In", comment: ""), systemImage: "person.crop.circle")
                         }
                         .disabled(isSigningInToLastFM)
                     }
                 }
 
                 Section {
+                    Button {
+                        openURL(Self.writeReviewURL)
+                    } label: {
+                        Label("Rate FastScrobbler", systemImage: "star.bubble")
+                    }
+
+                    Button {
+                        openURL(Self.repositoryURL)
+                    } label: {
+                        Label("GitHub", systemImage: "chevron.left.forwardslash.chevron.right")
+                    }
+
                     Button(role: .destructive) {
                         activeAlert = .resetConfirmation
                     } label: {
@@ -299,8 +330,21 @@ struct SettingsView: View {
             Text("General")
                 .font(.title3.weight(.semibold))
 
-            Toggle("Start at login", isOn: $startAtLoginEnabled)
-                .onChange(of: startAtLoginEnabled) { isEnabled in
+            HStack(alignment: .center, spacing: -20) {
+                Text("Language")
+                Picker("Language", selection: $appLanguage.selection) {
+                    ForEach(AppLanguage.allCases) { language in
+                        Text(language.title).tag(language)
+                    }
+                }
+                .pickerStyle(.menu)
+                .labelsHidden()
+                .frame(width: 180)
+            }
+            .fixedSize()
+
+            Toggle("Start at Login", isOn: $startAtLoginEnabled)
+                .onValueChange(of: startAtLoginEnabled) { isEnabled in
                     Task { @MainActor in
                         do {
                             try StartAtLoginManager.setEnabled(isEnabled)
@@ -311,7 +355,11 @@ struct SettingsView: View {
                     }
                 }
 
-            Text(requiresApproval ? "Requires approval in System Settings → Login Items." : "Launches FastScrobbler when you sign in.")
+            Text(
+                requiresApproval
+                    ? NSLocalizedString("Requires approval in System Settings → Login Items.", comment: "")
+                    : NSLocalizedString("Launches FastScrobbler when you sign in.", comment: "")
+            )
                 .font(.footnote)
                 .foregroundStyle(.secondary)
         }
@@ -355,7 +403,7 @@ struct SettingsView: View {
             .disabled(!pro.isPro)
             Toggle(isOn: proLockedBoolBinding($useAlbumArtistForScrobbling, unlockedDefault: false)) {
                 HStack {
-                    Text("Use album artist when scrobbling")
+                    Text("Replace song artist with album artist when scrobbling")
                         .foregroundStyle(pro.isPro ? .primary : .secondary)
                     Spacer()
                     ProFeatureBadge()
@@ -385,7 +433,7 @@ struct SettingsView: View {
                 Text("Account")
                     .font(.title3.weight(.semibold))
                 Spacer()
-                Text(auth.sessionKey != nil ? "Connected" : "Not connected")
+                Text(auth.sessionKey != nil ? NSLocalizedString("Connected", comment: "") : NSLocalizedString("Not connected", comment: ""))
                     .foregroundStyle(auth.sessionKey != nil ? .green : .secondary)
             }
 
@@ -394,7 +442,7 @@ struct SettingsView: View {
                     Text("Username")
                         .foregroundStyle(.secondary)
                     Spacer()
-                    Text(auth.username ?? "Loading…")
+                    Text(auth.username ?? NSLocalizedString("Loading…", comment: ""))
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.trailing)
                         .textSelection(.enabled)
@@ -409,7 +457,7 @@ struct SettingsView: View {
                     }
                 } label: {
                     Label("View Profile", systemImage: "person.circle")
-                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .frame(maxWidth: .infinity, minHeight: Self.macSettingsButtonMinHeight)
                 }
                 .buttonStyle(.bordered)
                 .pillButtonBorder()
@@ -419,8 +467,8 @@ struct SettingsView: View {
                     Button {
                         Task { await connectTapped() }
                     } label: {
-                        Label(isSigningInToLastFM ? "Signing In…" : "Sign In", systemImage: "person.crop.circle")
-                            .frame(maxWidth: .infinity, minHeight: 44)
+                        Label(isSigningInToLastFM ? NSLocalizedString("Signing In…", comment: "") : NSLocalizedString("Sign In", comment: ""), systemImage: "person.crop.circle")
+                            .frame(maxWidth: .infinity, minHeight: Self.macSettingsButtonMinHeight)
                     }
                     .buttonStyle(.bordered)
                     .pillButtonBorder()
@@ -431,12 +479,27 @@ struct SettingsView: View {
                         activeAlert = .logoutConfirmation
                     } label: {
                         Label("Sign Out", systemImage: "power")
-                            .frame(maxWidth: .infinity, minHeight: 44)
+                            .frame(maxWidth: .infinity, minHeight: Self.macSettingsButtonMinHeight)
                     }
                     .buttonStyle(.bordered)
                     .pillButtonBorder()
                     .tint(.red)
                 }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding()
+        .background(.thinMaterial)
+        .cornerRadius(12)
+        .shadow(color: .black.opacity(0.12), radius: 10, x: 0, y: 5)
+    }
+
+    private var macSupportCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            VStack(spacing: 12) {
+                macRateButton
+                macGitHubButton
+                macResetButton
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -478,6 +541,7 @@ struct SettingsView: View {
         scrobbleListeningHistoryFromAllDevicesEnabled = false
 
 #if os(macOS)
+        appLanguage.selection = .system
         Task { @MainActor in
             do {
                 try StartAtLoginManager.setEnabled(false)
@@ -499,9 +563,19 @@ struct SettingsView: View {
 
         let imported = await AppModel.shared.scanListeningHistory()
         if imported > 0 {
-            activeAlert = .listeningHistoryScanResult(message: "Imported \(imported) play\(imported == 1 ? "" : "s").")
+            activeAlert = .listeningHistoryScanResult(
+                message: String.localizedStringWithFormat(
+                    NSLocalizedString("Imported %lld play(s).", comment: ""),
+                    Int64(imported)
+                )
+            )
         } else {
-            activeAlert = .listeningHistoryScanResult(message: "No new plays found. Scrobbling from Listening History only works for songs added to your Library.")
+            activeAlert = .listeningHistoryScanResult(
+                message: NSLocalizedString(
+                    "No new plays found. Scrobbling from Listening History only works for songs added to your Library.",
+                    comment: ""
+                )
+            )
         }
     }
 #endif
@@ -592,26 +666,38 @@ struct SettingsView: View {
     }
 
 #if os(macOS)
-    private var macResetCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Reset")
-                .font(.title3.weight(.semibold))
-
-            Button(role: .destructive) {
-                activeAlert = .resetConfirmation
-            } label: {
-                Label("Reset Settings", systemImage: "arrow.counterclockwise")
-                    .frame(maxWidth: .infinity, minHeight: 44)
-            }
-            .buttonStyle(.bordered)
-            .pillButtonBorder()
-            .tint(.red)
+    private var macRateButton: some View {
+        Button {
+            openURL(Self.writeReviewURL)
+        } label: {
+            Label("Rate FastScrobbler", systemImage: "star.bubble")
+                .frame(maxWidth: .infinity, minHeight: Self.macSettingsButtonMinHeight)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
-        .background(.thinMaterial)
-        .cornerRadius(12)
-        .shadow(color: .black.opacity(0.12), radius: 10, x: 0, y: 5)
+        .buttonStyle(.bordered)
+        .pillButtonBorder()
+    }
+
+    private var macGitHubButton: some View {
+        Button {
+            openURL(Self.repositoryURL)
+        } label: {
+            Label("GitHub", systemImage: "chevron.left.forwardslash.chevron.right")
+                .frame(maxWidth: .infinity, minHeight: Self.macSettingsButtonMinHeight)
+        }
+        .buttonStyle(.bordered)
+        .pillButtonBorder()
+    }
+
+    private var macResetButton: some View {
+        Button(role: .destructive) {
+            activeAlert = .resetConfirmation
+        } label: {
+            Label("Reset Settings", systemImage: "arrow.counterclockwise")
+                .frame(maxWidth: .infinity, minHeight: Self.macSettingsButtonMinHeight)
+        }
+        .buttonStyle(.bordered)
+        .pillButtonBorder()
+        .tint(.red)
     }
 
     private enum StartAtLoginManager {
