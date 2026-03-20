@@ -129,7 +129,7 @@ struct LastFMClient {
         if let album = normalized(track.album) {
             params["album"] = album
         }
-        if let albumArtist = normalized(track.albumArtist) {
+        if let albumArtist = Track.albumArtistForScrobbleMetadata(track.albumArtist) {
             params["albumArtist"] = albumArtist
         }
         if let durationSeconds = track.durationSeconds, durationSeconds > 0 {

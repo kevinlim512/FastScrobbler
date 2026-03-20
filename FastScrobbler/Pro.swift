@@ -188,6 +188,11 @@ struct ProUpgradeView: View {
                             subtitle: NSLocalizedString("Replace song artist with album artist when scrobbling, and remove “- EP” / “- Single” from album names.", comment: "")
                         )
                         ProBenefitCard(
+                            systemImage: "parentheses",
+                            title: NSLocalizedString("Remove parentheses", comment: ""),
+                            subtitle: NSLocalizedString("Clean up titles before scrobbling by stripping matched parentheses from song names.", comment: "")
+                        )
+                        ProBenefitCard(
                             systemImage: "clock.arrow.circlepath",
                             title: NSLocalizedString("Scrobble Listening History from all devices", comment: ""),
                             subtitle: NSLocalizedString("Allow Listening History imports to include plays synced from your other devices.", comment: "")

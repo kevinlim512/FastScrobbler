@@ -29,6 +29,19 @@
 "One-time purchase. Not a subscription." = "Compra única. No es una suscripción.";
 "Pro" = "Pro";
 "Recent Scrobbles" = "Scrobbles recientes";
+/* Remove parentheses screen */
+"Remove parentheses" = "Eliminar paréntesis";
+"When enabled, parentheses containing any of the keywords in the list below will be removed when scrobbling." = "Cuando está activado, se eliminarán al hacer scrobble los paréntesis que contengan cualquiera de las palabras clave de la lista de abajo.";
+"Remove ALL parentheses" = "Eliminar TODOS los paréntesis";
+"This will affect song titles with parentheses in them." = "Esto afectará a los títulos de canciones que contengan paréntesis.";
+"Keywords" = "Palabras clave";
+"Keywords are matched case-insensitively and only as whole words." = "Las palabras clave se comparan sin distinguir mayúsculas y minúsculas y solo como palabras completas.";
+"Keyword" = "Palabra clave";
+"Remove keyword" = "Eliminar palabra clave";
+"Add Custom Keyword" = "Añadir palabra clave personalizada";
+"Custom keyword" = "Palabra clave personalizada";
+"Add" = "Añadir";
+"Enter a keyword to match inside parentheses when scrobbling." = "Introduce una palabra clave para buscar dentro de los paréntesis al hacer scrobble.";
 "Remove “- EP” / “- Single” from album name" = "Eliminar \"- EP\" / \"- Single\" del nombre del álbum";
 "Reset" = "Restablecer";
 "Reset Settings?" = "¿Restablecer ajustes?";
@@ -70,6 +83,7 @@
 "Invalid Last.fm base URL." = "URL base de Last.fm no válida.";
 "Invalid Last.fm request URL." = "URL de solicitud de Last.fm no válida.";
 "Invalid response from Last.fm." = "Respuesta no válida de Last.fm.";
+"Clean up titles before scrobbling by stripping matched parentheses from song names." = "Limpia los títulos antes de hacer scrobble eliminando los paréntesis coincidentes del nombre de la canción.";
 "Invalid sign-in callback URL." = "URL de retorno de inicio de sesión no válida.";
 "If Media Library access is off, enable it in System Settings." = "Si el acceso a la fototeca musical está desactivado, actívalo en Ajustes del Sistema.";
 "Last.fm Sign-in" = "Inicio de sesión de Last.fm";
@@ -173,3 +187,4 @@
 "stopped" = "detenido";
 "this device only" = "solo este dispositivo";
 "unknown" = "desconocido";
+"What's New" = "Novedades";

@@ -41,8 +41,9 @@ https://apps.apple.com/sg/app/fastscrobbler-for-last-fm/id6759501541
 - **Listening History import (iOS)**: scans the device’s Apple Music “Playback History” playlist and imports missed plays (best-effort; this device only).
 - **Apple Music favourites → Last.fm love (optional)**: when enabled, favouriting a song in Apple Music can trigger `track.love` after scrobbling.
 - **Scrobble metadata controls**:
-  - Use **Album Artist** as scrobble artist (when available).
+  - Use **Album Artist** as scrobble artist (when available, except compilation albums).
   - Strip “`- EP`” / “`- Single`” suffixes from album names.
+  - **Remove parentheses from song titles when scrobbling**: remove all parenthetical / bracketed title segments, or only segments whose contents match configurable keywords (case-insensitive whole-word matching).
 - **Live Activity (iOS 16.1+)**: shows scrobbling status on Lock Screen / Dynamic Island.
 - **Shortcuts (iOS)**:
   - **Send Now Playing** (updates Last.fm “currently playing”)

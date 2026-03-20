@@ -28,6 +28,19 @@
 "One-time purchase. Not a subscription." = "Compra única. No es una suscripción.";
 "Pro" = "Pro";
 "Recent Scrobbles" = "Scrobbles recientes";
+/* Remove parentheses screen */
+"Remove parentheses" = "Eliminar paréntesis";
+"When enabled, parentheses containing any of the keywords in the list below will be removed when scrobbling." = "Cuando está activado, se eliminarán al hacer scrobble los paréntesis que contengan cualquiera de las palabras clave de la lista de abajo.";
+"Remove ALL parentheses" = "Eliminar TODOS los paréntesis";
+"This will affect song titles with parentheses in them." = "Esto afectará a los títulos de canciones que contengan paréntesis.";
+"Keywords" = "Palabras clave";
+"Keywords are matched case-insensitively and only as whole words." = "Las palabras clave se comparan sin distinguir mayúsculas y minúsculas y solo como palabras completas.";
+"Keyword" = "Palabra clave";
+"Remove keyword" = "Eliminar palabra clave";
+"Add Custom Keyword" = "Añadir palabra clave personalizada";
+"Custom keyword" = "Palabra clave personalizada";
+"Add" = "Añadir";
+"Enter a keyword to match inside parentheses when scrobbling." = "Introduce una palabra clave para buscar dentro de los paréntesis al hacer scrobble.";
 "Remove “- EP” / “- Single” from album name" = "Eliminar \"- EP\" / \"- Single\" del nombre del álbum";
 "Reset" = "Restablecer";
 "Reset Settings?" = "¿Restablecer ajustes?";
@@ -69,6 +82,7 @@
 "Invalid Last.fm base URL." = "URL base de Last.fm no válida.";
 "Invalid Last.fm request URL." = "URL de solicitud de Last.fm no válida.";
 "Invalid response from Last.fm." = "Respuesta no válida de Last.fm.";
+"Clean up titles before scrobbling by stripping matched parentheses from song names." = "Limpia los títulos antes de hacer scrobble eliminando los paréntesis coincidentes del nombre de la canción.";
 "Invalid sign-in callback URL." = "URL de retorno de inicio de sesión no válida.";
 "If Media Library access is off, enable it in System Settings." = "Si el acceso a la fototeca musical está desactivado, actívalo en Ajustes del Sistema.";
 "Last.fm Sign-in" = "Inicio de sesión de Last.fm";
@@ -108,6 +122,10 @@
 "Pick scrobble threshold" = "Elegir umbral de scrobble";
 "Prevent duplicate scrobbles" = "Evitar scrobbles duplicados";
 "Purchased" = "Comprado";
+"Feedback" = "Comentarios";
+"Bug Report" = "Informar de un error";
+"Cancel" = "Cancelar";
+"Email FastScrobbler" = "Enviar correo a FastScrobbler";
 "Rate FastScrobbler" = "Valorar FastScrobbler";
 "Recently Played" = "Reproducido recientemente";
 "Request Access" = "Solicitar acceso";
@@ -150,6 +168,9 @@
 "Add Shortcut actions and Control Center buttons to scrobble or control playback without opening the app." = "Añade acciones de Atajos y botones del Centro de control para hacer scrobble o controlar la reproducción sin abrir la app.";
 "Choose when a track scrobbles: 10%, 25%, 50%, or 75% of the song duration." = "Elige cuándo hacer scrobble de una pista: al 10 %, 25 %, 50 % o 75 % de la duración de la canción.";
 "Allow Listening History imports to include plays synced from your other devices." = "Permite que las importaciones del historial de reproducción incluyan escuchas sincronizadas desde tus otros dispositivos.";
+"Scrobble from Listening History" = "Hacer scrobble desde el historial de reproducción";
+"When off, FastScrobbler won’t import or scrobble plays from Apple Music Playback History." = "Cuando está desactivado, FastScrobbler no importará ni hará scrobble de las reproducciones del Historial de reproducción de Apple Music.";
+"Listening History scrobbling is turned off." = "El scrobbling desde el historial de reproducción está desactivado.";
 "Your upgrade helps support future development of FastScrobbler." = "Tu mejora ayuda a apoyar el desarrollo futuro de FastScrobbler.";
 "Scrobbles the currently playing track to Last.fm." = "Hace scrobble de la pista que se está reproduciendo en Last.fm.";
 "Scrobble Song" = "Hacer scrobble de la canción";
@@ -177,3 +198,4 @@
 "stopped" = "detenido";
 "this device only" = "solo este dispositivo";
 "unknown" = "desconocido";
+"What's New" = "Novedades";

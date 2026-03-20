@@ -120,6 +120,21 @@ actor ScrobbleBacklog {
         })
     }
 
+    @discardableResult
+    func removeAll(origin targetOrigin: Origin) async -> Int {
+        await loadIfNeeded()
+
+        let originalCount = items.count
+        items.removeAll { $0.origin == targetOrigin }
+        let removedCount = originalCount - items.count
+
+        if removedCount > 0 {
+            await save()
+        }
+
+        return removedCount
+    }
+
     func flush(sessionKey: String, maxItems: Int = 25) async -> FlushResult {
         await flush(sessionKey: sessionKey, maxItems: maxItems, ignoreBackoff: false)
     }

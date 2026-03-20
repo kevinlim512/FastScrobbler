@@ -28,6 +28,19 @@
 "One-time purchase. Not a subscription." = "Achat unique. Pas d’abonnement.";
 "Pro" = "Pro";
 "Recent Scrobbles" = "Scrobbles récents";
+/* Remove parentheses screen */
+"Remove parentheses" = "Retirer les parenthèses";
+"When enabled, parentheses containing any of the keywords in the list below will be removed when scrobbling." = "Une fois activée, cette option retire lors du scrobbling les parenthèses contenant l’un des mots-clés de la liste ci-dessous.";
+"Remove ALL parentheses" = "Retirer TOUTES les parenthèses";
+"This will affect song titles with parentheses in them." = "Cela affectera les titres de morceaux contenant des parenthèses.";
+"Keywords" = "Mots-clés";
+"Keywords are matched case-insensitively and only as whole words." = "Les mots-clés sont reconnus sans tenir compte de la casse et uniquement comme mots entiers.";
+"Keyword" = "Mot-clé";
+"Remove keyword" = "Retirer le mot-clé";
+"Add Custom Keyword" = "Ajouter un mot-clé personnalisé";
+"Custom keyword" = "Mot-clé personnalisé";
+"Add" = "Ajouter";
+"Enter a keyword to match inside parentheses when scrobbling." = "Saisissez un mot-clé à rechercher dans les parenthèses lors du scrobbling.";
 "Remove “- EP” / “- Single” from album name" = "Retirer \"- EP\" / \"- Single\" du nom de l’album";
 "Reset" = "Réinitialiser";
 "Reset Settings?" = "Réinitialiser les réglages ?";
@@ -69,6 +82,7 @@
 "Invalid Last.fm base URL." = "URL de base Last.fm invalide.";
 "Invalid Last.fm request URL." = "URL de requête Last.fm invalide.";
 "Invalid response from Last.fm." = "Réponse invalide de Last.fm.";
+"Clean up titles before scrobbling by stripping matched parentheses from song names." = "Nettoie les titres avant le scrobble en retirant les parenthèses correspondantes des noms de morceaux.";
 "Invalid sign-in callback URL." = "URL de retour de connexion invalide.";
 "If Media Library access is off, enable it in System Settings." = "Si l’accès à la bibliothèque multimédia est désactivé, activez-le dans Réglages Système.";
 "Last.fm Sign-in" = "Connexion Last.fm";
@@ -108,6 +122,10 @@
 "Pick scrobble threshold" = "Choisir le seuil de scrobble";
 "Prevent duplicate scrobbles" = "Éviter les scrobbles en double";
 "Purchased" = "Acheté";
+"Feedback" = "Retour";
+"Bug Report" = "Signaler un bug";
+"Cancel" = "Annuler";
+"Email FastScrobbler" = "Envoyer un e-mail à FastScrobbler";
 "Rate FastScrobbler" = "Noter FastScrobbler";
 "Recently Played" = "Écouté récemment";
 "Request Access" = "Demander l’accès";
@@ -150,6 +168,9 @@
 "Add Shortcut actions and Control Center buttons to scrobble or control playback without opening the app." = "Ajoutez des actions Raccourcis et des boutons du Centre de contrôle pour scrobbler ou contrôler la lecture sans ouvrir l’app.";
 "Choose when a track scrobbles: 10%, 25%, 50%, or 75% of the song duration." = "Choisissez quand une piste est scrobblée : à 10 %, 25 %, 50 % ou 75 % de sa durée.";
 "Allow Listening History imports to include plays synced from your other devices." = "Autorisez les imports d’historique d’écoute à inclure les lectures synchronisées depuis vos autres appareils.";
+"Scrobble from Listening History" = "Scrobbler depuis l’historique d’écoute";
+"When off, FastScrobbler won’t import or scrobble plays from Apple Music Playback History." = "Lorsque cette option est désactivée, FastScrobbler n’importe ni ne scrobble les lectures depuis l’historique d’écoute Apple Music.";
+"Listening History scrobbling is turned off." = "Le scrobbling depuis l’historique d’écoute est désactivé.";
 "Your upgrade helps support future development of FastScrobbler." = "Votre mise à niveau contribue au développement futur de FastScrobbler.";
 "Scrobbles the currently playing track to Last.fm." = "Scrobble le morceau en cours de lecture vers Last.fm.";
 "Scrobble Song" = "Scrobbler le morceau";
@@ -176,3 +197,4 @@
 "stopped" = "arrêté";
 "this device only" = "cet appareil uniquement";
 "unknown" = "inconnu";
+"What's New" = "Nouveautés";

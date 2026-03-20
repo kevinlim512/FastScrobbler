@@ -29,6 +29,19 @@
 "One-time purchase. Not a subscription." = "Achat unique. Pas d’abonnement.";
 "Pro" = "Pro";
 "Recent Scrobbles" = "Scrobbles récents";
+/* Remove parentheses screen */
+"Remove parentheses" = "Retirer les parenthèses";
+"When enabled, parentheses containing any of the keywords in the list below will be removed when scrobbling." = "Une fois activée, cette option retire lors du scrobbling les parenthèses contenant l’un des mots-clés de la liste ci-dessous.";
+"Remove ALL parentheses" = "Retirer TOUTES les parenthèses";
+"This will affect song titles with parentheses in them." = "Cela affectera les titres de morceaux contenant des parenthèses.";
+"Keywords" = "Mots-clés";
+"Keywords are matched case-insensitively and only as whole words." = "Les mots-clés sont reconnus sans tenir compte de la casse et uniquement comme mots entiers.";
+"Keyword" = "Mot-clé";
+"Remove keyword" = "Retirer le mot-clé";
+"Add Custom Keyword" = "Ajouter un mot-clé personnalisé";
+"Custom keyword" = "Mot-clé personnalisé";
+"Add" = "Ajouter";
+"Enter a keyword to match inside parentheses when scrobbling." = "Saisissez un mot-clé à rechercher dans les parenthèses lors du scrobbling.";
 "Remove “- EP” / “- Single” from album name" = "Retirer \"- EP\" / \"- Single\" du nom de l’album";
 "Reset" = "Réinitialiser";
 "Reset Settings?" = "Réinitialiser les réglages ?";
@@ -70,6 +83,7 @@
 "Invalid Last.fm base URL." = "URL de base Last.fm invalide.";
 "Invalid Last.fm request URL." = "URL de requête Last.fm invalide.";
 "Invalid response from Last.fm." = "Réponse invalide de Last.fm.";
+"Clean up titles before scrobbling by stripping matched parentheses from song names." = "Nettoie les titres avant le scrobble en retirant les parenthèses correspondantes des noms de morceaux.";
 "Invalid sign-in callback URL." = "URL de retour de connexion invalide.";
 "If Media Library access is off, enable it in System Settings." = "Si l’accès à la bibliothèque multimédia est désactivé, activez-le dans Réglages Système.";
 "Last.fm Sign-in" = "Connexion Last.fm";
@@ -171,3 +185,4 @@
 "stopped" = "arrêté";
 "this device only" = "cet appareil uniquement";
 "unknown" = "inconnu";
+"What's New" = "Nouveautés";

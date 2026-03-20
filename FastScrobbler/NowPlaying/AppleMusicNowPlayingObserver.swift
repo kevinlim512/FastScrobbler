@@ -196,8 +196,10 @@ final class AppleMusicNowPlayingObserver: ObservableObject {
         let title = item.title ?? ""
         let album = item.albumTitle
         let albumArtist = item.albumArtist
+        let isCompilation = item.isCompilation
         let duration = item.playbackDuration
         let pid = item.persistentID
+        let playbackStoreID = item.playbackStoreID
 
         if artist.isEmpty || title.isEmpty {
             track = nil
@@ -211,7 +213,9 @@ final class AppleMusicNowPlayingObserver: ObservableObject {
             album: album,
             albumArtist: albumArtist,
             durationSeconds: duration > 0 ? duration : nil,
-            persistentID: pid
+            persistentID: pid,
+            playbackStoreID: playbackStoreID.isEmpty ? nil : playbackStoreID,
+            isCompilation: isCompilation
         )
 
         let loved = AppleMusicFavorites.isFavorited(item, index: favoritesIndex)

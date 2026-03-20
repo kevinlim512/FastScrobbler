@@ -35,8 +35,10 @@ private enum ShortcutsPlaybackReader {
 
             let album = item.albumTitle?.trimmingCharacters(in: .whitespacesAndNewlines)
             let albumArtist = item.albumArtist?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let isCompilation = item.isCompilation
             let duration = item.playbackDuration
             let pid = item.persistentID
+            let playbackStoreID = item.playbackStoreID
 
             let track = Track(
                 artist: artist,
@@ -44,7 +46,9 @@ private enum ShortcutsPlaybackReader {
                 album: (album?.isEmpty == false) ? album : nil,
                 albumArtist: (albumArtist?.isEmpty == false) ? albumArtist : nil,
                 durationSeconds: duration > 0 ? duration : nil,
-                persistentID: pid
+                persistentID: pid,
+                playbackStoreID: playbackStoreID.isEmpty ? nil : playbackStoreID,
+                isCompilation: isCompilation
             )
 
             return (track: track, playbackTimeSeconds: max(0, player.currentPlaybackTime))
@@ -74,6 +78,11 @@ private enum ShortcutsPlaybackReader {
                 if let u = info[MPMediaItemPropertyPersistentID] as? UInt64 { return u }
                 return nil
             }()
+            let isCompilation: Bool? = {
+                if let n = info[MPMediaItemPropertyIsCompilation] as? NSNumber { return n.boolValue }
+                if let b = info[MPMediaItemPropertyIsCompilation] as? Bool { return b }
+                return nil
+            }()
 
             let track = Track(
                 artist: artist,
@@ -81,7 +90,9 @@ private enum ShortcutsPlaybackReader {
                 album: (album?.isEmpty == false) ? album : nil,
                 albumArtist: (albumArtist?.isEmpty == false) ? albumArtist : nil,
                 durationSeconds: (duration ?? 0) > 0 ? duration : nil,
-                persistentID: pid
+                persistentID: pid,
+                playbackStoreID: nil,
+                isCompilation: isCompilation
             )
             return (track: track, playbackTimeSeconds: max(0, elapsed))
         }

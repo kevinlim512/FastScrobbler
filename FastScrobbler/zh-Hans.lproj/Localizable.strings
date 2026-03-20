@@ -28,6 +28,19 @@
 "One-time purchase. Not a subscription." = "一次性购买，不是订阅。";
 "Pro" = "Pro";
 "Recent Scrobbles" = "最近的 Scrobble";
+/* Remove parentheses screen */
+"Remove parentheses" = "移除括号";
+"When enabled, parentheses containing any of the keywords in the list below will be removed when scrobbling." = "启用后，scrobble 时会移除包含下方列表中任意关键词的括号内容。";
+"Remove ALL parentheses" = "移除所有括号";
+"This will affect song titles with parentheses in them." = "这会影响带有括号的歌曲标题。";
+"Keywords" = "关键词";
+"Keywords are matched case-insensitively and only as whole words." = "关键词匹配时不区分大小写，且仅按完整单词匹配。";
+"Keyword" = "关键词";
+"Remove keyword" = "移除关键词";
+"Add Custom Keyword" = "添加自定义关键词";
+"Custom keyword" = "自定义关键词";
+"Add" = "添加";
+"Enter a keyword to match inside parentheses when scrobbling." = "请输入一个在 scrobble 时用于匹配括号内容的关键词。";
 "Remove “- EP” / “- Single” from album name" = "从专辑名称中移除 “- EP” / “- Single”";
 "Reset" = "重置";
 "Reset Settings?" = "要重置设置吗？";
@@ -69,6 +82,7 @@
 "Invalid Last.fm base URL." = "无效的 Last.fm 基础 URL。";
 "Invalid Last.fm request URL." = "无效的 Last.fm 请求 URL。";
 "Invalid response from Last.fm." = "来自 Last.fm 的响应无效。";
+"Clean up titles before scrobbling by stripping matched parentheses from song names." = "Scrobble 前通过移除歌曲名中匹配的括号来清理标题。";
 "Invalid sign-in callback URL." = "无效的登录回调 URL。";
 "If Media Library access is off, enable it in System Settings." = "如果媒体资料库访问已关闭，请在系统设置中启用。";
 "Last.fm Sign-in" = "Last.fm 登录";
@@ -108,6 +122,10 @@
 "Pick scrobble threshold" = "选择 scrobble 阈值";
 "Prevent duplicate scrobbles" = "防止重复 scrobble";
 "Purchased" = "已购买";
+"Feedback" = "反馈";
+"Bug Report" = "错误报告";
+"Cancel" = "取消";
+"Email FastScrobbler" = "给 FastScrobbler 发邮件";
 "Rate FastScrobbler" = "给 FastScrobbler 评分";
 "Recently Played" = "最近播放";
 "Request Access" = "请求访问";
@@ -151,6 +169,9 @@
 "Add Shortcut actions and Control Center buttons to scrobble or control playback without opening the app." = "添加快捷指令操作和控制中心按钮，无需打开应用即可 scrobble 或控制播放。";
 "Choose when a track scrobbles: 10%, 25%, 50%, or 75% of the song duration." = "选择歌曲在播放到时长的 10%、25%、50% 或 75% 时进行 scrobble。";
 "Allow Listening History imports to include plays synced from your other devices." = "允许播放历史导入包含从其他设备同步的播放记录。";
+"Scrobble from Listening History" = "从播放历史中 scrobble";
+"When off, FastScrobbler won’t import or scrobble plays from Apple Music Playback History." = "关闭后，FastScrobbler 将不会从 Apple Music 播放历史导入或 scrobble 播放记录。";
+"Listening History scrobbling is turned off." = "播放历史 scrobble 已关闭。";
 "Your upgrade helps support future development of FastScrobbler." = "你的升级将支持 FastScrobbler 的后续开发。";
 "Scrobbles the currently playing track to Last.fm." = "将当前播放的歌曲 scrobble 到 Last.fm。";
 "Scrobble Song" = "Scrobble 歌曲";
@@ -178,3 +199,4 @@
 "stopped" = "已停止";
 "this device only" = "仅此设备";
 "unknown" = "未知";
+"What's New" = "新功能";

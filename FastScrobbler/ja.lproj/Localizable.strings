@@ -28,6 +28,19 @@
 "One-time purchase. Not a subscription." = "一度限りの購入です。サブスクリプションではありません。";
 "Pro" = "Pro";
 "Recent Scrobbles" = "最近のスクロブル";
+/* Remove parentheses screen */
+"Remove parentheses" = "括弧を削除";
+"When enabled, parentheses containing any of the keywords in the list below will be removed when scrobbling." = "オンにすると、以下のリスト内のいずれかのキーワードを含む括弧はスクロブル時に削除されます。";
+"Remove ALL parentheses" = "すべての括弧を削除";
+"This will affect song titles with parentheses in them." = "これは括弧を含む曲名にも影響します。";
+"Keywords" = "キーワード";
+"Keywords are matched case-insensitively and only as whole words." = "キーワードは大文字と小文字を区別せず、単語全体に対してのみ一致します。";
+"Keyword" = "キーワード";
+"Remove keyword" = "キーワードを削除";
+"Add Custom Keyword" = "カスタムキーワードを追加";
+"Custom keyword" = "カスタムキーワード";
+"Add" = "追加";
+"Enter a keyword to match inside parentheses when scrobbling." = "スクロブル時に括弧内で一致させるキーワードを入力してください。";
 "Remove “- EP” / “- Single” from album name" = "アルバム名から「- EP」「- Single」を削除";
 "Reset" = "リセット";
 "Reset Settings?" = "設定をリセットしますか？";
@@ -69,6 +82,7 @@
 "Invalid Last.fm base URL." = "Last.fmのベースURLが無効です。";
 "Invalid Last.fm request URL." = "Last.fmのリクエストURLが無効です。";
 "Invalid response from Last.fm." = "Last.fmからの応答が無効です。";
+"Clean up titles before scrobbling by stripping matched parentheses from song names." = "スクロブル前に、曲名から一致した括弧を取り除いてタイトルを整理します。";
 "Invalid sign-in callback URL." = "サインイン用コールバックURLが無効です。";
 "If Media Library access is off, enable it in System Settings." = "メディアライブラリへのアクセスがオフの場合は、システム設定で有効にしてください。";
 "Last.fm Sign-in" = "Last.fmサインイン";
@@ -108,6 +122,10 @@
 "Pick scrobble threshold" = "スクロブルのしきい値を選ぶ";
 "Prevent duplicate scrobbles" = "重複スクロブルを防ぐ";
 "Purchased" = "購入済み";
+"Feedback" = "フィードバック";
+"Bug Report" = "バグ報告";
+"Cancel" = "キャンセル";
+"Email FastScrobbler" = "FastScrobblerにメールする";
 "Rate FastScrobbler" = "FastScrobblerを評価";
 "Recently Played" = "最近再生した曲";
 "Request Access" = "アクセスを許可";
@@ -150,6 +168,9 @@
 "Add Shortcut actions and Control Center buttons to scrobble or control playback without opening the app." = "アプリを開かずにスクロブルや再生操作ができるよう、ショートカットのアクションやコントロールセンターのボタンを追加します。";
 "Choose when a track scrobbles: 10%, 25%, 50%, or 75% of the song duration." = "曲の長さの 10%、25%、50%、75% のどの時点でスクロブルするかを選べます。";
 "Allow Listening History imports to include plays synced from your other devices." = "再生履歴の取り込みに、ほかのデバイスから同期された再生も含められるようにします。";
+"Scrobble from Listening History" = "再生履歴からスクロブル";
+"When off, FastScrobbler won’t import or scrobble plays from Apple Music Playback History." = "オフにすると、FastScrobbler は Apple Music の再生履歴から再生を取り込んだり、スクロブルしたりしません。";
+"Listening History scrobbling is turned off." = "再生履歴からのスクロブルはオフになっています。";
 "Your upgrade helps support future development of FastScrobbler." = "アップグレードは FastScrobbler の今後の開発支援になります。";
 "Scrobbles the currently playing track to Last.fm." = "現在再生中の曲をLast.fmにスクロブルします。";
 "Scrobble Song" = "曲をスクロブル";
@@ -176,3 +197,4 @@
 "stopped" = "停止";
 "this device only" = "このデバイスのみ";
 "unknown" = "不明";
+"What's New" = "新機能";

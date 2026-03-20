@@ -24,6 +24,7 @@ struct ContentView: View {
 
     @State private var errorText: String?
     @State private var isShowingSetup = false
+    @State private var isShowingWhatsNew = false
     @State private var isShowingHelp = false
     @State private var isShowingSettings = false
 #if os(iOS)
@@ -56,11 +57,13 @@ struct ContentView: View {
 	        .onAppear {
 	            refreshMediaLibraryStatusIfNeeded()
 	            presentSetupIfNeeded()
+                presentWhatsNewIfNeeded()
 	        }
         .onValueChange(of: scenePhase) { phase in
             guard phase == .active else { return }
             refreshMediaLibraryStatusIfNeeded()
             presentSetupIfNeeded()
+            presentWhatsNewIfNeeded()
             if hasSeenSetup {
                 Task { @MainActor in
 	                    await AppModel.shared.startIfNeeded()
@@ -70,6 +73,10 @@ struct ContentView: View {
         .onValueChange(of: observer.authorizationStatus) { _ in
             refreshMediaLibraryStatusIfNeeded()
             presentSetupIfNeeded()
+        }
+        .onValueChange(of: hasSeenSetup) { hasSeenSetup in
+            guard hasSeenSetup else { return }
+            presentWhatsNewIfNeeded()
         }
 #if os(macOS)
         .overlay {
@@ -82,9 +89,15 @@ struct ContentView: View {
                 guard auth.sessionKey != nil else { return }
                 hasSeenSetup = true
                 isShowingSetup = false
+                presentWhatsNewIfNeeded()
                 Task { @MainActor in
                     await AppModel.shared.startIfNeeded()
                 }
+            }
+        }
+        .fullScreenCover(isPresented: $isShowingWhatsNew) {
+            WhatsNewView {
+                dismissWhatsNew()
             }
         }
         .fullScreenCover(isPresented: $isShowingHelp) {
@@ -95,22 +108,7 @@ struct ContentView: View {
 #endif
 #if os(iOS)
         .sheet(isPresented: $isShowingSettings) {
-            NavigationView {
-                SettingsView()
-                    .navigationTitle("Settings")
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar {
-                        ToolbarItem(placement: .topBarTrailing) {
-                            Button {
-                                isShowingSettings = false
-                            } label: {
-                                IOSCloseButtonLabel(style: .plain)
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityLabel("Close")
-                        }
-                    }
-            }
+            SettingsView()
         }
         .sheet(isPresented: $isShowingProUpgrade) {
             ProUpgradeView()
@@ -636,6 +634,24 @@ struct ContentView: View {
         }
         return text
     }
+
+    private func presentWhatsNewIfNeeded() {
+#if os(macOS)
+        return
+#else
+        guard hasSeenSetup else { return }
+        guard !isShowingSetup && !isShowingWhatsNew && !isShowingHelp && !isShowingSettings else { return }
+        guard !isShowingProUpgrade && inAppBrowserURL == nil else { return }
+        if WhatsNewRelease.shouldPresent() {
+            isShowingWhatsNew = true
+        }
+#endif
+    }
+
+    private func dismissWhatsNew() {
+        WhatsNewRelease.markSeen()
+        isShowingWhatsNew = false
+    }
 }
 
 extension View {
@@ -690,6 +706,197 @@ struct IOSCloseButtonLabel: View {
                 .shadow(color: .black.opacity(0.18), radius: 10, x: 0, y: 6)
                 .contentShape(Circle())
         }
+    }
+}
+
+struct WhatsNewView: View {
+    private struct VersionSection: Identifiable {
+        let id: String
+        let version: String
+        let features: [Feature]
+    }
+
+    private struct Feature: Identifiable {
+        let id = UUID()
+        let systemImage: String
+        let title: String
+        let showsProBadge: Bool
+    }
+
+    private let sections: [VersionSection] = [
+        VersionSection(
+            id: "3.0",
+            version: "3.0",
+            features: [
+                Feature(
+                    systemImage: "parentheses",
+                    title: "Added a \"Remove parentheses\" Pro feature",
+                    showsProBadge: true
+                ),
+                Feature(
+                    systemImage: "clock.arrow.circlepath",
+                    title: "Added toggle to disable the \"Scrobble from Listening History\" functionality",
+                    showsProBadge: false
+                ),
+                Feature(
+                    systemImage: "envelope",
+                    title: "Added option to send feedback/bug report via email, in the app\'s settings",
+                    showsProBadge: false
+                )
+            ]
+        ),
+        VersionSection(
+            id: "2.0",
+            version: "2.0",
+            features: [
+                Feature(
+                    systemImage: "globe",
+                    title: "Added support for Chinese (Simplified), French, Japanese, and Spanish",
+                    showsProBadge: false
+                ),
+                Feature(
+                    systemImage: "person.2",
+                    title: "Added album artist scrobbling support",
+                    showsProBadge: false
+                )
+            ]
+        ),
+        VersionSection(
+            id: "1.2",
+            version: "1.2",
+            features: [
+                Feature(
+                    systemImage: "clock.arrow.circlepath",
+                    title: "Added \"Scrobble Listening History from all devices\"",
+                    showsProBadge: true
+                )
+            ]
+        )
+    ]
+
+    let onContinue: () -> Void
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 18) {
+                    header
+                        .padding(.top, 4)
+
+                    VStack(spacing: 18) {
+                        ForEach(sections) { section in
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("Version \(section.version)")
+                                    .font(.headline.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                                VStack(spacing: 12) {
+                                    ForEach(section.features) { feature in
+                                        WhatsNewFeatureCard(
+                                            systemImage: feature.systemImage,
+                                            title: feature.title,
+                                            showsProBadge: feature.showsProBadge
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Button(action: onContinue) {
+                        Text(NSLocalizedString("Done", comment: ""))
+                            .font(.subheadline.weight(.semibold))
+                            .frame(maxWidth: .infinity, minHeight: 46)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.blue)
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 24)
+            }
+#if os(iOS)
+            .background(Color(.systemGroupedBackground).ignoresSafeArea())
+#else
+            .background(Color(nsColor: .windowBackgroundColor))
+#endif
+            .navigationTitle("")
+#if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(role: .cancel) {
+                        onContinue()
+                    } label: {
+                        Image(systemName: "xmark")
+                    }
+                    .accessibilityLabel("Close")
+                }
+            }
+#endif
+        }
+#if os(macOS)
+        .frame(width: 560, height: 620)
+#endif
+    }
+
+    private var header: some View {
+        VStack(spacing: 0) {
+            Text(NSLocalizedString("What's New", comment: ""))
+                .font(.largeTitle.weight(.bold))
+                .foregroundStyle(.primary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 8)
+    }
+}
+
+private struct WhatsNewFeatureCard: View {
+    let systemImage: String
+    let title: String
+    let showsProBadge: Bool
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: systemImage)
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(.primary)
+                .frame(width: 40, height: 40)
+                .background(.thinMaterial)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+            HStack(alignment: .center, spacing: 8) {
+                Text(title)
+                    .font(.body)
+                    .multilineTextAlignment(.leading)
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .layoutPriority(1)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                if showsProBadge {
+                    Text("Pro")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(.black)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.yellow, in: Capsule())
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding()
+#if os(iOS)
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+#else
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(.primary.opacity(0.10), lineWidth: 0.5)
+        }
+#endif
     }
 }
 
@@ -814,6 +1021,7 @@ extension ContentView {
             }) {
                 hasSeenSetup = true
                 isShowingSetup = false
+                presentWhatsNewIfNeeded()
                 Task { @MainActor in
                     await AppModel.shared.startIfNeeded()
                 }

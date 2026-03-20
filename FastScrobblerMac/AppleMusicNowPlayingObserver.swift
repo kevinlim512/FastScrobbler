@@ -155,6 +155,7 @@ final class AppleMusicNowPlayingObserver: ObservableObject {
             set n to ""
             set al to ""
             set aa to ""
+            set comp to ""
             set d to 0
             set streamTitle to ""
             set fav to ""
@@ -175,6 +176,9 @@ final class AppleMusicNowPlayingObserver: ObservableObject {
                     set aa to album artist of t
                 end try
                 try
+                    set comp to (compilation of t) as string
+                end try
+                try
                     set d to duration of t
                 end try
                 try
@@ -191,7 +195,7 @@ final class AppleMusicNowPlayingObserver: ObservableObject {
                 set streamTitle to ""
             end try
 
-            return ps & sep & a & sep & n & sep & al & sep & d & sep & pos & sep & aa & sep & streamTitle & sep & fav & sep & pid
+            return ps & sep & a & sep & n & sep & al & sep & d & sep & pos & sep & aa & sep & comp & sep & streamTitle & sep & fav & sep & pid
         end tell
         """#
 
@@ -212,9 +216,10 @@ final class AppleMusicNowPlayingObserver: ObservableObject {
         let duration = parts.count > 4 ? TimeInterval(parts[4]) ?? 0 : 0
         let position = parts.count > 5 ? TimeInterval(parts[5]) ?? 0 : 0
         let albumArtist = parts.count > 6 ? parts[6] : ""
-        let streamTitle = parts.count > 7 ? parts[7] : ""
-        let isFavorited = parts.count > 8 ? parseAppleScriptBool(parts[8]) : nil
-        let persistentID = parts.count > 9 ? parsePersistentID(parts[9]) : nil
+        let isCompilation = parts.count > 7 ? parseAppleScriptBool(parts[7]) : nil
+        let streamTitle = parts.count > 8 ? parts[8] : ""
+        let isFavorited = parts.count > 9 ? parseAppleScriptBool(parts[9]) : nil
+        let persistentID = parts.count > 10 ? parsePersistentID(parts[10]) : nil
 
         var resolvedArtist = artist
         var resolvedTitle = title
@@ -232,8 +237,7 @@ final class AppleMusicNowPlayingObserver: ObservableObject {
         }
 
         if resolvedArtist.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            let candidate = albumArtist.trimmingCharacters(in: .whitespacesAndNewlines)
-            if !candidate.isEmpty {
+            if let candidate = Track.usableAlbumArtistForArtistSubstitution(albumArtist, isCompilation: isCompilation) {
                 resolvedArtist = candidate
             }
         }
@@ -249,7 +253,9 @@ final class AppleMusicNowPlayingObserver: ObservableObject {
                 album: resolvedAlbum.isEmpty ? nil : resolvedAlbum,
                 albumArtist: albumArtist.isEmpty ? nil : albumArtist,
                 durationSeconds: duration > 0 ? duration : nil,
-                persistentID: persistentID
+                persistentID: persistentID,
+                playbackStoreID: nil,
+                isCompilation: isCompilation
             )
         }
 

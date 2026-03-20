@@ -54,6 +54,8 @@ final class AppModel {
             return
         }
 
+        await purgePlaybackHistoryBacklogIfNeeded()
+
         if auth.sessionKey == nil {
             await LiveActivityManager.shared.update(
                 status: NSLocalizedString("Connect Last.fm to scrobble.", comment: ""),
@@ -105,6 +107,7 @@ final class AppModel {
         guard UserDefaults.standard.bool(forKey: Keys.hasSeenSetup) else { return }
 
         observer.refreshOnceIfAuthorized()
+        await purgePlaybackHistoryBacklogIfNeeded()
         let imported = await PlaybackHistoryImporter.shared.importIntoBacklog(backlog: backlog, scrobbleLog: scrobbleLog)
         if let sessionKey = auth.sessionKey {
             let result = await backlog.flush(sessionKey: sessionKey)
@@ -132,6 +135,11 @@ final class AppModel {
     /// Imports plays from Apple Music listening history (when supported) and flushes the backlog if signed in.
     @discardableResult
     func scanListeningHistory(maxItems: Int = 200) async -> Int {
+        guard AppSettings.scrobbleListeningHistoryEnabled() else {
+            await purgePlaybackHistoryBacklogIfNeeded()
+            return 0
+        }
+
         let imported = await PlaybackHistoryImporter.shared.importIntoBacklog(
             backlog: backlog,
             scrobbleLog: scrobbleLog,
@@ -141,6 +149,11 @@ final class AppModel {
         guard let sessionKey = auth.sessionKey else { return imported }
         await flushBacklogIfNeeded(sessionKey: sessionKey, force: true)
         return imported
+    }
+
+    func handleListeningHistoryScrobblingChanged(isEnabled: Bool) async {
+        guard !isEnabled else { return }
+        await backlog.removeAll(origin: .playbackHistory)
     }
 
     private func flushBacklogIfNeeded(sessionKey: String, force: Bool = false) async {
@@ -170,6 +183,11 @@ final class AppModel {
             AppReviewManager.shared.recordSuccessfulScrobble()
 #endif
         }
+    }
+
+    private func purgePlaybackHistoryBacklogIfNeeded() async {
+        guard !AppSettings.scrobbleListeningHistoryEnabled() else { return }
+        await backlog.removeAll(origin: .playbackHistory)
     }
 
     private func scrobbleLogSource(for origin: ScrobbleBacklog.Origin?) -> ScrobbleLogStore.Source {

@@ -13,6 +13,7 @@ final class PlaybackHistoryImporter {
         static let maxImportLookbackDays = 7
         static let exactDuplicateToleranceSeconds = 10
         static let playedAtMatchToleranceSeconds = 45
+        static let sameDeviceLateSyncRecoveryHours = 24
     }
 
     static let shared = PlaybackHistoryImporter()
@@ -23,17 +24,50 @@ final class PlaybackHistoryImporter {
 
     private struct ImportState: Codable {
         var lastImportAt: Date?
-        var playCountByPersistentID: [UInt64: Int]
-        var lastSeenPlayedAtByPersistentID: [UInt64: Date]
+        var playCountByTrackID: [String: Int]
+        var lastSeenPlayedAtByTrackID: [String: Date]
+
+        private enum CodingKeys: String, CodingKey {
+            case lastImportAt
+            case playCountByTrackID
+            case lastSeenPlayedAtByTrackID
+            case playCountByPersistentID
+            case lastSeenPlayedAtByPersistentID
+        }
 
         init(lastImportAt: Date? = nil) {
             self.lastImportAt = lastImportAt
-            playCountByPersistentID = [:]
-            lastSeenPlayedAtByPersistentID = [:]
+            playCountByTrackID = [:]
+            lastSeenPlayedAtByTrackID = [:]
+        }
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            lastImportAt = try container.decodeIfPresent(Date.self, forKey: .lastImportAt)
+
+            if let playCountByTrackID = try container.decodeIfPresent([String: Int].self, forKey: .playCountByTrackID),
+               let lastSeenPlayedAtByTrackID = try container.decodeIfPresent([String: Date].self, forKey: .lastSeenPlayedAtByTrackID) {
+                self.playCountByTrackID = playCountByTrackID
+                self.lastSeenPlayedAtByTrackID = lastSeenPlayedAtByTrackID
+                return
+            }
+
+            let legacyPlayCounts = try container.decodeIfPresent([UInt64: Int].self, forKey: .playCountByPersistentID) ?? [:]
+            let legacyLastSeen = try container.decodeIfPresent([UInt64: Date].self, forKey: .lastSeenPlayedAtByPersistentID) ?? [:]
+            playCountByTrackID = Dictionary(uniqueKeysWithValues: legacyPlayCounts.map { ("pid:\($0.key)", $0.value) })
+            lastSeenPlayedAtByTrackID = Dictionary(uniqueKeysWithValues: legacyLastSeen.map { ("pid:\($0.key)", $0.value) })
+        }
+
+        func encode(to encoder: Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encodeIfPresent(lastImportAt, forKey: .lastImportAt)
+            try container.encode(playCountByTrackID, forKey: .playCountByTrackID)
+            try container.encode(lastSeenPlayedAtByTrackID, forKey: .lastSeenPlayedAtByTrackID)
         }
     }
 
     func importIntoBacklog(backlog: ScrobbleBacklog, scrobbleLog: ScrobbleLogStore, maxItems: Int = 50) async -> Int {
+        guard AppSettings.scrobbleListeningHistoryEnabled() else { return 0 }
         guard MPMediaLibrary.authorizationStatus() == .authorized else { return 0 }
 
         let favoritesIndex = AppleMusicFavorites.buildIndex()
@@ -50,12 +84,19 @@ final class PlaybackHistoryImporter {
 
         let priorLastImportAt = state.lastImportAt
         let cutoff = state.lastImportAt ?? Date(timeIntervalSinceNow: -24 * 60 * 60)
+        let lookback = Date(timeIntervalSinceNow: -Double(Constants.maxImportLookbackDays) * 24 * 60 * 60)
         let fetchCutoff: Date = {
-            // Keep listening-history scans bounded even if the import cursor is stale.
-            // This avoids re-walking a large library just to re-check older plays that are
-            // very likely already scrobbled.
-            let lookback = Date(timeIntervalSinceNow: -Double(Constants.maxImportLookbackDays) * 24 * 60 * 60)
-            return max(cutoff, lookback)
+            // Apple Music can update `lastPlayedDate` well after the play actually happened. Keep
+            // a bounded recovery window so recent library plays don't get dropped permanently just
+            // because they synced late.
+            guard priorLastImportAt != nil else { return max(cutoff, lookback) }
+
+            if allowAllDevicesListeningHistory {
+                return lookback
+            }
+
+            let recoveryStart = cutoff.addingTimeInterval(-Double(Constants.sameDeviceLateSyncRecoveryHours) * 60 * 60)
+            return max(recoveryStart, lookback)
         }()
 
         let candidates = fetchCandidatesPlayed(after: fetchCutoff)
@@ -74,15 +115,6 @@ final class PlaybackHistoryImporter {
             guard importedCount < maxItems else { break }
             let item = c.item
             let playedAt = c.playedAt
-            let pid = item.persistentID
-            let previousSeenPlayedAt = state.lastSeenPlayedAtByPersistentID[pid]
-            let playCutoff: Date = {
-                if allowAllDevicesListeningHistory {
-                    return max(fetchCutoff, previousSeenPlayedAt ?? fetchCutoff)
-                }
-                return cutoff
-            }()
-            guard playedAt > playCutoff else { continue }
 
             let artist = item.artist ?? ""
             let title = item.title ?? ""
@@ -95,12 +127,25 @@ final class PlaybackHistoryImporter {
                 album: item.albumTitle,
                 albumArtist: item.albumArtist,
                 durationSeconds: duration > 0 ? duration : nil,
-                persistentID: item.persistentID
+                persistentID: item.persistentID,
+                playbackStoreID: item.playbackStoreID.isEmpty ? nil : item.playbackStoreID,
+                isCompilation: item.isCompilation
             )
+            let trackID = track.libraryIdentityKey
+            let previousSeenPlayedAt = state.lastSeenPlayedAtByTrackID[trackID]
+            let playCutoff: Date = {
+                // Prefer the per-track cursor when available so repeated plays of the same song can
+                // still import even if Apple Music backfills them after the global cursor advanced.
+                if let previousSeenPlayedAt {
+                    return max(fetchCutoff, previousSeenPlayedAt)
+                }
+                return fetchCutoff
+            }()
+            guard playedAt > playCutoff else { continue }
             let wasAppleMusicFavorite = AppleMusicFavorites.isFavorited(item, index: favoritesIndex)
 
             let playCount = item.playCount
-            let previousPlayCount = state.playCountByPersistentID[pid]
+            let previousPlayCount = state.playCountByTrackID[trackID]
             let delta: Int = {
                 guard let previousPlayCount else { return 1 }
                 let d = playCount - previousPlayCount
@@ -204,8 +249,8 @@ final class PlaybackHistoryImporter {
                 }
             }
 
-            state.playCountByPersistentID[pid] = playCount
-            state.lastSeenPlayedAtByPersistentID[pid] = playedAt
+            state.playCountByTrackID[trackID] = playCount
+            state.lastSeenPlayedAtByTrackID[trackID] = playedAt
 
             newestPlayedAt = max(newestPlayedAt ?? playedAt, playedAt)
         }
@@ -279,20 +324,20 @@ final class PlaybackHistoryImporter {
     private func pruneState(_ state: inout ImportState) {
         // Keep state bounded to avoid unbounded growth in UserDefaults.
         let cutoff = Date(timeIntervalSinceNow: -30 * 24 * 60 * 60)
-        state.lastSeenPlayedAtByPersistentID = state.lastSeenPlayedAtByPersistentID.filter { _, lastSeen in
+        state.lastSeenPlayedAtByTrackID = state.lastSeenPlayedAtByTrackID.filter { _, lastSeen in
             lastSeen >= cutoff
         }
-        let allowedIDs = Set(state.lastSeenPlayedAtByPersistentID.keys)
-        state.playCountByPersistentID = state.playCountByPersistentID.filter { allowedIDs.contains($0.key) }
+        let allowedIDs = Set(state.lastSeenPlayedAtByTrackID.keys)
+        state.playCountByTrackID = state.playCountByTrackID.filter { allowedIDs.contains($0.key) }
 
         let maxEntries = 3000
-        if state.lastSeenPlayedAtByPersistentID.count > maxEntries {
-            let newest = state.lastSeenPlayedAtByPersistentID
+        if state.lastSeenPlayedAtByTrackID.count > maxEntries {
+            let newest = state.lastSeenPlayedAtByTrackID
                 .sorted(by: { $0.value > $1.value })
                 .prefix(maxEntries)
             let keepIDs = Set(newest.map { $0.key })
-            state.lastSeenPlayedAtByPersistentID = state.lastSeenPlayedAtByPersistentID.filter { keepIDs.contains($0.key) }
-            state.playCountByPersistentID = state.playCountByPersistentID.filter { keepIDs.contains($0.key) }
+            state.lastSeenPlayedAtByTrackID = state.lastSeenPlayedAtByTrackID.filter { keepIDs.contains($0.key) }
+            state.playCountByTrackID = state.playCountByTrackID.filter { keepIDs.contains($0.key) }
         }
     }
 }
