@@ -29,19 +29,27 @@
 "One-time purchase. Not a subscription." = "一次性购买，不是订阅。";
 "Pro" = "Pro";
 "Recent Scrobbles" = "最近的 Scrobble";
-/* Remove parentheses screen */
-"Remove parentheses" = "移除括号";
-"When enabled, parentheses containing any of the keywords in the list below will be removed when scrobbling." = "启用后，scrobble 时会移除包含下方列表中任意关键词的括号内容。";
-"Remove ALL parentheses" = "移除所有括号";
-"This will affect song titles with parentheses in them." = "这会影响带有括号的歌曲标题。";
+/* Remove brackets screen */
+"Remove brackets" = "移除括号";
+"Remove brackets for song titles" = "移除歌曲标题中的括号";
+"Remove brackets for album titles" = "移除专辑标题中的括号";
+"When enabled, brackets containing any of the keywords in the list below will be removed when scrobbling." = "启用后，scrobble 时会移除包含下方列表中任意关键词的括号内容。";
+"When enabled, brackets containing any of the keywords in the list below will be removed from song titles when scrobbling." = "启用后，scrobble 时会移除歌曲标题中包含下方列表任意关键词的括号内容。";
+"When enabled, brackets containing any of the keywords in the list below will be removed from album titles when scrobbling." = "启用后，scrobble 时会移除专辑标题中包含下方列表任意关键词的括号内容。";
+"Remove ALL brackets" = "移除所有括号";
+"This will affect song titles with any brackets in them." = "这会影响带有括号的歌曲标题。";
+"This will affect album titles with any brackets in them." = "这会影响带有括号的专辑标题。";
 "Keywords" = "关键词";
 "Keywords are matched case-insensitively and only as whole words." = "关键词匹配时不区分大小写，且仅按完整单词匹配。";
+"Keywords are matched case-insensitively and only as whole words inside () and []." = "关键词匹配时不区分大小写，且仅在括号内按完整单词匹配。";
 "Keyword" = "关键词";
 "Remove keyword" = "移除关键词";
 "Add Custom Keyword" = "添加自定义关键词";
 "Custom keyword" = "自定义关键词";
 "Add" = "添加";
-"Enter a keyword to match inside parentheses when scrobbling." = "请输入一个在 scrobble 时用于匹配括号内容的关键词。";
+"Enter a keyword to match inside brackets when scrobbling." = "请输入一个在 scrobble 时用于匹配括号内容的关键词。";
+"Enter a keyword to match inside song-title brackets when scrobbling." = "请输入一个在 scrobble 时用于匹配歌曲标题括号内容的关键词。";
+"Enter a keyword to match inside album-title brackets when scrobbling." = "请输入一个在 scrobble 时用于匹配专辑标题括号内容的关键词。";
 "Remove “- EP” / “- Single” from album name" = "从专辑名称中移除 “- EP” / “- Single”";
 "Reset" = "重置";
 "Reset Settings?" = "要重置设置吗？";
@@ -83,7 +91,7 @@
 "Invalid Last.fm base URL." = "无效的 Last.fm 基础 URL。";
 "Invalid Last.fm request URL." = "无效的 Last.fm 请求 URL。";
 "Invalid response from Last.fm." = "来自 Last.fm 的响应无效。";
-"Clean up titles before scrobbling by stripping matched parentheses from song names." = "Scrobble 前通过移除歌曲名中匹配的括号来清理标题。";
+"Clean up titles before scrobbling by stripping matched brackets from song names." = "Scrobble 前通过移除歌曲名中匹配的括号来清理标题。";
 "Invalid sign-in callback URL." = "无效的登录回调 URL。";
 "If Media Library access is off, enable it in System Settings." = "如果媒体资料库访问已关闭，请在系统设置中启用。";
 "Last.fm Sign-in" = "Last.fm 登录";
@@ -170,6 +178,7 @@
 "Unknown" = "未知";
 "Upgrade" = "升级";
 "Upgrade for %@" = "以 %@ 升级";
+"Remove brackets from song and album titles by matching keywords, or optionally remove all brackets." = "通过匹配关键词移除歌曲和专辑标题中的括号内容，或选择移除所有括号。";
 "Replace song artist with album artist when scrobbling, and remove “- EP” / “- Single” from album names." = "Scrobble 时用专辑艺人替换歌曲艺人，并从专辑名中移除 “- EP” / “- Single”。";
 "View Profile" = "查看个人资料";
 "View Profile in Last.fm" = "在 Last.fm 中查看个人资料";

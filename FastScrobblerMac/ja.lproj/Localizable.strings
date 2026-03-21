@@ -29,19 +29,27 @@
 "One-time purchase. Not a subscription." = "一度限りの購入です。サブスクリプションではありません。";
 "Pro" = "Pro";
 "Recent Scrobbles" = "最近のスクロブル";
-/* Remove parentheses screen */
-"Remove parentheses" = "括弧を削除";
-"When enabled, parentheses containing any of the keywords in the list below will be removed when scrobbling." = "オンにすると、以下のリスト内のいずれかのキーワードを含む括弧はスクロブル時に削除されます。";
-"Remove ALL parentheses" = "すべての括弧を削除";
-"This will affect song titles with parentheses in them." = "これは括弧を含む曲名にも影響します。";
+/* Remove brackets screen */
+"Remove brackets" = "括弧を削除";
+"Remove brackets for song titles" = "曲名の括弧を削除";
+"Remove brackets for album titles" = "アルバム名の括弧を削除";
+"When enabled, brackets containing any of the keywords in the list below will be removed when scrobbling." = "オンにすると、以下のリスト内のいずれかのキーワードを含む括弧はスクロブル時に削除されます。";
+"When enabled, brackets containing any of the keywords in the list below will be removed from song titles when scrobbling." = "オンにすると、以下のリスト内のいずれかのキーワードを含む曲名の括弧はスクロブル時に削除されます。";
+"When enabled, brackets containing any of the keywords in the list below will be removed from album titles when scrobbling." = "オンにすると、以下のリスト内のいずれかのキーワードを含むアルバム名の括弧はスクロブル時に削除されます。";
+"Remove ALL brackets" = "すべての括弧を削除";
+"This will affect song titles with any brackets in them." = "これは括弧を含む曲名にも影響します。";
+"This will affect album titles with any brackets in them." = "これは括弧を含むアルバム名にも影響します。";
 "Keywords" = "キーワード";
 "Keywords are matched case-insensitively and only as whole words." = "キーワードは大文字と小文字を区別せず、単語全体に対してのみ一致します。";
+"Keywords are matched case-insensitively and only as whole words inside () and []." = "キーワードは大文字と小文字を区別せず、括弧の中で単語全体に対してのみ一致します。";
 "Keyword" = "キーワード";
 "Remove keyword" = "キーワードを削除";
 "Add Custom Keyword" = "カスタムキーワードを追加";
 "Custom keyword" = "カスタムキーワード";
 "Add" = "追加";
-"Enter a keyword to match inside parentheses when scrobbling." = "スクロブル時に括弧内で一致させるキーワードを入力してください。";
+"Enter a keyword to match inside brackets when scrobbling." = "スクロブル時に括弧内で一致させるキーワードを入力してください。";
+"Enter a keyword to match inside song-title brackets when scrobbling." = "スクロブル時に曲名の括弧内で一致させるキーワードを入力してください。";
+"Enter a keyword to match inside album-title brackets when scrobbling." = "スクロブル時にアルバム名の括弧内で一致させるキーワードを入力してください。";
 "Remove “- EP” / “- Single” from album name" = "アルバム名から「- EP」「- Single」を削除";
 "Reset" = "リセット";
 "Reset Settings?" = "設定をリセットしますか？";
@@ -83,7 +91,7 @@
 "Invalid Last.fm base URL." = "Last.fmのベースURLが無効です。";
 "Invalid Last.fm request URL." = "Last.fmのリクエストURLが無効です。";
 "Invalid response from Last.fm." = "Last.fmからの応答が無効です。";
-"Clean up titles before scrobbling by stripping matched parentheses from song names." = "スクロブル前に、曲名から一致した括弧を取り除いてタイトルを整理します。";
+"Clean up titles before scrobbling by stripping matched brackets from song names." = "スクロブル前に、曲名から一致した括弧を取り除いてタイトルを整理します。";
 "Invalid sign-in callback URL." = "サインイン用コールバックURLが無効です。";
 "If Media Library access is off, enable it in System Settings." = "メディアライブラリへのアクセスがオフの場合は、システム設定で有効にしてください。";
 "Last.fm Sign-in" = "Last.fmサインイン";
@@ -167,6 +175,7 @@
 "Unknown" = "不明";
 "Upgrade" = "アップグレード";
 "Upgrade for %@" = "%@でアップグレード";
+"Remove brackets from song and album titles by matching keywords, or optionally remove all brackets." = "キーワードに一致する曲名とアルバム名の括弧を削除したり、必要に応じてすべての括弧を削除したりできます。";
 "Replace song artist with album artist when scrobbling, and remove “- EP” / “- Single” from album names." = "スクロブル時に曲アーティストをアルバムアーティストに置き換え、アルバム名から「- EP」「- Single」を削除します。";
 "View Profile" = "プロフィールを見る";
 "View Profile in Last.fm" = "Last.fmでプロフィールを見る";

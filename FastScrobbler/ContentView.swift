@@ -710,27 +710,38 @@ struct IOSCloseButtonLabel: View {
 }
 
 struct WhatsNewView: View {
-    private struct VersionSection: Identifiable {
+    struct VersionSection: Identifiable {
         let id: String
         let version: String
         let features: [Feature]
     }
 
-    private struct Feature: Identifiable {
+    struct Feature: Identifiable {
         let id = UUID()
         let systemImage: String
         let title: String
         let showsProBadge: Bool
     }
 
-    private let sections: [VersionSection] = [
+    private let currentSections: [VersionSection] = [
+        VersionSection(
+            id: "3.1",
+            version: "3.1",
+            features: [
+                Feature(
+                    systemImage: "parentheses",
+                    title: "Added a \"Remove brackets for album titles\" Pro feature",
+                    showsProBadge: true
+                )
+            ]
+        ),
         VersionSection(
             id: "3.0",
             version: "3.0",
             features: [
                 Feature(
                     systemImage: "parentheses",
-                    title: "Added a \"Remove parentheses\" Pro feature",
+                    title: "Added a \"Remove brackets for song titles\" Pro feature",
                     showsProBadge: true
                 ),
                 Feature(
@@ -760,7 +771,10 @@ struct WhatsNewView: View {
                     showsProBadge: false
                 )
             ]
-        ),
+        )
+    ]
+
+    private let previousSections: [VersionSection] = [
         VersionSection(
             id: "1.2",
             version: "1.2",
@@ -783,26 +797,17 @@ struct WhatsNewView: View {
                     header
                         .padding(.top, 4)
 
-                    VStack(spacing: 18) {
-                        ForEach(sections) { section in
-                            VStack(alignment: .leading, spacing: 12) {
-                                Text("Version \(section.version)")
-                                    .font(.headline.weight(.semibold))
-                                    .foregroundStyle(.secondary)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
+                    VersionSectionList(sections: currentSections)
 
-                                VStack(spacing: 12) {
-                                    ForEach(section.features) { feature in
-                                        WhatsNewFeatureCard(
-                                            systemImage: feature.systemImage,
-                                            title: feature.title,
-                                            showsProBadge: feature.showsProBadge
-                                        )
-                                    }
-                                }
-                            }
-                        }
+                    NavigationLink {
+                        WhatsNewPreviousVersionsView(sections: previousSections)
+                    } label: {
+                        Text(NSLocalizedString("View Previous Versions", comment: ""))
+                            .font(.subheadline.weight(.semibold))
+                            .frame(maxWidth: .infinity, minHeight: 46)
                     }
+                    .buttonStyle(.bordered)
+                    .tint(.blue)
 
                     Button(action: onContinue) {
                         Text(NSLocalizedString("Done", comment: ""))
@@ -848,6 +853,52 @@ struct WhatsNewView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 8)
+    }
+
+    struct VersionSectionList: View {
+        let sections: [VersionSection]
+
+        var body: some View {
+            VStack(spacing: 18) {
+                ForEach(sections) { section in
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Version \(section.version)")
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+
+                        VStack(spacing: 12) {
+                            ForEach(section.features) { feature in
+                                WhatsNewFeatureCard(
+                                    systemImage: feature.systemImage,
+                                    title: feature.title,
+                                    showsProBadge: feature.showsProBadge
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private struct WhatsNewPreviousVersionsView: View {
+    let sections: [WhatsNewView.VersionSection]
+
+    var body: some View {
+        ScrollView {
+            WhatsNewView.VersionSectionList(sections: sections)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 24)
+        }
+#if os(iOS)
+        .background(Color(.systemGroupedBackground).ignoresSafeArea())
+        .navigationBarTitleDisplayMode(.inline)
+#else
+        .background(Color(nsColor: .windowBackgroundColor))
+#endif
+        .navigationTitle(NSLocalizedString("Previous Versions", comment: ""))
     }
 }
 

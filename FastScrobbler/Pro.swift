@@ -189,8 +189,8 @@ struct ProUpgradeView: View {
                         )
                         ProBenefitCard(
                             systemImage: "parentheses",
-                            title: NSLocalizedString("Remove parentheses", comment: ""),
-                            subtitle: NSLocalizedString("Clean up titles before scrobbling by stripping matched parentheses from song names.", comment: "")
+                            title: NSLocalizedString("Remove brackets", comment: ""),
+                            subtitle: NSLocalizedString("Remove brackets from song and album titles by matching keywords, or optionally remove all brackets.", comment: "")
                         )
                         ProBenefitCard(
                             systemImage: "clock.arrow.circlepath",
@@ -410,7 +410,6 @@ private struct ProBenefitCard: View {
                 Text(title)
                     .font(.headline)
                     .multilineTextAlignment(.leading)
-                    .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
 
                 Text(subtitle)

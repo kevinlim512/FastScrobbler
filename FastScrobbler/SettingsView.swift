@@ -11,6 +11,9 @@ struct SettingsView: View {
     private static let writeReviewURL = URL(string: "https://apps.apple.com/app/id6759501541?action=write-review")!
 #if os(macOS)
     private static let macSettingsButtonMinHeight: CGFloat = 34
+#else
+    private static let iosLockedProNavigationBadgeTrailingInset: CGFloat = 24
+    private static let iosLockedProToggleBadgeTrailingInset: CGFloat = 63
 #endif
 
     @AppStorage(LiveActivityManager.enabledDefaultsKey) private var liveActivityEnabled = false
@@ -18,8 +21,10 @@ struct SettingsView: View {
     @AppStorage(ProSettings.Keys.scrobbleThresholdIndex, store: AppGroup.userDefaults) private var scrobbleThresholdIndex = ProSettings.defaultScrobbleThresholdIndex
     @AppStorage(ProSettings.Keys.useAlbumArtistForScrobbling, store: AppGroup.userDefaults) private var useAlbumArtistForScrobbling = false
     @AppStorage(ProSettings.Keys.stripEpAndSingleSuffixFromAlbum, store: AppGroup.userDefaults) private var stripEpAndSingleSuffixFromAlbum = false
-    @AppStorage(ProSettings.Keys.removeParenthesesEnabled, store: AppGroup.userDefaults) private var removeParenthesesEnabled = false
-    @AppStorage(ProSettings.Keys.removeAllParenthesesEnabled, store: AppGroup.userDefaults) private var removeAllParenthesesEnabled = false
+    @AppStorage(ProSettings.Keys.removeBracketsFromSongTitlesEnabled, store: AppGroup.userDefaults) private var removeBracketsFromSongTitlesEnabled = false
+    @AppStorage(ProSettings.Keys.removeAllBracketsFromSongTitlesEnabled, store: AppGroup.userDefaults) private var removeAllBracketsFromSongTitlesEnabled = false
+    @AppStorage(ProSettings.Keys.removeBracketsFromAlbumTitlesEnabled, store: AppGroup.userDefaults) private var removeBracketsFromAlbumTitlesEnabled = false
+    @AppStorage(ProSettings.Keys.removeAllBracketsFromAlbumTitlesEnabled, store: AppGroup.userDefaults) private var removeAllBracketsFromAlbumTitlesEnabled = false
     @AppStorage(ProSettings.Keys.preventDuplicateScrobblesEnabled, store: AppGroup.userDefaults) private var preventDuplicateScrobblesEnabled = true
     @AppStorage(AppSettings.Keys.scrobbleListeningHistoryEnabled, store: AppGroup.userDefaults) private var scrobbleListeningHistoryEnabled = true
     @AppStorage(ProSettings.Keys.scrobbleListeningHistoryFromAllDevicesEnabled, store: AppGroup.userDefaults) private var scrobbleListeningHistoryFromAllDevicesEnabled = false
@@ -51,7 +56,8 @@ struct SettingsView: View {
     }
 
     private enum SettingsRoute: Hashable {
-        case removeParentheses
+        case removeBracketsFromSongTitles
+        case removeBracketsFromAlbumTitles
     }
 
     @State private var activeAlert: ActiveAlert?
@@ -80,8 +86,10 @@ struct SettingsView: View {
             settingsRootContent
                 .navigationDestination(for: SettingsRoute.self) { route in
                     switch route {
-                    case .removeParentheses:
-                        RemoveParenthesesSettingsPage()
+                    case .removeBracketsFromSongTitles:
+                        RemoveBracketsSettingsPage(target: .songTitles)
+                    case .removeBracketsFromAlbumTitles:
+                        RemoveBracketsSettingsPage(target: .albumTitles)
                     }
                 }
 #if os(iOS)
@@ -258,34 +266,44 @@ struct SettingsView: View {
                         .foregroundStyle(.secondary)
                 }
                 scrobbleThresholdSlider()
-                removeParenthesesNavigationLink
+                removeBracketsNavigationLink(target: .songTitles)
+                removeBracketsNavigationLink(target: .albumTitles)
                 Toggle(isOn: proLockedBoolBinding($loveOnFavoriteEnabled, unlockedDefault: false)) {
                     HStack {
                         Text("Love Apple Music favourites on Last.fm")
                             .foregroundStyle(pro.isPro ? .primary : .secondary)
                         Spacer()
-                        ProFeatureBadge()
+                        proFeatureBadgePlaceholder
                     }
                 }
                 .disabled(!pro.isPro)
+                .overlay(alignment: .trailing) {
+                    lockedProBadgeOverlay(trailingInset: Self.iosLockedProToggleBadgeTrailingInset)
+                }
                 Toggle(isOn: proLockedBoolBinding($useAlbumArtistForScrobbling, unlockedDefault: false)) {
                     HStack {
                         Text("Replace song artist with album artist when scrobbling")
                             .foregroundStyle(pro.isPro ? .primary : .secondary)
                         Spacer()
-                        ProFeatureBadge()
+                        proFeatureBadgePlaceholder
                     }
                 }
                 .disabled(!pro.isPro)
+                .overlay(alignment: .trailing) {
+                    lockedProBadgeOverlay(trailingInset: Self.iosLockedProToggleBadgeTrailingInset)
+                }
                 Toggle(isOn: proLockedBoolBinding($stripEpAndSingleSuffixFromAlbum, unlockedDefault: false)) {
                     HStack {
                         Text("Remove “- EP” / “- Single” from album name")
                             .foregroundStyle(pro.isPro ? .primary : .secondary)
                         Spacer()
-                        ProFeatureBadge()
+                        proFeatureBadgePlaceholder
                     }
                 }
                 .disabled(!pro.isPro)
+                .overlay(alignment: .trailing) {
+                    lockedProBadgeOverlay(trailingInset: Self.iosLockedProToggleBadgeTrailingInset)
+                }
             }
 
 #if os(iOS)
@@ -332,10 +350,13 @@ struct SettingsView: View {
                         Text("Scrobble Listening History from all devices")
                             .foregroundStyle(pro.isPro ? .primary : .secondary)
                         Spacer()
-                        ProFeatureBadge()
+                        proFeatureBadgePlaceholder
                     }
                 }
                 .disabled(!pro.isPro)
+                .overlay(alignment: .trailing) {
+                    lockedProBadgeOverlay(trailingInset: Self.iosLockedProToggleBadgeTrailingInset)
+                }
             }
 #endif
 
@@ -488,7 +509,8 @@ struct SettingsView: View {
                 .font(.footnote)
                 .foregroundStyle(.secondary)
             scrobbleThresholdSlider()
-            removeParenthesesNavigationLink
+            removeBracketsNavigationLink(target: .songTitles)
+            removeBracketsNavigationLink(target: .albumTitles)
             Toggle(isOn: proLockedBoolBinding($loveOnFavoriteEnabled, unlockedDefault: false)) {
                 HStack {
                     Text("Love Apple Music favourites on Last.fm")
@@ -628,9 +650,12 @@ struct SettingsView: View {
         defaults.removeObject(forKey: ProSettings.Keys.scrobbleThresholdIndex)
         defaults.removeObject(forKey: ProSettings.Keys.useAlbumArtistForScrobbling)
         defaults.removeObject(forKey: ProSettings.Keys.stripEpAndSingleSuffixFromAlbum)
-        defaults.removeObject(forKey: ProSettings.Keys.removeParenthesesEnabled)
-        defaults.removeObject(forKey: ProSettings.Keys.removeAllParenthesesEnabled)
-        defaults.removeObject(forKey: ProSettings.Keys.removeParenthesesKeywords)
+        defaults.removeObject(forKey: ProSettings.Keys.removeBracketsFromSongTitlesEnabled)
+        defaults.removeObject(forKey: ProSettings.Keys.removeAllBracketsFromSongTitlesEnabled)
+        defaults.removeObject(forKey: ProSettings.Keys.removeBracketsFromSongTitleKeywords)
+        defaults.removeObject(forKey: ProSettings.Keys.removeBracketsFromAlbumTitlesEnabled)
+        defaults.removeObject(forKey: ProSettings.Keys.removeAllBracketsFromAlbumTitlesEnabled)
+        defaults.removeObject(forKey: ProSettings.Keys.removeBracketsFromAlbumTitleKeywords)
         defaults.removeObject(forKey: ProSettings.Keys.preventDuplicateScrobblesEnabled)
         defaults.removeObject(forKey: AppSettings.Keys.scrobbleListeningHistoryEnabled)
         defaults.removeObject(forKey: ProSettings.Keys.scrobbleListeningHistoryFromAllDevicesEnabled)
@@ -640,8 +665,10 @@ struct SettingsView: View {
         preventDuplicateScrobblesEnabled = true
         useAlbumArtistForScrobbling = false
         stripEpAndSingleSuffixFromAlbum = false
-        removeParenthesesEnabled = false
-        removeAllParenthesesEnabled = false
+        removeBracketsFromSongTitlesEnabled = false
+        removeAllBracketsFromSongTitlesEnabled = false
+        removeBracketsFromAlbumTitlesEnabled = false
+        removeAllBracketsFromAlbumTitlesEnabled = false
         scrobbleListeningHistoryEnabled = true
         scrobbleListeningHistoryFromAllDevicesEnabled = false
 
@@ -740,7 +767,7 @@ struct SettingsView: View {
             HStack {
                 Text("Scrobble at \(percentText) of duration")
                 Spacer()
-                ProFeatureBadge()
+                lockedProInlineBadge
             }
             .foregroundStyle(pro.isPro ? .primary : .secondary)
             Slider(value: sliderValue, in: 0...Double(ProSettings.scrobbleThresholdOptions.count - 1), step: 1)
@@ -783,12 +810,18 @@ struct SettingsView: View {
         }
     }
 
-    @ViewBuilder
-    private var removeParenthesesNavigationLink: some View {
+    private func removeBracketsNavigationLink(target: RemoveBracketsSettingsPage.Target) -> some View {
+        let route: SettingsRoute
+        switch target {
+        case .songTitles:
+            route = .removeBracketsFromSongTitles
+        case .albumTitles:
+            route = .removeBracketsFromAlbumTitles
+        }
 #if os(macOS)
-        NavigationLink(value: SettingsRoute.removeParentheses) {
+        return NavigationLink(value: route) {
             HStack(spacing: 12) {
-                Text("Remove parentheses")
+                Text(target.settingsLabel)
                     .foregroundStyle(pro.isPro ? .primary : .secondary)
                 Spacer()
                 ProFeatureBadge()
@@ -804,17 +837,47 @@ struct SettingsView: View {
         .buttonStyle(.plain)
         .disabled(!pro.isPro)
 #else
-        NavigationLink(value: SettingsRoute.removeParentheses) {
+        return NavigationLink(value: route) {
             HStack {
-                Text("Remove parentheses")
+                Text(target.settingsLabel)
                     .foregroundStyle(pro.isPro ? .primary : .secondary)
                 Spacer()
-                ProFeatureBadge()
+                proFeatureBadgePlaceholder
             }
         }
         .disabled(!pro.isPro)
+        .overlay(alignment: .trailing) {
+            lockedProBadgeOverlay(trailingInset: Self.iosLockedProNavigationBadgeTrailingInset)
+        }
 #endif
     }
+
+    @ViewBuilder
+    private var lockedProInlineBadge: some View {
+        if !pro.isPro {
+            ProFeatureBadge()
+        }
+    }
+
+#if os(iOS)
+    @ViewBuilder
+    private var proFeatureBadgePlaceholder: some View {
+        if !pro.isPro {
+            ProFeatureBadge()
+                .hidden()
+                .accessibilityHidden(true)
+        }
+    }
+
+    @ViewBuilder
+    private func lockedProBadgeOverlay(trailingInset: CGFloat) -> some View {
+        if !pro.isPro {
+            ProFeatureBadge()
+                .allowsHitTesting(false)
+                .padding(.trailing, trailingInset)
+        }
+    }
+#endif
 
     private func proLockedBoolBinding(_ storage: Binding<Bool>, unlockedDefault: Bool) -> Binding<Bool> {
         Binding(
@@ -860,16 +923,28 @@ struct SettingsView: View {
             value: SupportEmailDiagnostics.yesNo(pro.isPro ? stripEpAndSingleSuffixFromAlbum : false)
         ))
         settings.append(SupportEmailSetting(
-            label: "Remove parentheses",
-            value: SupportEmailDiagnostics.yesNo(pro.isPro ? removeParenthesesEnabled : false)
+            label: "Remove brackets for song titles",
+            value: SupportEmailDiagnostics.yesNo(pro.isPro ? removeBracketsFromSongTitlesEnabled : false)
         ))
         settings.append(SupportEmailSetting(
-            label: "Remove ALL parentheses",
-            value: SupportEmailDiagnostics.yesNo(pro.isPro ? removeAllParenthesesEnabled : false)
+            label: "Remove ALL brackets for song titles",
+            value: SupportEmailDiagnostics.yesNo(pro.isPro ? removeAllBracketsFromSongTitlesEnabled : false)
         ))
         settings.append(SupportEmailSetting(
-            label: "Remove parentheses keywords",
-            value: ProSettings.removeParenthesesKeywords().joined(separator: ", ")
+            label: "Remove brackets keywords for song titles",
+            value: ProSettings.removeBracketsFromSongTitleKeywords().joined(separator: ", ")
+        ))
+        settings.append(SupportEmailSetting(
+            label: "Remove brackets for album titles",
+            value: SupportEmailDiagnostics.yesNo(pro.isPro ? removeBracketsFromAlbumTitlesEnabled : false)
+        ))
+        settings.append(SupportEmailSetting(
+            label: "Remove ALL brackets for album titles",
+            value: SupportEmailDiagnostics.yesNo(pro.isPro ? removeAllBracketsFromAlbumTitlesEnabled : false)
+        ))
+        settings.append(SupportEmailSetting(
+            label: "Remove brackets keywords for album titles",
+            value: ProSettings.removeBracketsFromAlbumTitleKeywords().joined(separator: ", ")
         ))
 
 #if os(iOS)
@@ -976,223 +1051,6 @@ struct SettingsView: View {
         }
     }
 #endif
-}
-
-private struct RemoveParenthesesSettingsPage: View {
-    private struct KeywordDraft: Identifiable {
-        let id: UUID
-        var text: String
-    }
-
-    @AppStorage(ProSettings.Keys.removeParenthesesEnabled, store: AppGroup.userDefaults) private var removeParenthesesEnabled = false
-    @AppStorage(ProSettings.Keys.removeAllParenthesesEnabled, store: AppGroup.userDefaults) private var removeAllParenthesesEnabled = false
-
-    @State private var keywordDrafts: [KeywordDraft] = ProSettings.removeParenthesesKeywords().map {
-        KeywordDraft(id: UUID(), text: $0)
-    }
-    @State private var newKeyword = ""
-    @State private var isPresentingAddKeywordPrompt = false
-    @FocusState private var focusedKeywordID: UUID?
-    @Environment(\.dismiss) private var dismiss
-
-    private var areKeywordsDisabled: Bool {
-        removeAllParenthesesEnabled
-    }
-
-    var body: some View {
-        pageContent
-            .navigationTitle("Remove parentheses")
-#if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
-#endif
-            .onDisappear {
-                normalizeAndPersistKeywords()
-            }
-            .alert("Add Custom Keyword", isPresented: $isPresentingAddKeywordPrompt) {
-                TextField("Custom keyword", text: $newKeyword)
-                Button("Add") {
-                    addKeyword(from: newKeyword)
-                }
-                Button("Cancel", role: .cancel) {
-                    newKeyword = ""
-                }
-            } message: {
-                Text("Enter a keyword to match inside parentheses when scrobbling.")
-            }
-    }
-
-    @ViewBuilder
-    private var pageContent: some View {
-#if os(macOS)
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                settingsCard
-                keywordsCard
-            }
-            .padding()
-            .padding(.top, MacFloatingBarLayout.circleButtonContentTopPadding)
-        }
-        .background(Color(nsColor: .windowBackgroundColor))
-        .overlay(alignment: .topLeading) {
-            MacFloatingCircleButton(
-                systemImage: "chevron.left",
-                help: "Back",
-                accessibilityLabel: "Back",
-                action: {
-                    dismiss()
-                }
-            )
-            .padding(.top, 10)
-            .padding(.leading, 10)
-        }
-#else
-        Form {
-            toggleSectionContent
-
-            Section {
-                keywordSectionContent
-            } header: {
-                Text("Keywords")
-            } footer: {
-                Text("Keywords are matched case-insensitively and only as whole words.")
-            }
-            .disabled(areKeywordsDisabled)
-            .opacity(areKeywordsDisabled ? 0.5 : 1)
-        }
-#endif
-    }
-
-    @ViewBuilder
-    private var toggleSectionContent: some View {
-        Toggle("Remove parentheses", isOn: $removeParenthesesEnabled)
-        Text("When enabled, parentheses containing any of the keywords in the list below will be removed when scrobbling.")
-            .font(.footnote)
-            .foregroundStyle(.secondary)
-        Toggle("Remove ALL parentheses", isOn: $removeAllParenthesesEnabled)
-            .disabled(!removeParenthesesEnabled)
-            .tint(.red)
-        Text("This will affect song titles with parentheses in them.")
-            .font(.footnote)
-            .foregroundStyle(.red)
-    }
-
-    @ViewBuilder
-    private var keywordSectionContent: some View {
-        ForEach(Array(keywordDrafts.indices), id: \.self) { index in
-            keywordRow(index: index)
-        }
-
-        addKeywordRow
-    }
-
-#if os(macOS)
-    private var settingsCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            toggleSectionContent
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
-        .background(.thinMaterial)
-        .cornerRadius(12)
-        .shadow(color: .black.opacity(0.12), radius: 10, x: 0, y: 5)
-    }
-
-    private var keywordsCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Keywords")
-                .font(.title3.weight(.semibold))
-
-            keywordSectionContent
-
-            Text("Keywords are matched case-insensitively and only as whole words.")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
-        .background(.thinMaterial)
-        .cornerRadius(12)
-        .shadow(color: .black.opacity(0.12), radius: 10, x: 0, y: 5)
-        .disabled(areKeywordsDisabled)
-        .opacity(areKeywordsDisabled ? 0.5 : 1)
-    }
-#endif
-
-    @ViewBuilder
-    private func keywordRow(index: Int) -> some View {
-        HStack(spacing: 12) {
-            TextField("Keyword", text: $keywordDrafts[index].text)
-                .focused($focusedKeywordID, equals: keywordDrafts[index].id)
-                .onSubmit {
-                    normalizeAndPersistKeywords()
-                }
-#if os(macOS)
-                .textFieldStyle(.roundedBorder)
-#endif
-
-            Button(role: .destructive) {
-                removeKeyword(at: index)
-            } label: {
-                Image(systemName: "minus.circle.fill")
-                    .foregroundStyle(.red)
-            }
-            .buttonStyle(.plain)
-            .tint(.red)
-            .accessibilityLabel("Remove keyword")
-        }
-    }
-
-    private var addKeywordRow: some View {
-        Button {
-            isPresentingAddKeywordPrompt = true
-        } label: {
-            Label("Add Custom Keyword", systemImage: "plus.circle.fill")
-                .foregroundStyle(.blue)
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func addKeyword(from source: String) {
-        let candidate = source
-        let normalizedCandidate = candidate.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        guard !normalizedCandidate.isEmpty else { return }
-        guard !keywordDrafts.contains(where: {
-            $0.text.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == normalizedCandidate
-        }) else {
-            newKeyword = ""
-            return
-        }
-
-        keywordDrafts.append(KeywordDraft(id: UUID(), text: candidate))
-        newKeyword = ""
-        normalizeAndPersistKeywords()
-    }
-
-    private func removeKeyword(at index: Int) {
-        guard keywordDrafts.indices.contains(index) else { return }
-        let removedID = keywordDrafts[index].id
-        keywordDrafts.remove(at: index)
-        if focusedKeywordID == removedID {
-            focusedKeywordID = nil
-        }
-        normalizeAndPersistKeywords()
-    }
-
-    private func normalizeAndPersistKeywords() {
-        let persistedKeywords = ProSettings.sanitizedRemoveParenthesesKeywords(keywordDrafts.map(\.text))
-        let existingIDs = Dictionary(
-            keywordDrafts.map {
-                ($0.text.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(), $0.id)
-            },
-            uniquingKeysWith: { first, _ in first }
-        )
-
-        ProSettings.setRemoveParenthesesKeywords(persistedKeywords)
-        keywordDrafts = persistedKeywords.map { keyword in
-            let normalized = keyword.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-            return KeywordDraft(id: existingIDs[normalized] ?? UUID(), text: keyword)
-        }
-    }
 }
 
 struct ProFeatureBadge: View {

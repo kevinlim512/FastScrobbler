@@ -21,8 +21,8 @@ enum WhatsNewRelease {
         static let lastSeenVersion = "FastScrobbler.WhatsNew.lastSeenVersion"
     }
 
-    /// Release notes only exist for version 3.0; later versions should not reuse this screen automatically.
-    static let version = "3.0"
+    /// Present the current release notes automatically once for users updating to this version.
+    static let version = "3.1"
 
     static func currentAppVersion() -> String? {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
@@ -84,16 +84,19 @@ enum ProSettings {
         static let scrobbleThresholdIndex = "FastScrobbler.Pro.scrobbleThresholdIndex"
         static let useAlbumArtistForScrobbling = "FastScrobbler.Pro.useAlbumArtistForScrobbling"
         static let stripEpAndSingleSuffixFromAlbum = "FastScrobbler.Pro.stripEpAndSingleSuffixFromAlbum"
-        static let removeParenthesesEnabled = "FastScrobbler.Pro.removeParenthesesEnabled"
-        static let removeAllParenthesesEnabled = "FastScrobbler.Pro.removeAllParenthesesEnabled"
-        static let removeParenthesesKeywords = "FastScrobbler.Pro.removeParenthesesKeywords"
+        static let removeBracketsFromSongTitlesEnabled = "FastScrobbler.Pro.removeBracketsEnabled"
+        static let removeAllBracketsFromSongTitlesEnabled = "FastScrobbler.Pro.removeAllBracketsEnabled"
+        static let removeBracketsFromSongTitleKeywords = "FastScrobbler.Pro.removeBracketsKeywords"
+        static let removeBracketsFromAlbumTitlesEnabled = "FastScrobbler.Pro.removeBracketsFromAlbumTitlesEnabled"
+        static let removeAllBracketsFromAlbumTitlesEnabled = "FastScrobbler.Pro.removeAllBracketsFromAlbumTitlesEnabled"
+        static let removeBracketsFromAlbumTitleKeywords = "FastScrobbler.Pro.removeBracketsFromAlbumTitleKeywords"
         static let preventDuplicateScrobblesEnabled = "FastScrobbler.Pro.preventDuplicateScrobblesEnabled"
         static let scrobbleListeningHistoryFromAllDevicesEnabled = "FastScrobbler.Pro.scrobbleListeningHistoryFromAllDevicesEnabled"
     }
 
     static let scrobbleThresholdOptions: [Double] = [0.10, 0.25, 0.50, 0.75]
     static let defaultScrobbleThresholdIndex: Int = 2
-    static let defaultRemoveParenthesesKeywords: [String] = [
+    static let defaultRemoveBracketsKeywords: [String] = [
         "feat. ",
         "with ",
         "Remix",
@@ -102,6 +105,14 @@ enum ProSettings {
         "Remastered",
         "from",
         "Radio Edit"
+    ]
+    static let defaultRemoveBracketsFromAlbumTitleKeywords: [String] = [
+        "Deluxe",
+        "Edition",
+        "Remastered",
+        "Remaster",
+        "Bonus",
+        "Special"
     ]
 
     static func loveOnFavoriteEnabled() -> Bool {
@@ -122,16 +133,28 @@ enum ProSettings {
         return AppGroup.userDefaults.bool(forKey: Keys.stripEpAndSingleSuffixFromAlbum)
     }
 
-    static func removeParenthesesEnabled() -> Bool {
+    static func removeBracketsFromSongTitlesEnabled() -> Bool {
         guard ProEntitlement.isPro else { return false }
-        if AppGroup.userDefaults.object(forKey: Keys.removeParenthesesEnabled) == nil { return false }
-        return AppGroup.userDefaults.bool(forKey: Keys.removeParenthesesEnabled)
+        if AppGroup.userDefaults.object(forKey: Keys.removeBracketsFromSongTitlesEnabled) == nil { return false }
+        return AppGroup.userDefaults.bool(forKey: Keys.removeBracketsFromSongTitlesEnabled)
     }
 
-    static func removeAllParenthesesEnabled() -> Bool {
+    static func removeAllBracketsFromSongTitlesEnabled() -> Bool {
         guard ProEntitlement.isPro else { return false }
-        if AppGroup.userDefaults.object(forKey: Keys.removeAllParenthesesEnabled) == nil { return false }
-        return AppGroup.userDefaults.bool(forKey: Keys.removeAllParenthesesEnabled)
+        if AppGroup.userDefaults.object(forKey: Keys.removeAllBracketsFromSongTitlesEnabled) == nil { return false }
+        return AppGroup.userDefaults.bool(forKey: Keys.removeAllBracketsFromSongTitlesEnabled)
+    }
+
+    static func removeBracketsFromAlbumTitlesEnabled() -> Bool {
+        guard ProEntitlement.isPro else { return false }
+        if AppGroup.userDefaults.object(forKey: Keys.removeBracketsFromAlbumTitlesEnabled) == nil { return false }
+        return AppGroup.userDefaults.bool(forKey: Keys.removeBracketsFromAlbumTitlesEnabled)
+    }
+
+    static func removeAllBracketsFromAlbumTitlesEnabled() -> Bool {
+        guard ProEntitlement.isPro else { return false }
+        if AppGroup.userDefaults.object(forKey: Keys.removeAllBracketsFromAlbumTitlesEnabled) == nil { return false }
+        return AppGroup.userDefaults.bool(forKey: Keys.removeAllBracketsFromAlbumTitlesEnabled)
     }
 
     static func preventDuplicateScrobblesEnabled() -> Bool {
@@ -157,25 +180,43 @@ enum ProSettings {
         return "\(Int((scrobbleThresholdOptions[clamped] * 100).rounded()))%"
     }
 
-    static func removeParenthesesKeywords() -> [String] {
-        guard let data = AppGroup.userDefaults.data(forKey: Keys.removeParenthesesKeywords) else {
-            return defaultRemoveParenthesesKeywords
+    static func removeBracketsFromSongTitleKeywords() -> [String] {
+        guard let data = AppGroup.userDefaults.data(forKey: Keys.removeBracketsFromSongTitleKeywords) else {
+            return defaultRemoveBracketsKeywords
         }
 
         guard let decoded = try? JSONDecoder().decode([String].self, from: data) else {
-            return defaultRemoveParenthesesKeywords
+            return defaultRemoveBracketsKeywords
         }
 
-        return sanitizedRemoveParenthesesKeywords(decoded)
+        return sanitizedRemoveBracketsKeywords(decoded)
     }
 
-    static func setRemoveParenthesesKeywords(_ keywords: [String]) {
-        let sanitized = sanitizedRemoveParenthesesKeywords(keywords)
+    static func setRemoveBracketsFromSongTitleKeywords(_ keywords: [String]) {
+        let sanitized = sanitizedRemoveBracketsKeywords(keywords)
         guard let data = try? JSONEncoder().encode(sanitized) else { return }
-        AppGroup.userDefaults.set(data, forKey: Keys.removeParenthesesKeywords)
+        AppGroup.userDefaults.set(data, forKey: Keys.removeBracketsFromSongTitleKeywords)
     }
 
-    static func sanitizedRemoveParenthesesKeywords(_ keywords: [String]) -> [String] {
+    static func removeBracketsFromAlbumTitleKeywords() -> [String] {
+        guard let data = AppGroup.userDefaults.data(forKey: Keys.removeBracketsFromAlbumTitleKeywords) else {
+            return defaultRemoveBracketsFromAlbumTitleKeywords
+        }
+
+        guard let decoded = try? JSONDecoder().decode([String].self, from: data) else {
+            return defaultRemoveBracketsFromAlbumTitleKeywords
+        }
+
+        return sanitizedRemoveBracketsKeywords(decoded)
+    }
+
+    static func setRemoveBracketsFromAlbumTitleKeywords(_ keywords: [String]) {
+        let sanitized = sanitizedRemoveBracketsKeywords(keywords)
+        guard let data = try? JSONEncoder().encode(sanitized) else { return }
+        AppGroup.userDefaults.set(data, forKey: Keys.removeBracketsFromAlbumTitleKeywords)
+    }
+
+    static func sanitizedRemoveBracketsKeywords(_ keywords: [String]) -> [String] {
         var seen = Set<String>()
         var sanitized: [String] = []
 
@@ -277,7 +318,11 @@ extension Track {
             copy = copy.strippingEpAndSingleSuffixFromAlbumIfPresent()
         }
 
-        if ProSettings.removeParenthesesEnabled() {
+        if ProSettings.removeBracketsFromAlbumTitlesEnabled() {
+            copy = copy.removingConfiguredParentheticalAlbumSegments()
+        }
+
+        if ProSettings.removeBracketsFromSongTitlesEnabled() {
             copy = copy.removingConfiguredParentheticalTitleSegments()
         }
 
@@ -313,10 +358,10 @@ extension Track {
     }
 
     func removingConfiguredParentheticalTitleSegments() -> Track {
-        let cleanedTitle = Self.cleanedTitleByRemovingParentheticalSegments(
+        let cleanedTitle = Self.cleanedMetadataByRemovingParentheticalSegments(
             from: title,
-            removeAll: ProSettings.removeAllParenthesesEnabled(),
-            keywords: ProSettings.removeParenthesesKeywords()
+            removeAll: ProSettings.removeAllBracketsFromSongTitlesEnabled(),
+            keywords: ProSettings.removeBracketsFromSongTitleKeywords()
         )
         guard cleanedTitle != title else { return self }
 
@@ -325,64 +370,79 @@ extension Track {
         return copy
     }
 
-    private static func cleanedTitleByRemovingParentheticalSegments(
-        from title: String,
+    func removingConfiguredParentheticalAlbumSegments() -> Track {
+        guard let album, !album.isEmpty else { return self }
+
+        let cleanedAlbum = Self.cleanedMetadataByRemovingParentheticalSegments(
+            from: album,
+            removeAll: ProSettings.removeAllBracketsFromAlbumTitlesEnabled(),
+            keywords: ProSettings.removeBracketsFromAlbumTitleKeywords()
+        )
+        guard cleanedAlbum != album else { return self }
+
+        var copy = self
+        copy.album = cleanedAlbum
+        return copy
+    }
+
+    private static func cleanedMetadataByRemovingParentheticalSegments(
+        from value: String,
         removeAll: Bool,
         keywords: [String]
     ) -> String {
-        guard removeAll || !keywords.isEmpty else { return title }
+        guard removeAll || !keywords.isEmpty else { return value }
 
         let pattern = #"\([^()]*\)|\[[^\[\]]*\]"#
-        guard let regex = try? NSRegularExpression(pattern: pattern) else { return title }
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return value }
 
-        var workingTitle = title
+        var workingValue = value
         var removedAnySegment = false
 
         while true {
             let matches = regex.matches(
-                in: workingTitle,
-                range: NSRange(workingTitle.startIndex..<workingTitle.endIndex, in: workingTitle)
+                in: workingValue,
+                range: NSRange(workingValue.startIndex..<workingValue.endIndex, in: workingValue)
             )
             guard !matches.isEmpty else { break }
 
             var rebuilt = ""
-            var currentIndex = workingTitle.startIndex
+            var currentIndex = workingValue.startIndex
             var removedOnThisPass = false
 
             for match in matches {
-                guard let range = Range(match.range, in: workingTitle) else { continue }
-                let segment = String(workingTitle[range])
+                guard let range = Range(match.range, in: workingValue) else { continue }
+                let segment = String(workingValue[range])
                 let inner = String(segment.dropFirst().dropLast())
                 let shouldRemove = removeAll || keywords.contains { keyword in
                     parentheticalContent(inner, matchesWholeWordKeyword: keyword)
                 }
 
                 if shouldRemove {
-                    rebuilt += String(workingTitle[currentIndex..<range.lowerBound])
+                    rebuilt += String(workingValue[currentIndex..<range.lowerBound])
                     removedOnThisPass = true
                 } else {
-                    rebuilt += String(workingTitle[currentIndex..<range.upperBound])
+                    rebuilt += String(workingValue[currentIndex..<range.upperBound])
                 }
 
                 currentIndex = range.upperBound
             }
 
-            rebuilt += String(workingTitle[currentIndex...])
+            rebuilt += String(workingValue[currentIndex...])
 
             guard removedOnThisPass else { break }
-            workingTitle = rebuilt
+            workingValue = rebuilt
             removedAnySegment = true
         }
 
-        guard removedAnySegment else { return title }
+        guard removedAnySegment else { return value }
 
-        let normalizedWhitespace = workingTitle.replacingOccurrences(
+        let normalizedWhitespace = workingValue.replacingOccurrences(
             of: #"\s+"#,
             with: " ",
             options: .regularExpression
         ).trimmingCharacters(in: .whitespacesAndNewlines)
 
-        return normalizedWhitespace.isEmpty ? title : normalizedWhitespace
+        return normalizedWhitespace.isEmpty ? value : normalizedWhitespace
     }
 
     private static func parentheticalContent(_ content: String, matchesWholeWordKeyword keyword: String) -> Bool {

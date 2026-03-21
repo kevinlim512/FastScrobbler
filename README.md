@@ -43,7 +43,7 @@ https://apps.apple.com/sg/app/fastscrobbler-for-last-fm/id6759501541
 - **Scrobble metadata controls**:
   - Use **Album Artist** as scrobble artist (when available, except compilation albums).
   - Strip “`- EP`” / “`- Single`” suffixes from album names.
-  - **Remove parentheses from song titles when scrobbling**: remove all parenthetical / bracketed title segments, or only segments whose contents match configurable keywords (case-insensitive whole-word matching).
+  - **Remove brackets from song titles when scrobbling**: remove all parenthetical / bracketed title segments, or only segments whose contents match configurable keywords (case-insensitive whole-word matching).
 - **Live Activity (iOS 16.1+)**: shows scrobbling status on Lock Screen / Dynamic Island.
 - **Shortcuts (iOS)**:
   - **Send Now Playing** (updates Last.fm “currently playing”)
@@ -144,7 +144,7 @@ These localisations are included across the iOS app, macOS app, and Control Cent
 ## Pro upgrade (In‑App Purchase)
 
 - The app expects a **non-consumable** IAP with product ID `com.kevin.FastScrobbler.pro` (see `FastScrobbler/Models/Track.swift` and `FastScrobbler/Pro.swift`).
-- You **don’t set $1.99 in code** — pricing is configured in **App Store Connect** for the IAP product.
+- **Don’t set price in code.** Pricing is configured in **App Store Connect** for the IAP product.
 
 ## License
 
