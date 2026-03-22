@@ -64,6 +64,7 @@ final class LastFMAuthManager: NSObject, ObservableObject {
             }
 
             session.presentationContextProvider = self
+            session.prefersEphemeralWebBrowserSession = true
             self.webAuth = session
             _ = session.start()
         }
@@ -113,6 +114,21 @@ final class LastFMAuthManager: NSObject, ObservableObject {
         guard let username = username?.trimmingCharacters(in: .whitespacesAndNewlines), !username.isEmpty else { return nil }
         let encoded = username.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? username
         return URL(string: "https://www.last.fm/user/\(encoded)")
+    }
+
+    func freshProfileURL() -> URL? {
+        guard let profileURL else { return nil }
+        guard var components = URLComponents(url: profileURL, resolvingAgainstBaseURL: false) else {
+            return profileURL
+        }
+
+        // Last.fm profile pages can lag behind a successful API scrobble when the same URL is reopened in-app.
+        // Use a unique query item per tap so Safari fetches a fresh page.
+        var items = components.queryItems ?? []
+        items.removeAll(where: { $0.name == "fs_refresh" })
+        items.append(URLQueryItem(name: "fs_refresh", value: String(Int(Date().timeIntervalSince1970))))
+        components.queryItems = items
+        return components.url ?? profileURL
     }
 }
 

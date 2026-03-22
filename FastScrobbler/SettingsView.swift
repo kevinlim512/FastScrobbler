@@ -386,7 +386,7 @@ struct SettingsView: View {
 
                 let canViewProfile = (auth.sessionKey != nil && auth.profileURL != nil)
                 Button {
-                    if let url = auth.profileURL {
+                    if let url = auth.freshProfileURL() {
                         openURL(url)
                     }
                 } label: {
@@ -571,7 +571,7 @@ struct SettingsView: View {
 
             HStack(spacing: 12) {
                 Button {
-                    if let url = auth.profileURL {
+                    if let url = auth.freshProfileURL() {
                         openURL(url)
                     }
                 } label: {

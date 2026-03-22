@@ -362,7 +362,7 @@ struct ContentView: View {
 
             if auth.sessionKey != nil {
                 Button {
-                    if let url = auth.profileURL {
+                    if let url = auth.freshProfileURL() {
 #if os(iOS)
                         inAppBrowserURL = url
 #else
@@ -468,7 +468,7 @@ struct ContentView: View {
 
     private func presentSetupIfNeeded() {
 #if os(macOS)
-        let shouldShow = !hasSeenSetup
+        let shouldShow = (!hasSeenSetup || auth.sessionKey == nil || observer.authorizationStatus != .authorized)
         guard shouldShow else { return }
 
         isShowingHelp = false
@@ -654,6 +654,20 @@ struct ContentView: View {
     }
 }
 
+#if os(iOS)
+private struct InAppSafariView: UIViewControllerRepresentable {
+    let url: URL
+
+    func makeUIViewController(context: Context) -> SFSafariViewController {
+        let controller = SFSafariViewController(url: url)
+        controller.dismissButtonStyle = .close
+        return controller
+    }
+
+    func updateUIViewController(_ uiViewController: SFSafariViewController, context: Context) {}
+}
+#endif
+
 extension View {
     @ViewBuilder
     func onValueChange<Value: Equatable>(
@@ -725,8 +739,8 @@ struct WhatsNewView: View {
 
     private let currentSections: [VersionSection] = [
         VersionSection(
-            id: "3.1",
-            version: "3.1",
+            id: "3.2",
+            version: "3.2",
             features: [
                 Feature(
                     systemImage: "parentheses",
@@ -951,20 +965,6 @@ private struct WhatsNewFeatureCard: View {
     }
 }
 
-#if os(iOS)
-private struct InAppSafariView: UIViewControllerRepresentable {
-    let url: URL
-
-    func makeUIViewController(context: Context) -> SFSafariViewController {
-        let controller = SFSafariViewController(url: url)
-        controller.dismissButtonStyle = .close
-        return controller
-    }
-
-    func updateUIViewController(_ uiViewController: SFSafariViewController, context: Context) {}
-}
-#endif
-
 extension View {
     @ViewBuilder
     func pillButtonBorder() -> some View {
@@ -1044,7 +1044,9 @@ extension ContentView {
                 Color.black.opacity(0.18)
                     .ignoresSafeArea()
                     .onTapGesture {
-                        dismissMacModal()
+                        if !isShowingSetup {
+                            dismissMacModal()
+                        }
                     }
 
                 macModalContent
@@ -1095,8 +1097,8 @@ extension ContentView {
         } else if isShowingHelp {
             isShowingHelp = false
         } else if isShowingSetup {
-            hasSeenSetup = true
-            isShowingSetup = false
+            // Keep onboarding visible until the setup requirements are actually satisfied.
+            return
         }
     }
 }

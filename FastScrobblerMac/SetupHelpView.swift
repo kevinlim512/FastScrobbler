@@ -8,6 +8,10 @@ import ServiceManagement
 import SwiftUI
 
 struct SetupHelpView: View {
+    private enum Keys {
+        static let hasSeenSetup = "FastScrobbler.Setup.hasSeen"
+    }
+
     enum Mode {
         case onboarding
         case help
@@ -27,6 +31,10 @@ struct SetupHelpView: View {
     @State private var startAtLoginEnabled = Self.isStartAtLoginEnabled
     @State private var isSigningInToLastFM = false
     @State private var lastFMErrorText: String?
+
+    private var canFinishSetup: Bool {
+        auth.sessionKey != nil && observer.authorizationStatus == .authorized
+    }
 
     init(mode: Mode, onOpenSettings: (() -> Void)? = nil, onDone: @escaping () -> Void) {
         self.mode = mode
@@ -165,13 +173,35 @@ struct SetupHelpView: View {
                     )
 
                     let musicControlAllowed = (observer.authorizationStatus == .authorized)
+                    let musicControlActionTitle: String? = {
+                        guard !musicControlAllowed else { return nil }
+                        switch observer.authorizationStatus {
+                        case .notDetermined:
+                            return NSLocalizedString("Request Access", comment: "")
+                        case .denied, .restricted:
+                            return NSLocalizedString("Open System Settings", comment: "")
+                        case .authorized:
+                            return nil
+                        }
+                    }()
+                    let musicControlAction: (() -> Void)? = {
+                        guard !musicControlAllowed else { return nil }
+                        switch observer.authorizationStatus {
+                        case .notDetermined:
+                            return requestMusicControlPermission
+                        case .denied, .restricted:
+                            return { openPrivacySettings(kind: .automation) }
+                        case .authorized:
+                            return nil
+                        }
+                    }()
                     HelpRow(
                         icon: "music.note",
                         title: NSLocalizedString("Allow Music Control", comment: ""),
                         subtitle: NSLocalizedString("When macOS asks to let FastScrobbler control Music, click Allow. This lets FastScrobbler read what’s playing for scrobbling.", comment: ""),
                         isChecked: musicControlAllowed,
-                        actionTitle: musicControlAllowed ? nil : NSLocalizedString("Open System Settings", comment: ""),
-                        action: musicControlAllowed ? nil : { openPrivacySettings(kind: .automation) }
+                        actionTitle: musicControlActionTitle,
+                        action: musicControlAction
                     )
 
                     let mediaAllowed = (mediaLibraryStatus == .authorized)
@@ -231,6 +261,14 @@ struct SetupHelpView: View {
                 .pillButtonBorder()
                 .tint(.blue)
                 .keyboardShortcut(.defaultAction)
+                .disabled(mode == .onboarding && !canFinishSetup)
+
+                if mode == .onboarding && !canFinishSetup {
+                    Text("Connect Last.fm and allow Music control before continuing.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
             }
             .padding()
             .padding(.top, MacFloatingBarLayout.circleButtonContentTopPadding)
@@ -254,14 +292,16 @@ struct SetupHelpView: View {
             Text(lastFMErrorText ?? "")
         }
         .overlay(alignment: .topLeading) {
-            MacFloatingCircleButton(
-                systemImage: "chevron.left",
-                help: NSLocalizedString("Back", comment: ""),
-                accessibilityLabel: NSLocalizedString("Back", comment: ""),
-                action: onDone
-            )
-            .padding(.top, 10)
-            .padding(.leading, 10)
+            if mode == .help {
+                MacFloatingCircleButton(
+                    systemImage: "chevron.left",
+                    help: NSLocalizedString("Back", comment: ""),
+                    accessibilityLabel: NSLocalizedString("Back", comment: ""),
+                    action: onDone
+                )
+                .padding(.top, 10)
+                .padding(.leading, 10)
+            }
         }
     }
 
@@ -326,6 +366,15 @@ struct SetupHelpView: View {
                 }
             }
             refreshStatuses()
+            await maybeStartScrobblingIfSetupAlreadyCompleted()
+        }
+    }
+
+    private func requestMusicControlPermission() {
+        Task { @MainActor in
+            await observer.requestMusicControlPermission()
+            refreshStatuses()
+            await maybeStartScrobblingIfSetupAlreadyCompleted()
         }
     }
 
@@ -339,11 +388,18 @@ struct SetupHelpView: View {
             defer { isSigningInToLastFM = false }
             do {
                 try await auth.connect()
-                engine.start()
+                refreshStatuses()
+                await maybeStartScrobblingIfSetupAlreadyCompleted()
             } catch {
                 if error is CancellationError { return }
                 lastFMErrorText = error.localizedDescription
             }
         }
+    }
+
+    private func maybeStartScrobblingIfSetupAlreadyCompleted() async {
+        guard UserDefaults.standard.bool(forKey: Keys.hasSeenSetup) || mode == .help else { return }
+        guard auth.sessionKey != nil, observer.authorizationStatus == .authorized else { return }
+        await AppModel.shared.startIfNeeded()
     }
 }

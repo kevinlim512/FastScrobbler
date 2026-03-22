@@ -3,6 +3,14 @@ import Foundation
 enum AppGroup {
     static let id = "group.com.kevin.FastScrobbler"
     static let userDefaults = UserDefaults(suiteName: id) ?? .standard
+
+    static func sharedContainerURL() -> URL? {
+        FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: id)
+    }
+
+    static func sharedDataDirectoryURL() -> URL? {
+        sharedContainerURL()?.appendingPathComponent("FastScrobblerShared", isDirectory: true)
+    }
 }
 
 enum AppSettings {
@@ -22,7 +30,7 @@ enum WhatsNewRelease {
     }
 
     /// Present the current release notes automatically once for users updating to this version.
-    static let version = "3.1"
+    static let version = "3.2"
 
     static func currentAppVersion() -> String? {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String

@@ -27,6 +27,12 @@ struct LastFMClient {
     private let apiKey: String
     private let apiSecret: String
     private let baseURL: URL
+    private static let session: URLSession = {
+        let config = URLSessionConfiguration.ephemeral
+        config.requestCachePolicy = .reloadIgnoringLocalCacheData
+        config.urlCache = nil
+        return URLSession(configuration: config)
+    }()
 
     init(apiKey: String = LastFMSecrets.apiKey, apiSecret: String = LastFMSecrets.apiSecret) throws {
         guard !apiKey.isEmpty else { throw ClientError.missingApiKey }
@@ -191,7 +197,7 @@ struct LastFMClient {
         #endif
         request.setValue("FastScrobbler/1.0 (\(platform))", forHTTPHeaderField: "User-Agent")
 
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, _) = try await Self.session.data(for: request)
         let obj = try JSONSerialization.jsonObject(with: data)
         guard let json = obj as? [String: Any] else { throw ClientError.invalidResponse }
         if let code = json["error"] as? Int, let message = json["message"] as? String {

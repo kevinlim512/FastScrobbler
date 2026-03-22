@@ -2,7 +2,7 @@
 "CFBundleDisplayName" = "FastScrobbler";
 
 /* Bundle name */
-"CFBundleName" = "FastScrobblerMac";
+"CFBundleName" = "FastScrobbler";
 
 /* Privacy - AppleEvents Sending Usage Description */
 "NSAppleEventsUsageDescription" = "FastScrobbler 需要获得控制“音乐”App 的权限，以读取当前播放歌曲的元数据。";

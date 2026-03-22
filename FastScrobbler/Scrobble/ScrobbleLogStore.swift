@@ -85,7 +85,6 @@ final class ScrobbleLogStore: ObservableObject {
     }
 
     private func load() {
-        let fm = FileManager.default
         let legacyURL = legacyFileURL()
         let sharedURL = sharedFileURL()
 
@@ -126,9 +125,7 @@ final class ScrobbleLogStore: ObservableObject {
 
             // Persist into the shared container so app + extensions share the same dedupe history.
             do {
-                let data = try JSONEncoder().encode(merged)
-                try fm.createDirectory(at: sharedURL.deletingLastPathComponent(), withIntermediateDirectories: true, attributes: nil)
-                try data.write(to: sharedURL, options: [.atomic])
+                try persist(merged, preferredURL: sharedURL, fallbackURL: legacyURL)
             } catch {
                 logger.warning("failed to persist merged scrobble log: \(error.localizedDescription, privacy: .public)")
             }
@@ -138,15 +135,8 @@ final class ScrobbleLogStore: ObservableObject {
     }
 
     private func save() {
-        let url = fileURL()
         do {
-            let data = try JSONEncoder().encode(entries)
-            try FileManager.default.createDirectory(
-                at: url.deletingLastPathComponent(),
-                withIntermediateDirectories: true,
-                attributes: nil
-            )
-            try data.write(to: url, options: [.atomic])
+            try persist(entries, preferredURL: sharedFileURL(), fallbackURL: legacyFileURL())
         } catch {
             logger.warning("failed to persist scrobble log: \(error.localizedDescription, privacy: .public)")
         }
@@ -166,8 +156,7 @@ final class ScrobbleLogStore: ObservableObject {
     }
 
     private func sharedFileURL() -> URL? {
-        FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: AppGroup.id)?
-            .appendingPathComponent("FastScrobblerShared", isDirectory: true)
+        AppGroup.sharedDataDirectoryURL()?
             .appendingPathComponent("scrobble_log.json")
     }
 
@@ -180,5 +169,29 @@ final class ScrobbleLogStore: ObservableObject {
         return base
             .appendingPathComponent(bundleID, isDirectory: true)
             .appendingPathComponent("scrobble_log.json")
+    }
+
+    private func persist(_ entries: [Entry], preferredURL: URL?, fallbackURL: URL) throws {
+        let data = try JSONEncoder().encode(entries)
+
+        if let preferredURL {
+            do {
+                try write(data, to: preferredURL)
+                return
+            } catch {
+                logger.warning("shared scrobble log write failed; falling back to Application Support: \(error.localizedDescription, privacy: .public)")
+            }
+        }
+
+        try write(data, to: fallbackURL)
+    }
+
+    private func write(_ data: Data, to url: URL) throws {
+        try FileManager.default.createDirectory(
+            at: url.deletingLastPathComponent(),
+            withIntermediateDirectories: true,
+            attributes: nil
+        )
+        try data.write(to: url, options: [.atomic])
     }
 }

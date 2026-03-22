@@ -27,20 +27,24 @@ final class MacAppDelegate: NSObject, NSApplicationDelegate {
     private let model = AppModel.shared
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        Task { @MainActor in
-            await model.startIfNeeded()
-            await ProPurchaseManager.shared.startIfNeeded()
-        }
-
         let rootView = MacPopoverRootView(content: ContentView())
             .environmentObject(model.auth)
             .environmentObject(model.observer)
             .environmentObject(model.engine)
             .environmentObject(model.scrobbleLog)
             .environmentObject(ProPurchaseManager.shared)
-            .environmentObject(AppLanguageStore.shared)
+                .environmentObject(AppLanguageStore.shared)
 
         MenuBarController.shared.start(rootView: rootView)
+
+        Task { @MainActor in
+            await model.startIfNeeded()
+            await ProPurchaseManager.shared.startIfNeeded()
+        }
+    }
+
+    func applicationDidBecomeActive(_ notification: Notification) {
+        MenuBarController.shared.showPrimaryInterfaceIfNeeded()
     }
 }
 

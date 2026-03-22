@@ -7,6 +7,10 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
+        URLCache.shared.removeAllCachedResponses()
+        URLCache.shared.memoryCapacity = 0
+        URLCache.shared.diskCapacity = 0
+
         // Ensure shared objects exist for background task launches (no UI scene).
         _ = AppModel.shared
         Task { @MainActor in

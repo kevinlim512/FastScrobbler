@@ -2,11 +2,10 @@
 "CFBundleDisplayName" = "FastScrobbler";
 
 /* Bundle name */
-"CFBundleName" = "FastScrobblerMac";
+"CFBundleName" = "FastScrobbler";
 
 /* Privacy - AppleEvents Sending Usage Description */
 "NSAppleEventsUsageDescription" = "FastScrobbler a besoin de l’autorisation de contrôler l’app Musique pour lire les métadonnées du morceau en cours de lecture.";
 
 /* Privacy - Media Library Usage Description */
 "NSAppleMusicUsageDescription" = "FastScrobbler a besoin de l’autorisation d’accéder à votre bibliothèque multimédia pour scrobbler.";
-
