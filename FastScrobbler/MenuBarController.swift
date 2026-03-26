@@ -45,6 +45,7 @@
 	            let image = Self.makeStatusBarImage(
 	                symbolNames: Self.statusBarSymbolNames,
 	                symbolConfiguration: symbolConfig,
+	                pointSize: pointSize,
 	                targetSize: NSSize(width: thickness, height: thickness)
 	            )
 
@@ -70,6 +71,7 @@
     private static func makeStatusBarImage(
         symbolNames: [String],
         symbolConfiguration: NSImage.SymbolConfiguration,
+        pointSize: CGFloat,
         targetSize: NSSize
     ) -> NSImage? {
         let resolvedSymbol = symbolNames.lazy.compactMap { symbolName in
@@ -81,7 +83,6 @@
             return nil
         }
 
-        let verticalOffset = measuredVerticalOpticalCenterOffset(for: symbol)
         let backingScale = NSScreen.main?.backingScaleFactor ?? 2.0
         func snapToPixel(_ value: CGFloat) -> CGFloat {
             (value * backingScale).rounded() / backingScale
@@ -89,36 +90,14 @@
 
         let drawOrigin = NSPoint(
             x: snapToPixel((targetSize.width - symbol.size.width) / 2.0),
-            y: snapToPixel((targetSize.height - symbol.size.height) / 2.0 + verticalOffset)
+            y: snapToPixel((targetSize.height - symbol.size.height) / 2.0)
         )
         let drawRect = NSRect(origin: drawOrigin, size: symbol.size)
 
-        // Use a drawing handler so the symbol remains resolution-independent when rendered (e.g., Retina).
         return NSImage(size: targetSize, flipped: false) { _ in
             symbol.draw(in: drawRect, from: .zero, operation: .sourceOver, fraction: 1.0)
             return true
         }
-    }
-
-    private static func measuredVerticalOpticalCenterOffset(for image: NSImage) -> CGFloat {
-        // SF Symbols can have asymmetric padding inside their bounding box, which can make them appear
-        // visually "low" in the menu bar. NSSymbolImageRep exposes an alignment rect the app can use to nudge
-        // the glyph so its alignment center sits at the image's vertical center.
-        guard
-            let rep = image.representations.first,
-            let value = (rep as AnyObject).value(forKey: "alignmentRect") as? NSValue
-        else {
-            return 0
-        }
-
-        let alignmentRect = value.rectValue
-        let imageCenterY = image.size.height / 2.0
-        let alignmentCenterY = alignmentRect.midY
-        let rawOffset = imageCenterY - alignmentCenterY
-
-        // Round to half-point increments and clamp to a small, safe adjustment range.
-        let rounded = (rawOffset * 2.0).rounded() / 2.0
-        return min(2.0, max(-2.0, rounded))
     }
 
     func start<Root: View>(rootView: Root) {

@@ -133,6 +133,7 @@
 "Prevent duplicate scrobbles" = "重複スクロブルを防ぐ";
 "Purchased" = "購入済み";
 "Rate FastScrobbler" = "FastScrobblerを評価";
+"Ask a Question or Report a Bug" = "質問するかバグを報告";
 "Recently Played" = "最近再生した曲";
 "Request Access" = "アクセスを許可";
 "Request Media Library Access" = "メディアライブラリへのアクセスを要求";
@@ -150,6 +151,9 @@
 "Scrobbled: %@ — %@" = "スクロブルしました: %@ — %@";
 "Scrobbling from Listening History may be affected when AutoMix is on." = "AutoMixがオンの場合、再生履歴からのスクロブルに影響することがあります。";
 "Scrobbling…" = "スクロブル中…";
+"Questions or Bug Reports?" = "質問やバグ報告はありますか？";
+"[Submit a post to r/FastScrobbler](https://www.reddit.com/r/FastScrobbler/submit/), and FastScrobbler will respond to your post." = "[r/FastScrobbler に投稿する](https://www.reddit.com/r/FastScrobbler/submit/)と、FastScrobbler がその投稿に返信します。";
+"Submit a post to r/FastScrobbler, and FastScrobbler will respond to your post." = "r/FastScrobbler に投稿すると、FastScrobbler がその投稿に返信します。";
 "Issues Scrobbling?" = "スクロブルに問題がありますか？";
 "Try signing out of Last.fm and signing in again." = "Last.fm から一度サインアウトして、再度サインインしてみてください。";
 "Send Now Playing" = "再生中を送信";

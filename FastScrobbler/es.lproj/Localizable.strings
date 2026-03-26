@@ -97,6 +97,7 @@
 "Last.fm callback did not include an auth token." = "La devolución de llamada de Last.fm no incluyó un token de autenticación.";
 "Launches FastScrobbler when you sign in." = "Inicia FastScrobbler cuando inicias sesión.";
 "Live Activity (Beta)" = "Actividad en Vivo (Beta)";
+"Links" = "Enlaces";
 "Loading…" = "Cargando…";
 "Love favourites on Last.fm" = "Marcar favoritos en Last.fm";
 "Loved on Last.fm" = "Loved en Last.fm";
@@ -135,6 +136,7 @@
 "Cancel" = "Cancelar";
 "Email FastScrobbler" = "Enviar correo a FastScrobbler";
 "Rate FastScrobbler" = "Valorar FastScrobbler";
+"Ask a Question or Report a Bug" = "Hacer una pregunta o informar de un error";
 "Recently Played" = "Reproducido recientemente";
 "Request Access" = "Solicitar acceso";
 "Request Media Library Access" = "Solicitar acceso a la fototeca musical";
@@ -152,7 +154,12 @@
 "Scrobbled: %@ — %@" = "Scrobble enviado: %@ — %@";
 "Scrobbling from Listening History may be affected when AutoMix is on." = "El scrobbling desde el Historial de reproducción puede verse afectado cuando AutoMix está activado.";
 "Scrobbling…" = "Haciendo scrobble…";
+"Note" = "Nota";
 "Issues Scrobbling?" = "¿Problemas con el scrobbling?";
+"Questions or Bug Reports?" = "¿Preguntas o informes de errores?";
+"Submit a post to r/FastScrobbler" = "Publica una entrada en r/FastScrobbler";
+"Submit a post to r/FastScrobbler, and FastScrobbler will respond to your post." = "Publica una entrada en r/FastScrobbler y FastScrobbler responderá a tu publicación.";
+", and FastScrobbler will respond to your post." = " y FastScrobbler responderá a tu publicación.";
 "Try signing out of Last.fm and signing in again." = "Prueba a cerrar sesión en Last.fm y volver a iniciarla.";
 "Search" = "Buscar";
 "Send Now Playing" = "Enviar En reproducción";

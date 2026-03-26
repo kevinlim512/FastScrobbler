@@ -133,6 +133,7 @@
 "Prevent duplicate scrobbles" = "防止重复 scrobble";
 "Purchased" = "已购买";
 "Rate FastScrobbler" = "给 FastScrobbler 评分";
+"Ask a Question or Report a Bug" = "提问或报告错误";
 "Recently Played" = "最近播放";
 "Request Access" = "请求访问";
 "Request Media Library Access" = "请求媒体资料库访问权限";
@@ -151,6 +152,9 @@
 "Scrobbled: %@ — %@" = "已 Scrobble：%@ — %@";
 "Scrobbling from Listening History may be affected when AutoMix is on." = "启用自动过渡时，从播放历史进行 scrobble 可能会受到影响。";
 "Scrobbling…" = "Scrobble 中…";
+"Questions or Bug Reports?" = "有问题或要报告错误？";
+"[Submit a post to r/FastScrobbler](https://www.reddit.com/r/FastScrobbler/submit/), and FastScrobbler will respond to your post." = "[在 r/FastScrobbler 发帖](https://www.reddit.com/r/FastScrobbler/submit/)，FastScrobbler 会回复你的帖子。";
+"Submit a post to r/FastScrobbler, and FastScrobbler will respond to your post." = "在 r/FastScrobbler 发帖，FastScrobbler 会回复你的帖子。";
 "Issues Scrobbling?" = "Scrobble 有问题？";
 "Try signing out of Last.fm and signing in again." = "请先退出 Last.fm 账号，然后重新登录。";
 "Search" = "搜索";

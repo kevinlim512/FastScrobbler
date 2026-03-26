@@ -97,6 +97,7 @@
 "Last.fm callback did not include an auth token." = "Last.fmのコールバックに認証トークンが含まれていませんでした。";
 "Launches FastScrobbler when you sign in." = "サインイン時にFastScrobblerを起動します。";
 "Live Activity (Beta)" = "ライブアクティビティ（ベータ）";
+"Links" = "リンク";
 "Loading…" = "読み込み中…";
 "Love favourites on Last.fm" = "お気に入りをLast.fmでLovedにする";
 "Loved on Last.fm" = "Last.fmでLoved";
@@ -135,6 +136,7 @@
 "Cancel" = "キャンセル";
 "Email FastScrobbler" = "FastScrobblerにメールする";
 "Rate FastScrobbler" = "FastScrobblerを評価";
+"Ask a Question or Report a Bug" = "質問するかバグを報告";
 "Recently Played" = "最近再生した曲";
 "Request Access" = "アクセスを許可";
 "Request Media Library Access" = "メディアライブラリへのアクセスを要求";
@@ -152,7 +154,12 @@
 "Scrobbled: %@ — %@" = "スクロブルしました: %@ — %@";
 "Scrobbling from Listening History may be affected when AutoMix is on." = "AutoMixがオンの場合、再生履歴からのスクロブルに影響することがあります。";
 "Scrobbling…" = "スクロブル中…";
+"Note" = "注";
 "Issues Scrobbling?" = "スクロブルに問題がありますか？";
+"Questions or Bug Reports?" = "質問やバグ報告はありますか？";
+"Submit a post to r/FastScrobbler" = "r/FastScrobbler に投稿する";
+"Submit a post to r/FastScrobbler, and FastScrobbler will respond to your post." = "r/FastScrobbler に投稿すると、FastScrobbler がその投稿に返信します。";
+", and FastScrobbler will respond to your post." = "すると、FastScrobbler がその投稿に返信します。";
 "Try signing out of Last.fm and signing in again." = "Last.fm から一度サインアウトして、再度サインインしてみてください。";
 "Send Now Playing" = "再生中を送信";
 "Send the current track to Last.fm as now playing." = "現在の曲をLast.fmに再生中として送信します。";

@@ -133,6 +133,7 @@
 "Prevent duplicate scrobbles" = "Evitar scrobbles duplicados";
 "Purchased" = "Comprado";
 "Rate FastScrobbler" = "Valorar FastScrobbler";
+"Ask a Question or Report a Bug" = "Hacer una pregunta o informar de un error";
 "Recently Played" = "Reproducido recientemente";
 "Request Access" = "Solicitar acceso";
 "Request Media Library Access" = "Solicitar acceso a la fototeca musical";
@@ -150,6 +151,9 @@
 "Scrobbled: %@ — %@" = "Scrobble enviado: %@ — %@";
 "Scrobbling from Listening History may be affected when AutoMix is on." = "El scrobbling desde el Historial de reproducción puede verse afectado cuando AutoMix está activado.";
 "Scrobbling…" = "Haciendo scrobble…";
+"Questions or Bug Reports?" = "¿Preguntas o informes de errores?";
+"[Submit a post to r/FastScrobbler](https://www.reddit.com/r/FastScrobbler/submit/), and FastScrobbler will respond to your post." = "[Publica una entrada en r/FastScrobbler](https://www.reddit.com/r/FastScrobbler/submit/) y FastScrobbler responderá a tu publicación.";
+"Submit a post to r/FastScrobbler, and FastScrobbler will respond to your post." = "Publica una entrada en r/FastScrobbler y FastScrobbler responderá a tu publicación.";
 "Issues Scrobbling?" = "¿Problemas con el scrobbling?";
 "Try signing out of Last.fm and signing in again." = "Prueba a cerrar sesión en Last.fm y volver a iniciarla.";
 "Search" = "Buscar";

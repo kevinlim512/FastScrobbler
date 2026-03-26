@@ -97,6 +97,7 @@
 "Last.fm callback did not include an auth token." = "Last.fm 回调中未包含身份验证令牌。";
 "Launches FastScrobbler when you sign in." = "在你登录时启动 FastScrobbler。";
 "Live Activity (Beta)" = "实时活动（Beta）";
+"Links" = "链接";
 "Loading…" = "加载中…";
 "Love favourites on Last.fm" = "在 Last.fm 上标记喜爱";
 "Loved on Last.fm" = "已在 Last.fm 标记 Loved";
@@ -135,6 +136,7 @@
 "Cancel" = "取消";
 "Email FastScrobbler" = "给 FastScrobbler 发邮件";
 "Rate FastScrobbler" = "给 FastScrobbler 评分";
+"Ask a Question or Report a Bug" = "提问或报告错误";
 "Recently Played" = "最近播放";
 "Request Access" = "请求访问";
 "Request Media Library Access" = "请求媒体资料库访问权限";
@@ -153,7 +155,12 @@
 "Scrobbled: %@ — %@" = "已 Scrobble：%@ — %@";
 "Scrobbling from Listening History may be affected when AutoMix is on." = "启用自动过渡时，从播放历史进行 scrobble 可能会受到影响。";
 "Scrobbling…" = "Scrobble 中…";
+"Note" = "提示";
 "Issues Scrobbling?" = "Scrobble 有问题？";
+"Questions or Bug Reports?" = "有问题或要报告错误？";
+"Submit a post to r/FastScrobbler" = "在 r/FastScrobbler 发帖";
+"Submit a post to r/FastScrobbler, and FastScrobbler will respond to your post." = "在 r/FastScrobbler 发帖，FastScrobbler 会回复你的帖子。";
+", and FastScrobbler will respond to your post." = "，FastScrobbler 会回复你的帖子。";
 "Try signing out of Last.fm and signing in again." = "请先退出 Last.fm 账号，然后重新登录。";
 "Search" = "搜索";
 "Send Now Playing" = "发送“正在播放”";

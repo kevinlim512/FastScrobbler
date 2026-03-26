@@ -12,6 +12,10 @@ struct SetupHelpView: View {
         static let hasSeenSetup = "FastScrobbler.Setup.hasSeen"
     }
 
+    private static let redditSubmitURL = URL(string: "https://www.reddit.com/r/FastScrobbler/submit/")!
+    private static let redditSubmitPlainSubtitle = "Submit a post to r/FastScrobbler, and FastScrobbler will respond to your post."
+    private static let redditSubmitMarkdownSubtitle = "[Submit a post to r/FastScrobbler](https://www.reddit.com/r/FastScrobbler/submit/), and FastScrobbler will respond to your post."
+
     enum Mode {
         case onboarding
         case help
@@ -45,7 +49,7 @@ struct SetupHelpView: View {
     private struct HelpRow: View {
         let icon: String
         let title: String
-        let subtitle: String
+        let subtitle: AttributedString
         let isChecked: Bool
         let actionTitle: String?
         let action: (() -> Void)?
@@ -57,6 +61,28 @@ struct SetupHelpView: View {
             icon: String,
             title: String,
             subtitle: String,
+            isChecked: Bool = false,
+            actionTitle: String? = nil,
+            action: (() -> Void)? = nil,
+            actionTint: Color? = nil,
+            actionProminent: Bool = false,
+            actionDisabled: Bool = false
+        ) {
+            self.icon = icon
+            self.title = title
+            self.subtitle = AttributedString(subtitle)
+            self.isChecked = isChecked
+            self.actionTitle = actionTitle
+            self.action = action
+            self.actionTint = actionTint
+            self.actionProminent = actionProminent
+            self.actionDisabled = actionDisabled
+        }
+
+        init(
+            icon: String,
+            title: String,
+            subtitle: AttributedString,
             isChecked: Bool = false,
             actionTitle: String? = nil,
             action: (() -> Void)? = nil,
@@ -79,12 +105,12 @@ struct SetupHelpView: View {
             ZStack(alignment: .topTrailing) {
                 HStack(alignment: .top, spacing: 16) {
                     Image(systemName: icon)
-                        .font(.system(size: 24, weight: .semibold))
+                        .font(.system(size: 18, weight: .semibold))
                         .foregroundStyle(.primary)
-                        .frame(width: 56, height: 56)
-                        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                        .frame(width: 44, height: 44)
+                        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                         .overlay {
-                            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
                                 .strokeBorder(.primary.opacity(0.10), lineWidth: 0.5)
                         }
 
@@ -99,6 +125,7 @@ struct SetupHelpView: View {
                             .font(.subheadline)
                             .fixedSize(horizontal: false, vertical: true)
                             .foregroundStyle(.secondary)
+                            .tint(.accentColor)
 
                         if let actionTitle, let action {
                             actionButton(title: actionTitle, action: action)
@@ -116,7 +143,8 @@ struct SetupHelpView: View {
                     statusBadge
                 }
             }
-            .padding(20)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 20)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay {
@@ -248,6 +276,12 @@ struct SetupHelpView: View {
                         subtitle: NSLocalizedString("Optional: turn this on in Settings if you want FastScrobbler to launch when you sign in to your Mac.", comment: ""),
                         isChecked: startAtLoginEnabled
                     )
+
+                    HelpRow(
+                        icon: "questionmark.bubble",
+                        title: NSLocalizedString("Questions or Bug Reports?", comment: ""),
+                        subtitle: redditSubmitSubtitle
+                    )
                 }
 
                 Button {
@@ -316,6 +350,18 @@ struct SetupHelpView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 8)
+    }
+
+    private var redditSubmitSubtitle: AttributedString {
+        let localizedMarkdown = NSLocalizedString(Self.redditSubmitMarkdownSubtitle, comment: "")
+        if let subtitle = try? AttributedString(
+            markdown: localizedMarkdown,
+            options: AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
+        ) {
+            return subtitle
+        }
+
+        return AttributedString(NSLocalizedString(Self.redditSubmitPlainSubtitle, comment: ""))
     }
 
     private enum PrivacyKind {

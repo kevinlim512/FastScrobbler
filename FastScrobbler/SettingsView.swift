@@ -8,7 +8,10 @@ import SwiftUI
 
 struct SettingsView: View {
     private static let repositoryURL = URL(string: "https://github.com/kevinlim512/FastScrobbler")!
+    private static let redditURL = URL(string: "https://www.reddit.com/r/FastScrobbler/")!
+    private static let redditSubmitURL = URL(string: "https://www.reddit.com/r/FastScrobbler/submit")!
     private static let writeReviewURL = URL(string: "https://apps.apple.com/app/id6759501541?action=write-review")!
+    private static let linksSectionRed = Color(red: 0.72, green: 0.14, blue: 0.14)
 #if os(macOS)
     private static let macSettingsButtonMinHeight: CGFloat = 34
 #else
@@ -63,11 +66,9 @@ struct SettingsView: View {
     @State private var activeAlert: ActiveAlert?
     @State private var isSigningInToLastFM = false
     @State private var lastFMLoginErrorText: String?
-    @State private var isPresentingSupportEmailOptions = false
-    @State private var supportEmailDraft: SupportEmailDraft?
-    @State private var supportEmailErrorText: String?
 #if os(iOS)
     @State private var isScanningListeningHistory = false
+    @State private var isShowingWhatsNew = false
 #endif
 #if os(macOS)
     @State private var startAtLoginEnabled = StartAtLoginManager.isEnabled
@@ -150,46 +151,11 @@ struct SettingsView: View {
         } message: {
             Text(lastFMLoginErrorText ?? "")
         }
-        .alert("Couldn't start email", isPresented: Binding(
-            get: { supportEmailErrorText != nil },
-            set: { isPresented in
-                if !isPresented {
-                    supportEmailErrorText = nil
-                }
-            }
-        )) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(supportEmailErrorText ?? "")
-        }
 #if os(iOS)
-        .alert("Email FastScrobbler", isPresented: $isPresentingSupportEmailOptions) {
-            Button("Feedback") {
-                startSupportEmail(.feedback)
+        .fullScreenCover(isPresented: $isShowingWhatsNew) {
+            WhatsNewView {
+                isShowingWhatsNew = false
             }
-
-            Button("Bug Report") {
-                startSupportEmail(.bugReport)
-            }
-
-            Button("Cancel", role: .cancel) {}
-        }
-        .sheet(item: $supportEmailDraft) { draft in
-            SupportEmailComposeView(draft: draft) {
-                supportEmailDraft = nil
-            }
-        }
-#else
-        .confirmationDialog("Email FastScrobbler", isPresented: $isPresentingSupportEmailOptions, titleVisibility: .visible) {
-            Button("Feedback") {
-                startSupportEmail(.feedback)
-            }
-
-            Button("Bug Report") {
-                startSupportEmail(.bugReport)
-            }
-
-            Button("Cancel", role: .cancel) {}
         }
 #endif
     }
@@ -411,25 +377,33 @@ struct SettingsView: View {
                 }
             }
 
+            Section("Links") {
+                iosLinksBrandButton(title: "r/FastScrobbler", imageName: "reddit_logo") {
+                    openURL(Self.redditURL)
+                }
+
+                iosLinksButton(title: "Ask a Question or Report a Bug", systemImage: "questionmark.bubble") {
+                    openURL(Self.redditSubmitURL)
+                }
+
+                iosLinksButton(title: "Rate FastScrobbler", systemImage: "star.bubble") {
+                    openURL(Self.writeReviewURL)
+                }
+
+                iosLinksBrandButton(title: "GitHub", imageName: "github_logo") {
+                    openURL(Self.repositoryURL)
+                }
+            }
+
             Section {
                 Button {
-                    openURL(Self.writeReviewURL)
+                    isShowingWhatsNew = true
                 } label: {
-                    Label("Rate FastScrobbler", systemImage: "star.bubble")
+                    Label("What's New", systemImage: "sparkles")
                 }
+            }
 
-                Button {
-                    isPresentingSupportEmailOptions = true
-                } label: {
-                    Label("Email FastScrobbler", systemImage: "envelope")
-                }
-
-                Button {
-                    openURL(Self.repositoryURL)
-                } label: {
-                    Label("GitHub", systemImage: "chevron.left.forwardslash.chevron.right")
-                }
-
+            Section {
                 Button(role: .destructive) {
                     activeAlert = .resetConfirmation
                 } label: {
@@ -616,8 +590,9 @@ struct SettingsView: View {
     private var macSupportCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             VStack(spacing: 12) {
+                macRedditButton
+                macAskQuestionButton
                 macRateButton
-                macEmailButton
                 macGitHubButton
                 macResetButton
             }
@@ -681,29 +656,6 @@ struct SettingsView: View {
                 startAtLoginErrorText = error.localizedDescription
             }
             startAtLoginEnabled = StartAtLoginManager.isEnabled
-        }
-#endif
-    }
-
-    @MainActor
-    private func startSupportEmail(_ kind: SupportEmailKind) {
-        isPresentingSupportEmailOptions = false
-        let draft = SupportEmailDraft.make(kind: kind, context: supportEmailContext())
-
-#if os(iOS)
-        guard SupportEmailMailCompose.canSendMail else {
-            supportEmailErrorText = SupportEmailError.unavailable.localizedDescription
-            return
-        }
-
-        supportEmailDraft = draft
-#elseif os(macOS)
-        do {
-            try SupportEmailMailCompose.compose(draft)
-        } catch let error as SupportEmailError {
-            supportEmailErrorText = error.localizedDescription
-        } catch {
-            supportEmailErrorText = SupportEmailError.preparationFailed.localizedDescription
         }
 #endif
     }
@@ -879,6 +831,39 @@ struct SettingsView: View {
     }
 #endif
 
+#if os(iOS)
+    private func iosLinksBrandButton(title: LocalizedStringKey, imageName: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            settingsBrandLabel(title: title, imageName: imageName, color: .white)
+        }
+        .listRowBackground(Self.linksSectionRed)
+        .listRowSeparatorTint(.white.opacity(0.35))
+    }
+
+    private func iosLinksButton(title: LocalizedStringKey, systemImage: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Label(title, systemImage: systemImage)
+                .foregroundStyle(.white)
+        }
+        .listRowBackground(Self.linksSectionRed)
+        .listRowSeparatorTint(.white.opacity(0.35))
+    }
+#endif
+
+    private func settingsBrandLabel(title: LocalizedStringKey, imageName: String, color: Color, iconSize: CGFloat = 24) -> some View {
+        Label {
+            Text(title)
+        } icon: {
+            Image(imageName)
+                .renderingMode(.template)
+                .resizable()
+                .scaledToFit()
+                .frame(width: iconSize, height: iconSize)
+                .frame(width: iconSize + 5, alignment: .center)
+        }
+        .foregroundStyle(color)
+    }
+
     private func proLockedBoolBinding(_ storage: Binding<Bool>, unlockedDefault: Bool) -> Binding<Bool> {
         Binding(
             get: { pro.isPro ? storage.wrappedValue : unlockedDefault },
@@ -889,100 +874,31 @@ struct SettingsView: View {
         )
     }
 
-    private func supportEmailContext() -> SupportEmailContext {
-        let effectiveThresholdIndex = pro.isPro
-            ? scrobbleThresholdIndex
-            : ProSettings.defaultScrobbleThresholdIndex
-        var settings: [SupportEmailSetting] = []
-
-#if os(iOS)
-        settings.append(SupportEmailSetting(
-            label: "Live Activity enabled",
-            value: SupportEmailDiagnostics.yesNo(liveActivityEnabled)
-        ))
-#endif
-
-        settings.append(SupportEmailSetting(
-            label: "Prevent duplicate scrobbles",
-            value: SupportEmailDiagnostics.yesNo(preventDuplicateScrobblesEnabled)
-        ))
-        settings.append(SupportEmailSetting(
-            label: "Scrobble threshold",
-            value: "\(ProSettings.scrobbleThresholdPercentText(index: effectiveThresholdIndex)) of duration"
-        ))
-        settings.append(SupportEmailSetting(
-            label: "Love Apple Music favourites on Last.fm",
-            value: SupportEmailDiagnostics.yesNo(pro.isPro ? loveOnFavoriteEnabled : false)
-        ))
-        settings.append(SupportEmailSetting(
-            label: "Replace song artist with album artist when scrobbling",
-            value: SupportEmailDiagnostics.yesNo(pro.isPro ? useAlbumArtistForScrobbling : false)
-        ))
-        settings.append(SupportEmailSetting(
-            label: "Remove “- EP” / “- Single” from album name",
-            value: SupportEmailDiagnostics.yesNo(pro.isPro ? stripEpAndSingleSuffixFromAlbum : false)
-        ))
-        settings.append(SupportEmailSetting(
-            label: "Remove brackets for song titles",
-            value: SupportEmailDiagnostics.yesNo(pro.isPro ? removeBracketsFromSongTitlesEnabled : false)
-        ))
-        settings.append(SupportEmailSetting(
-            label: "Remove ALL brackets for song titles",
-            value: SupportEmailDiagnostics.yesNo(pro.isPro ? removeAllBracketsFromSongTitlesEnabled : false)
-        ))
-        settings.append(SupportEmailSetting(
-            label: "Remove brackets keywords for song titles",
-            value: ProSettings.removeBracketsFromSongTitleKeywords().joined(separator: ", ")
-        ))
-        settings.append(SupportEmailSetting(
-            label: "Remove brackets for album titles",
-            value: SupportEmailDiagnostics.yesNo(pro.isPro ? removeBracketsFromAlbumTitlesEnabled : false)
-        ))
-        settings.append(SupportEmailSetting(
-            label: "Remove ALL brackets for album titles",
-            value: SupportEmailDiagnostics.yesNo(pro.isPro ? removeAllBracketsFromAlbumTitlesEnabled : false)
-        ))
-        settings.append(SupportEmailSetting(
-            label: "Remove brackets keywords for album titles",
-            value: ProSettings.removeBracketsFromAlbumTitleKeywords().joined(separator: ", ")
-        ))
-
-#if os(iOS)
-        settings.append(SupportEmailSetting(
-            label: "Scrobble from Listening History",
-            value: SupportEmailDiagnostics.yesNo(scrobbleListeningHistoryEnabled)
-        ))
-        settings.append(SupportEmailSetting(
-            label: "Scrobble Listening History from all devices",
-            value: SupportEmailDiagnostics.yesNo(pro.isPro ? scrobbleListeningHistoryFromAllDevicesEnabled : false)
-        ))
-
-        return SupportEmailContext(
-            platformName: "iOS",
-            isProEnabled: pro.isPro,
-            isLastFMConnected: auth.sessionKey != nil,
-            settings: settings
-        )
-#elseif os(macOS)
-        settings.insert(SupportEmailSetting(label: "Language", value: appLanguage.selection.title), at: 0)
-        settings.insert(
-            SupportEmailSetting(
-                label: "Start at Login",
-                value: SupportEmailDiagnostics.yesNo(startAtLoginEnabled)
-            ),
-            at: 1
-        )
-
-        return SupportEmailContext(
-            platformName: "macOS",
-            isProEnabled: pro.isPro,
-            isLastFMConnected: auth.sessionKey != nil,
-            settings: settings
-        )
-#endif
+#if os(macOS)
+    private var macRedditButton: some View {
+        Button {
+            openURL(Self.redditURL)
+        } label: {
+            settingsBrandLabel(title: "r/FastScrobbler", imageName: "reddit_logo", color: .white, iconSize: 16)
+                .frame(maxWidth: .infinity, minHeight: Self.macSettingsButtonMinHeight)
+        }
+        .buttonStyle(.borderedProminent)
+        .pillButtonBorder()
+        .tint(Self.linksSectionRed)
     }
 
-#if os(macOS)
+    private var macAskQuestionButton: some View {
+        Button {
+            openURL(Self.redditSubmitURL)
+        } label: {
+            Label("Ask a Question or Report a Bug", systemImage: "questionmark.bubble")
+                .frame(maxWidth: .infinity, minHeight: Self.macSettingsButtonMinHeight)
+        }
+        .buttonStyle(.borderedProminent)
+        .pillButtonBorder()
+        .tint(Self.linksSectionRed)
+    }
+
     private var macRateButton: some View {
         Button {
             openURL(Self.writeReviewURL)
@@ -990,19 +906,21 @@ struct SettingsView: View {
             Label("Rate FastScrobbler", systemImage: "star.bubble")
                 .frame(maxWidth: .infinity, minHeight: Self.macSettingsButtonMinHeight)
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(.borderedProminent)
         .pillButtonBorder()
+        .tint(Self.linksSectionRed)
     }
 
     private var macGitHubButton: some View {
         Button {
             openURL(Self.repositoryURL)
         } label: {
-            Label("GitHub", systemImage: "chevron.left.forwardslash.chevron.right")
+            settingsBrandLabel(title: "GitHub", imageName: "github_logo", color: .white, iconSize: 16)
                 .frame(maxWidth: .infinity, minHeight: Self.macSettingsButtonMinHeight)
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(.borderedProminent)
         .pillButtonBorder()
+        .tint(Self.linksSectionRed)
     }
 
     private var macResetButton: some View {
@@ -1015,17 +933,6 @@ struct SettingsView: View {
         .buttonStyle(.bordered)
         .pillButtonBorder()
         .tint(.red)
-    }
-
-    private var macEmailButton: some View {
-        Button {
-            isPresentingSupportEmailOptions = true
-        } label: {
-            Label("Email FastScrobbler", systemImage: "envelope")
-                .frame(maxWidth: .infinity, minHeight: Self.macSettingsButtonMinHeight)
-        }
-        .buttonStyle(.bordered)
-        .pillButtonBorder()
     }
 
     private enum StartAtLoginManager {

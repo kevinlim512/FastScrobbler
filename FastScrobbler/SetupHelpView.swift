@@ -3,6 +3,8 @@ import SwiftUI
 import UIKit
 
 struct SetupHelpView: View {
+    private static let redditSubmitURL = URL(string: "https://www.reddit.com/r/FastScrobbler/submit/")!
+
     enum Mode {
         case onboarding
         case help
@@ -52,6 +54,7 @@ struct SetupHelpView: View {
         let icon: String
         let title: String
         let subtitle: String
+        let attributedSubtitle: AttributedString?
         let badgeText: String
         let badgeLevel: StatusLevel
         let actionTitle: String?
@@ -64,6 +67,7 @@ struct SetupHelpView: View {
             icon: String,
             title: String,
             subtitle: String,
+            attributedSubtitle: AttributedString? = nil,
             badgeText: String,
             badgeLevel: StatusLevel,
             actionTitle: String?,
@@ -75,6 +79,7 @@ struct SetupHelpView: View {
             self.icon = icon
             self.title = title
             self.subtitle = subtitle
+            self.attributedSubtitle = attributedSubtitle
             self.badgeText = badgeText
             self.badgeLevel = badgeLevel
             self.actionTitle = actionTitle
@@ -106,9 +111,15 @@ struct SetupHelpView: View {
                             .fixedSize(horizontal: true, vertical: false)
                     }
 
-                    Text(subtitle)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                    if let attributedSubtitle {
+                        Text(attributedSubtitle)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text(subtitle)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
 
                     if let actionTitle, let action {
                         if actionProminent {
@@ -197,7 +208,16 @@ struct SetupHelpView: View {
                         liveActivitiesDelayNote
                         listeningHistoryLibraryOnlyNoteRow
                         autoMixListeningHistoryNoteRow
+                    }
+
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Help")
+                            .font(.headline.weight(.semibold))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 4)
+
                         scrobblingIssuesNoteRow
+                        questionsOrBugReportsRow
                     }
 
                     Button {
@@ -427,6 +447,29 @@ struct SetupHelpView: View {
             actionTitle: nil,
             action: nil
         )
+    }
+
+    private var questionsOrBugReportsRow: some View {
+        SettingRow(
+            icon: "questionmark.bubble",
+            title: NSLocalizedString("Questions or Bug Reports?", comment: ""),
+            subtitle: NSLocalizedString("Submit a post to r/FastScrobbler, and FastScrobbler will respond to your post.", comment: ""),
+            attributedSubtitle: questionsOrBugReportsSubtitle,
+            badgeText: NSLocalizedString("Tip", comment: ""),
+            badgeLevel: .tip,
+            actionTitle: nil,
+            action: nil
+        )
+    }
+
+    private var questionsOrBugReportsSubtitle: AttributedString {
+        var linkedText = AttributedString(NSLocalizedString("Submit a post to r/FastScrobbler", comment: ""))
+        linkedText.link = Self.redditSubmitURL
+
+        let suffix = AttributedString(NSLocalizedString(", and FastScrobbler will respond to your post.", comment: ""))
+        var result = linkedText
+        result.append(suffix)
+        return result
     }
 
     private func refreshStatuses() {
