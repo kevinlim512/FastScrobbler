@@ -170,23 +170,55 @@ func runListeningHistoryRecoveryTests() {
         originalPlayedAt: Int,
         durationSeconds: Double?
     ) -> Int {
-        originalPlayedAt
+        if startTimestamp < originalPlayedAt {
+            if let durationSeconds, durationSeconds > 0 {
+                let candidatePlayedAtTimestamp = startTimestamp + max(Int(durationSeconds.rounded(.down)), 1)
+                if candidatePlayedAtTimestamp <= originalPlayedAt {
+                    return candidatePlayedAtTimestamp
+                }
+            }
+            return startTimestamp
+        }
+        return originalPlayedAt
     }
 
     expectEqual(
-        "candidate playedAt preserves Apple's timestamp when duration is known",
-        playbackHistoryPlayedAt(startTimestamp: 970, originalPlayedAt: 1_000, durationSeconds: 30.9),
+        "candidate playedAt calculates completed time for earlier synthesized play when duration is known",
+        playbackHistoryPlayedAt(startTimestamp: 940, originalPlayedAt: 1_000, durationSeconds: 30.9),
+        970
+    )
+    expectEqual(
+        "candidate playedAt preserves Apple's timestamp for final play when startTimestamp matches or exceeds originalPlayedAt",
+        playbackHistoryPlayedAt(startTimestamp: 1_000, originalPlayedAt: 1_000, durationSeconds: 30.9),
         1_000
     )
     expectEqual(
-        "candidate playedAt preserves Apple's timestamp when duration is unknown",
+        "candidate playedAt uses startTimestamp when duration is unknown",
         playbackHistoryPlayedAt(startTimestamp: 999, originalPlayedAt: 1_050, durationSeconds: nil),
-        1_050
+        999
     )
     expectEqual(
-        "candidate playedAt preserves Apple's timestamp for tiny positive durations",
-        playbackHistoryPlayedAt(startTimestamp: 9, originalPlayedAt: 10, durationSeconds: 0.4),
+        "candidate playedAt preserves Apple's timestamp for tiny positive durations at upper bound",
+        playbackHistoryPlayedAt(startTimestamp: 10, originalPlayedAt: 10, durationSeconds: 0.4),
         10
+    )
+
+    section("Listening History · Looped scrobble submission")
+    let loopedStarts = (0..<5).map { index in
+        10_000 - 215 * (5 - index - 1)
+    }
+    let loopedPlayedAts = loopedStarts.map { start in
+        playbackHistoryPlayedAt(startTimestamp: start, originalPlayedAt: 10_000, durationSeconds: 210)
+    }
+    expectEqual(
+        "looped scrobbles produce distinct candidate playedAt timestamps so none are incorrectly rejected as duplicate",
+        Set(loopedPlayedAts).count,
+        5
+    )
+    expectEqual(
+        "looped scrobbles playedAt values step according to track duration",
+        loopedPlayedAts,
+        [9350, 9565, 9780, 9995, 10000]
     )
 
     section("Listening History · Media library snapshot diff")

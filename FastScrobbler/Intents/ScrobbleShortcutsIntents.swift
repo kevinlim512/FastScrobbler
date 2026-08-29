@@ -5,6 +5,7 @@ import OSLog
 
 extension Notification.Name {
     static let openManualScrobble = Notification.Name("FastScrobbler.openManualScrobble")
+    static let openHelp = Notification.Name("FastScrobbler.openHelp")
     static let triggerPendingScan = Notification.Name("FastScrobbler.triggerPendingScan")
     static let triggerScrobbleSong = Notification.Name("FastScrobbler.triggerScrobbleSong")
 }
@@ -18,7 +19,7 @@ enum ShortcutsIntentError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .notConnected:
-            return NSLocalizedString("Connect Last.fm to scrobble.", comment: "")
+            return NSLocalizedString("Connect Last.fm or ListenBrainz to scrobble.", comment: "")
         case .mediaLibraryDenied:
             return NSLocalizedString("Media Library access is required to read now-playing metadata.", comment: "")
         case .noNowPlaying:
@@ -35,29 +36,27 @@ private enum ShortcutsPlaybackReader {
         if MPMediaLibrary.authorizationStatus() == .authorized, let item = player.nowPlayingItem {
             let artist = (item.artist ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             let title = (item.title ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !artist.isEmpty, !title.isEmpty else {
-                throw ShortcutsIntentError.invalidNowPlayingMetadata
+            if !artist.isEmpty && !title.isEmpty {
+                let album = item.albumTitle?.trimmingCharacters(in: .whitespacesAndNewlines)
+                let albumArtist = item.albumArtist?.trimmingCharacters(in: .whitespacesAndNewlines)
+                let isCompilation = item.isCompilation
+                let duration = item.playbackDuration
+                let pid = item.persistentID
+                let playbackStoreID = item.playbackStoreID
+
+                let track = Track(
+                    artist: artist,
+                    title: title,
+                    album: (album?.isEmpty == false) ? album : nil,
+                    albumArtist: (albumArtist?.isEmpty == false) ? albumArtist : nil,
+                    durationSeconds: duration > 0 ? duration : nil,
+                    persistentID: pid,
+                    playbackStoreID: playbackStoreID.isEmpty ? nil : playbackStoreID,
+                    isCompilation: isCompilation
+                )
+
+                return (track: track, playbackTimeSeconds: max(0, player.currentPlaybackTime))
             }
-
-            let album = item.albumTitle?.trimmingCharacters(in: .whitespacesAndNewlines)
-            let albumArtist = item.albumArtist?.trimmingCharacters(in: .whitespacesAndNewlines)
-            let isCompilation = item.isCompilation
-            let duration = item.playbackDuration
-            let pid = item.persistentID
-            let playbackStoreID = item.playbackStoreID
-
-            let track = Track(
-                artist: artist,
-                title: title,
-                album: (album?.isEmpty == false) ? album : nil,
-                albumArtist: (albumArtist?.isEmpty == false) ? albumArtist : nil,
-                durationSeconds: duration > 0 ? duration : nil,
-                persistentID: pid,
-                playbackStoreID: playbackStoreID.isEmpty ? nil : playbackStoreID,
-                isCompilation: isCompilation
-            )
-
-            return (track: track, playbackTimeSeconds: max(0, player.currentPlaybackTime))
         }
 
         if let info = MPNowPlayingInfoCenter.default().nowPlayingInfo {
@@ -118,6 +117,7 @@ struct OpenManualScrobbleIntent: AppIntent {
     init() {}
 
     func perform() async throws -> some IntentResult {
+        AppSettings.requestPendingManualScrobbleLaunch()
         await MainActor.run {
             NotificationCenter.default.post(name: .openManualScrobble, object: nil)
         }
@@ -165,7 +165,7 @@ struct OpenListeningHistoryReviewIntent: OpenIntent {
 
 struct SendNowPlayingIntent: AppIntent {
     static let title: LocalizedStringResource = "Send Now Playing"
-    static let description = IntentDescription("Sends the currently playing track to Last.fm as \"Now Playing\".")
+    static let description = IntentDescription("Sends the currently playing track to Last.fm or ListenBrainz as \"Now Playing\".")
     static let openAppWhenRun: Bool = false
 
     init() {}
@@ -173,16 +173,65 @@ struct SendNowPlayingIntent: AppIntent {
     func perform() async throws -> some IntentResult & ProvidesDialog {
         let logger = Logger(subsystem: "FastScrobbler", category: "SendNowPlayingIntent")
 
-        guard let sessionKey = LastFMSessionStore.readSessionKey() else {
+        let sessionKey = LastFMSessionStore.readSessionKey()
+        let listenBrainzToken = ListenBrainzSessionStore.readUserToken()
+
+        guard sessionKey != nil || (listenBrainzToken != nil && !listenBrainzToken!.isEmpty) else {
             throw ShortcutsIntentError.notConnected
         }
 
+        ControlWidgetStatusStore.markInProgress(.sendNowPlaying)
+
         let track = try ShortcutsPlaybackReader.nowPlayingTrackAndPlaybackTime().track
         let trackToSend = track.applyingProScrobblePreferences()
-        let client = try LastFMClient()
 
-        do {
-            try await client.updateNowPlaying(track: trackToSend, sessionKey: sessionKey)
+        async let lastFMTask: Result<Void, Error>? = {
+            guard let sessionKey, let client = try? LastFMClient() else { return nil }
+            do {
+                try await client.updateNowPlaying(track: trackToSend, sessionKey: sessionKey)
+                return .success(())
+            } catch {
+                logger.warning("Last.fm updateNowPlaying failed: \(error.localizedDescription, privacy: .public)")
+                return .failure(error)
+            }
+        }()
+
+        async let listenBrainzTask: Result<Void, Error>? = {
+            guard let listenBrainzToken, !listenBrainzToken.isEmpty else { return nil }
+            do {
+                try await ListenBrainzClient().sendNowPlaying(track: trackToSend, userToken: listenBrainzToken)
+                return .success(())
+            } catch {
+                logger.warning("ListenBrainz updateNowPlaying failed: \(error.localizedDescription, privacy: .public)")
+                return .failure(error)
+            }
+        }()
+
+        let (lastFMResult, listenBrainzResult) = await (lastFMTask, listenBrainzTask)
+
+        var lastError: Error?
+        var sentAny = false
+
+        if let lastFMResult {
+            switch lastFMResult {
+            case .success:
+                sentAny = true
+            case .failure(let error):
+                lastError = error
+            }
+        }
+
+        if let listenBrainzResult {
+            switch listenBrainzResult {
+            case .success:
+                sentAny = true
+            case .failure(let error):
+                if lastError == nil { lastError = error }
+            }
+        }
+
+        if sentAny {
+            ControlWidgetStatusStore.markSuccess(.sendNowPlaying, duration: 1)
             return .result(
                 dialog: IntentDialog(
                     stringLiteral: String.localizedStringWithFormat(
@@ -192,16 +241,20 @@ struct SendNowPlayingIntent: AppIntent {
                     )
                 )
             )
-        } catch {
-            logger.warning("updateNowPlaying failed: \(error.localizedDescription, privacy: .public)")
-            throw error
+        } else {
+            ControlWidgetStatusStore.clear(.sendNowPlaying)
+            if let error = lastError {
+                throw error
+            } else {
+                throw ShortcutsIntentError.notConnected
+            }
         }
     }
 }
 
 struct ScrobbleSongIntent: AppIntent {
     static let title: LocalizedStringResource = "Scrobble Song"
-    static let description = IntentDescription("Scrobbles the currently playing track to Last.fm.")
+    static let description = IntentDescription("Scrobbles the currently playing track to Last.fm or ListenBrainz.")
     static let openAppWhenRun: Bool = false
 
     init() {}
@@ -209,37 +262,103 @@ struct ScrobbleSongIntent: AppIntent {
     func perform() async throws -> some IntentResult & ProvidesDialog {
         let logger = Logger(subsystem: "FastScrobbler", category: "ScrobbleSongIntent")
 
-        guard let sessionKey = LastFMSessionStore.readSessionKey() else {
+        let sessionKey = LastFMSessionStore.readSessionKey()
+        let listenBrainzToken = ListenBrainzSessionStore.readUserToken()
+
+        guard sessionKey != nil || (listenBrainzToken != nil && !listenBrainzToken!.isEmpty) else {
             throw ShortcutsIntentError.notConnected
         }
+
+        ControlWidgetStatusStore.markInProgress(.scrobbleSong)
 
         let now = Date()
         let (track, _) = try ShortcutsPlaybackReader.nowPlayingTrackAndPlaybackTime()
         let scrobbleTrack = track.applyingProScrobblePreferences()
         let ts = max(1, Int(now.timeIntervalSince1970.rounded(.down)))
 
-        let client = try LastFMClient()
-        do {
-            try await client.scrobble(track: scrobbleTrack, sessionKey: sessionKey, startTimestamp: ts)
+        var activeServices: Set<ScrobbleService> = []
+        if sessionKey != nil { activeServices.insert(.lastfm) }
+        if listenBrainzToken != nil && !listenBrainzToken!.isEmpty { activeServices.insert(.listenbrainz) }
+
+        async let lastFMTask: (failed: Bool, error: Error?)? = {
+            guard activeServices.contains(.lastfm), let sessionKey, let client = try? LastFMClient() else { return nil }
+            do {
+                try await client.scrobble(track: scrobbleTrack, sessionKey: sessionKey, startTimestamp: ts)
+                return (failed: false, error: nil)
+            } catch {
+                logger.warning("Last.fm scrobble failed: \(error.localizedDescription, privacy: .public)")
+                return (failed: true, error: error)
+            }
+        }()
+
+        async let listenBrainzTask: (failed: Bool, error: Error?)? = {
+            guard activeServices.contains(.listenbrainz), let listenBrainzToken, !listenBrainzToken.isEmpty else { return nil }
+            do {
+                try await ListenBrainzClient().submitScrobble(
+                    track: scrobbleTrack,
+                    timestamp: Date(timeIntervalSince1970: TimeInterval(ts)),
+                    userToken: listenBrainzToken
+                )
+                return (failed: false, error: nil)
+            } catch {
+                logger.warning("ListenBrainz scrobble failed: \(error.localizedDescription, privacy: .public)")
+                return (failed: true, error: error)
+            }
+        }()
+
+        let (lastFMOutcome, listenBrainzOutcome) = await (lastFMTask, listenBrainzTask)
+
+        var failedServices: Set<ScrobbleService> = []
+        var lastFMError: Error?
+
+        if let lastFMOutcome {
+            if lastFMOutcome.failed {
+                failedServices.insert(.lastfm)
+                lastFMError = lastFMOutcome.error
+            }
+        }
+
+        if let listenBrainzOutcome {
+            if listenBrainzOutcome.failed {
+                failedServices.insert(.listenbrainz)
+            }
+        }
+
+        let succeededServices = activeServices.subtracting(failedServices)
+        if !succeededServices.isEmpty {
             await MainActor.run {
                 ScrobbleLogStore.shared.record(track: scrobbleTrack, startTimestamp: ts, source: .live)
             }
-            return .result(
-                dialog: IntentDialog(
-                    stringLiteral: String.localizedStringWithFormat(
-                        NSLocalizedString("Scrobbled: %@ — %@", comment: ""),
-                        scrobbleTrack.artist,
-                        scrobbleTrack.title
-                    )
+            ControlWidgetStatusStore.markSuccess(.scrobbleSong, duration: 1)
+        } else {
+            ControlWidgetStatusStore.clear(.scrobbleSong)
+        }
+
+        if !failedServices.isEmpty {
+            let sampleError = lastFMError ?? ListenBrainzClient.ClientError.invalidResponse
+            let preventDuplicates = ProSettings.preventDuplicateScrobblesEnabled()
+            await ScrobbleBacklog.shared.enqueue(
+                track: scrobbleTrack,
+                startTimestamp: ts,
+                origin: .live,
+                wasAppleMusicFavorite: false,
+                pendingServices: failedServices,
+                allowExactDuplicates: !preventDuplicates
+            )
+            if succeededServices.isEmpty {
+                throw sampleError
+            }
+        }
+
+        return .result(
+            dialog: IntentDialog(
+                stringLiteral: String.localizedStringWithFormat(
+                    NSLocalizedString("Scrobbled: %@ — %@", comment: ""),
+                    scrobbleTrack.artist,
+                    scrobbleTrack.title
                 )
             )
-        } catch {
-            logger.warning("manual scrobble failed: \(error.localizedDescription, privacy: .public)")
-            if (error as? LastFMClient.ClientError)?.shouldRetryScrobble ?? true {
-                await ScrobbleBacklog.shared.enqueue(track: scrobbleTrack, startTimestamp: ts)
-            }
-            throw error
-        }
+        )
     }
 }
 
@@ -251,7 +370,7 @@ struct ScanListeningHistoryIntent: AppIntent {
     init() {}
 
     func perform() async throws -> some IntentResult {
-        guard LastFMSessionStore.readSessionKey() != nil else {
+        guard LastFMSessionStore.readSessionKey() != nil || ListenBrainzSessionStore.readUserToken() != nil else {
             throw ShortcutsIntentError.notConnected
         }
 

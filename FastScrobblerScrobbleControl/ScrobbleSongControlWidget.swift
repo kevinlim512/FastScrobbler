@@ -12,6 +12,6 @@ struct ScrobbleSongControlWidget: ControlWidget {
             .tint(.purple)
         }
         .displayName("Scrobble Song")
-        .description("Scrobble the current track to Last.fm.")
+        .description("Scrobble the current track.")
     }
 }

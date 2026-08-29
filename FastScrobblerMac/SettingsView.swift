@@ -50,6 +50,11 @@ struct SettingsView: View {
         NSLocalizedString(key, comment: "")
     }
 
+    private var appVersionString: String {
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "7.0"
+        return String.localizedStringWithFormat(localized("Version %@"), version)
+    }
+
     private var contentCardBackground: some View {
         RoundedRectangle(cornerRadius: 12, style: .continuous)
             .fill(.regularMaterial)
@@ -75,7 +80,10 @@ struct SettingsView: View {
     @AppStorage(AppSettings.Keys.sendNowPlayingAutomaticallyEnabled, store: AppGroup.userDefaults) private var sendNowPlayingAutomaticallyEnabled = true
     @AppStorage(AppSettings.Keys.buttonThemeSelection) private var buttonThemeSelectionRawValue = ButtonTheme.colorful.rawValue
 
+    @ObservedObject private var iCloudSync = ICloudSyncCoordinator.shared
+
     @EnvironmentObject private var auth: LastFMAuthManager
+    @EnvironmentObject private var listenBrainzAuth: ListenBrainzAuthManager
     @EnvironmentObject private var engine: ScrobbleEngine
     @EnvironmentObject private var pro: ProPurchaseManager
     @EnvironmentObject private var appLanguage: AppLanguageStore
@@ -100,20 +108,29 @@ struct SettingsView: View {
         case removeBracketsFromSongTitles
         case removeBracketsFromAlbumTitles
         case textReplacement
+        case firstArtistOnly
     }
 
     @State private var activeAlert: ActiveAlert?
     @State private var isSigningInToLastFM = false
     @State private var lastFMLoginErrorText: String?
+    @State private var listenBrainzTokenInput = ""
+    @State private var isConnectingListenBrainz = false
+    @State private var listenBrainzErrorText: String?
     @State private var startAtLoginEnabled = StartAtLoginManager.isEnabled
     @State private var startAtLoginErrorText: String?
     @State private var isConfirmingReset = false
     @State private var isConfirmingSignOut = false
+    @State private var isConfirmingListenBrainzSignOut = false
+    @State private var isShowingListenBrainzConnectSheet = false
+    @State private var isConfirmingICloudDeletion = false
 
     let onBack: (() -> Void)?
+    let onOpenListenBrainzConnect: (() -> Void)?
 
-    init(onBack: (() -> Void)? = nil) {
+    init(onBack: (() -> Void)? = nil, onOpenListenBrainzConnect: (() -> Void)? = nil) {
         self.onBack = onBack
+        self.onOpenListenBrainzConnect = onOpenListenBrainzConnect
     }
 
     var body: some View {
@@ -127,28 +144,32 @@ struct SettingsView: View {
                         RemoveBracketsSettingsPage(target: .albumTitles)
                     case .textReplacement:
                         TextReplacementSettingsPage()
+                    case .firstArtistOnly:
+                        FirstArtistOnlySettingsPage()
                     }
                 }
         }
         .task {
             await auth.refreshUserInfoIfNeeded()
+            await listenBrainzAuth.refreshUserInfoIfNeeded()
+            await iCloudSync.refreshStatus()
             startAtLoginEnabled = StartAtLoginManager.isEnabled
         }
         .alert(item: $activeAlert) { alert in
             switch alert {
             case .logoutConfirmation:
                 Alert(
-                    title: Text("Sign Out of Last.fm?"),
-                    message: Text("You'll need to sign in again to scrobble."),
-                    primaryButton: .destructive(Text("Sign Out"), action: performLogout),
-                    secondaryButton: .cancel()
+                    title: Text(localized("Sign Out of Last.fm?")),
+                    message: Text(localized("You'll need to sign in again to scrobble.")),
+                    primaryButton: .destructive(Text(localized("Sign Out")), action: performLogout),
+                    secondaryButton: .cancel(Text(localized("Cancel")))
                 )
             case .resetConfirmation:
                 Alert(
-                    title: Text("Reset Settings?"),
-                    message: Text("This will restore all settings to their defaults."),
-                    primaryButton: .destructive(Text("Reset"), action: resetToInitialSettings),
-                    secondaryButton: .cancel()
+                    title: Text(localized("Reset Settings?")),
+                    message: Text(localized("This resets settings back to their initial values (your Last.fm and ListenBrainz accounts stay connected).")),
+                    primaryButton: .destructive(Text(localized("Reset")), action: resetToInitialSettings),
+                    secondaryButton: .cancel(Text(localized("Cancel")))
                 )
             }
         }
@@ -176,7 +197,15 @@ struct SettingsView: View {
                 macGeneralCard
                 macScrobbleControlsCard
                 macAccountCard
+                macListenBrainzAccountCard
+                macICloudSyncCard
                 macSupportCard
+
+                Text(appVersionString)
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.top, -6)
             }
             .padding()
             .padding(.top, MacFloatingBarLayout.contentTopPadding)
@@ -276,12 +305,12 @@ struct SettingsView: View {
                 .font(.title3.weight(.semibold))
 
             Toggle(localized("Prevent duplicate scrobbles"), isOn: $preventDuplicateScrobblesEnabled)
-            Text(localized("Avoids sending the same playback session to Last.fm more than once within a short time window."))
+            Text(localized("Avoids sending the same playback session more than once within a short time window."))
                 .font(.footnote)
                 .foregroundStyle(.secondary)
             VStack(alignment: .leading, spacing: 6) {
-                Toggle(localized("Send Now Playing status to Last.fm"), isOn: $sendNowPlayingAutomaticallyEnabled)
-                Text(localized("Display the currently playing track on your Last.fm profile. Automatic scrobbles still work when this is off."))
+                Toggle(localized("Send Now Playing status"), isOn: $sendNowPlayingAutomaticallyEnabled)
+                Text(localized("Display the currently playing track on your connected profile. Automatic scrobbles still work when this is off."))
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
@@ -307,21 +336,7 @@ struct SettingsView: View {
                 }
             }
             .disabled(!pro.isPro)
-            VStack(alignment: .leading, spacing: 6) {
-                Toggle(isOn: proLockedBoolBinding($useFirstArtistOnlyForScrobbling, unlockedDefault: false)) {
-                    HStack {
-                        Text(localized("Scrobble only the first credited artist"))
-                            .foregroundStyle(pro.isPro ? .primary : .secondary)
-                        Spacer()
-                        ProFeatureBadge()
-                    }
-                }
-                .disabled(!pro.isPro)
-
-                Text(localized("When a song lists multiple artists separated by \"&\" or commas, only scrobble the first artist."))
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
+            firstArtistOnlyNavigationLink
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
@@ -331,7 +346,7 @@ struct SettingsView: View {
     private var macAccountCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .firstTextBaseline) {
-                Text(localized("Account"))
+                Text(localized("Last.fm Account"))
                     .font(.title3.weight(.semibold))
                 Spacer()
                 Text(auth.sessionKey != nil ? NSLocalizedString("Signed in", comment: "") : NSLocalizedString("Not connected", comment: ""))
@@ -380,16 +395,16 @@ struct SettingsView: View {
                 } else {
                     if isConfirmingSignOut {
                         HStack(spacing: 8) {
-                            Text("Sign out?")
+                            Text(localized("Sign Out?"))
                                 .foregroundStyle(.secondary)
                                 .font(.headline)
                             Spacer()
-                            Button("Cancel") {
+                            Button(localized("Cancel")) {
                                 isConfirmingSignOut = false
                             }
                             .buttonStyle(.bordered)
                             .pillButtonBorder()
-                            Button("Sign Out") {
+                            Button(localized("Sign Out")) {
                                 isConfirmingSignOut = false
                                 performLogout()
                             }
@@ -417,6 +432,108 @@ struct SettingsView: View {
         .background(contentCardBackground)
     }
 
+    private var macListenBrainzAccountCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(localized("ListenBrainz Account"))
+                    .font(.title3.weight(.semibold))
+                Spacer()
+                Text(listenBrainzAuth.isConnected ? NSLocalizedString("Signed in", comment: "") : NSLocalizedString("Not connected", comment: ""))
+                    .foregroundStyle(listenBrainzAuth.isConnected ? .green : .secondary)
+            }
+
+            if listenBrainzAuth.isConnected {
+                if let username = listenBrainzAuth.username {
+                    HStack {
+                        Text(localized("Username"))
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Text(username)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.trailing)
+                            .textSelection(.enabled)
+                    }
+                    .font(.subheadline)
+                }
+
+                HStack(spacing: 12) {
+                    if !isConfirmingListenBrainzSignOut {
+                        Button {
+                            if let url = listenBrainzAuth.freshProfileURL() {
+                                openURL(url)
+                            }
+                        } label: {
+                            Label(localized("View Profile"), systemImage: "person.circle")
+                                .frame(maxWidth: .infinity, minHeight: Self.macSettingsButtonMinHeight)
+                        }
+                        .buttonStyle(.bordered)
+                        .pillButtonBorder()
+                        .disabled(listenBrainzAuth.profileURL == nil)
+                    }
+
+                    if isConfirmingListenBrainzSignOut {
+                        HStack(spacing: 8) {
+                            Text(localized("Sign Out?"))
+                                .foregroundStyle(.secondary)
+                                .font(.headline)
+                            Spacer()
+                            Button(localized("Cancel")) {
+                                isConfirmingListenBrainzSignOut = false
+                            }
+                            .buttonStyle(.bordered)
+                            .pillButtonBorder()
+                            Button(localized("Sign Out")) {
+                                isConfirmingListenBrainzSignOut = false
+                                performListenBrainzLogout()
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .pillButtonBorder()
+                            .tint(.red)
+                        }
+                        .frame(minHeight: Self.macSettingsButtonMinHeight)
+                    } else {
+                        Button {
+                            isConfirmingListenBrainzSignOut = true
+                        } label: {
+                            Label(localized("Sign Out"), systemImage: "power")
+                                .frame(maxWidth: .infinity, minHeight: Self.macSettingsButtonMinHeight)
+                        }
+                        .buttonStyle(.bordered)
+                        .pillButtonBorder()
+                        .tint(.red)
+                    }
+                }
+            } else {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text(localized("Beta feature: Sign in to start scrobbling to your ListenBrainz account."))
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+
+                    Button {
+                        if let onOpenListenBrainzConnect {
+                            onOpenListenBrainzConnect()
+                        } else {
+                            isShowingListenBrainzConnectSheet = true
+                        }
+                    } label: {
+                        Label(localized("Sign In to ListenBrainz"), systemImage: "waveform.path.ecg")
+                            .frame(maxWidth: .infinity, minHeight: Self.macSettingsButtonMinHeight)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .pillButtonBorder()
+                    .tint(Self.linksSectionRed)
+                }
+            }
+
+            Text(localized("ListenBrainz support is currently in beta."))
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding()
+        .background(contentCardBackground)
+    }
+
     private var macSupportCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             VStack(spacing: 12) {
@@ -438,12 +555,19 @@ struct SettingsView: View {
         engine.stop()
     }
 
+    private func performListenBrainzLogout() {
+        listenBrainzAuth.disconnect()
+        listenBrainzTokenInput = ""
+        listenBrainzErrorText = nil
+    }
+
     private func resetToInitialSettings() {
         let defaults = AppGroup.userDefaults
         defaults.removeObject(forKey: ProSettings.Keys.loveOnFavoriteEnabled)
         defaults.removeObject(forKey: ProSettings.Keys.scrobbleThresholdIndex)
         defaults.removeObject(forKey: ProSettings.Keys.useAlbumArtistForScrobbling)
         defaults.removeObject(forKey: ProSettings.Keys.useFirstArtistOnlyForScrobbling)
+        defaults.removeObject(forKey: ProSettings.Keys.firstArtistOnlyIgnoredArtists)
         defaults.removeObject(forKey: ProSettings.Keys.removeBracketsFromSongTitlesEnabled)
         defaults.removeObject(forKey: ProSettings.Keys.removeAllBracketsFromSongTitlesEnabled)
         defaults.removeObject(forKey: ProSettings.Keys.removeBracketsFromSongTitleKeywords)
@@ -579,6 +703,26 @@ struct SettingsView: View {
     }
 
     @ViewBuilder
+    private var firstArtistOnlyNavigationLink: some View {
+        NavigationLink(value: SettingsRoute.firstArtistOnly) {
+            HStack(spacing: 12) {
+                Text(localized("Scrobble only the first credited artist"))
+                    .foregroundStyle(pro.isPro ? .primary : .secondary)
+                Spacer()
+                ProFeatureBadge()
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(Color.primary.opacity(0.05))
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        }
+        .buttonStyle(.plain)
+    }
+
+    @ViewBuilder
     private var lockedProInlineBadge: some View {
         if !pro.isPro {
             ProFeatureBadge()
@@ -663,16 +807,16 @@ struct SettingsView: View {
         Group {
             if isConfirmingReset {
                 HStack(spacing: 8) {
-                    Text("Reset settings?")
+                    Text(localized("Reset Settings?"))
                         .foregroundStyle(.secondary)
                         .font(.headline)
                     Spacer()
-                    Button("Cancel") {
+                    Button(localized("Cancel")) {
                         isConfirmingReset = false
                     }
                     .buttonStyle(.bordered)
                     .pillButtonBorder()
-                    Button("Reset") {
+                    Button(localized("Reset")) {
                         isConfirmingReset = false
                         resetToInitialSettings()
                     }
@@ -693,6 +837,91 @@ struct SettingsView: View {
                 .tint(.red)
             }
         }
+    }
+
+    private var canDeleteICloudData: Bool {
+        !iCloudSync.isBusy && (iCloudSync.isSyncEnabled || iCloudSync.hasCloudData)
+    }
+
+    private var macICloudSyncCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(localized("iCloud Sync"))
+                .font(.title3.weight(.semibold))
+
+            Text(localized("Back up your FastScrobbler data to iCloud and keep it synced across your devices."))
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            Toggle(
+                isOn: Binding(
+                    get: { iCloudSync.isSyncEnabled },
+                    set: { newValue in
+                        Task { await setICloudSyncEnabled(newValue) }
+                    }
+                )
+            ) {
+                Text(localized("Sync with iCloud"))
+            }
+            .disabled(iCloudSync.isBusy || (!iCloudSync.isICloudAvailable && !iCloudSync.isSyncEnabled))
+
+            if !iCloudSync.isICloudAvailable {
+                Text(localized("iCloud is currently unavailable on this device."))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else if iCloudSync.isBusy {
+                ProgressView()
+                    .controlSize(.small)
+            } else if let error = iCloudSync.lastErrorMessage, !error.isEmpty {
+                Text(error)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            } else if let status = iCloudSync.statusMessage, !status.isEmpty {
+                Text(status)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Divider()
+
+            Button(role: .destructive) {
+                isConfirmingICloudDeletion = true
+            } label: {
+                Label(localized("Delete iCloud Data"), systemImage: "trash")
+                    .foregroundStyle(canDeleteICloudData ? .red : .secondary)
+            }
+            .disabled(!canDeleteICloudData)
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(contentCardBackground)
+        .confirmationDialog(
+            localized("Delete iCloud Data?"),
+            isPresented: $isConfirmingICloudDeletion,
+            titleVisibility: .visible
+        ) {
+            Button(localized("Delete iCloud Data"), role: .destructive) {
+                Task { await deleteICloudDataTapped() }
+            }
+            Button(localized("Cancel"), role: .cancel) {}
+        } message: {
+            Text(localized("This removes only the iCloud copy of your synced FastScrobbler data. Local data on this Mac stays intact, and iCloud sync will be turned off here."))
+        }
+    }
+
+    private func setICloudSyncEnabled(_ isEnabled: Bool) async {
+        if isEnabled {
+            do {
+                try await iCloudSync.enableSync()
+            } catch {}
+        } else {
+            await iCloudSync.disableSync()
+        }
+    }
+
+    private func deleteICloudDataTapped() async {
+        do {
+            try await iCloudSync.deleteCloudData()
+        } catch {}
     }
 
     private enum StartAtLoginManager {

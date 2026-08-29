@@ -20,6 +20,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         let contentView = ContentView()
             .environmentObject(model.auth)
+            .environmentObject(model.listenBrainzAuth)
             .environmentObject(model.observer)
             .environmentObject(model.engine)
             .environmentObject(model.scrobbleLog)
@@ -82,9 +83,11 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         var items: [UIApplicationShortcutItem] = []
         
         let sessionKey = LastFMSessionStore.readSessionKey()
+        let listenBrainzToken = ListenBrainzSessionStore.readUserToken()
+        let hasAccount = sessionKey != nil || (listenBrainzToken != nil && !listenBrainzToken!.isEmpty)
         let hasSeenSetup = UserDefaults.standard.bool(forKey: "FastScrobbler.Setup.hasSeen")
         
-        if hasSeenSetup && sessionKey != nil {
+        if hasSeenSetup && hasAccount {
             items.append(
                 UIApplicationShortcutItem(
                     type: "com.fastscrobbler.scrobbleSong",
@@ -105,25 +108,24 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             )
         }
         
-        if sessionKey != nil {
-            items.append(
-                UIApplicationShortcutItem(
-                    type: "com.fastscrobbler.manualScrobble",
-                    localizedTitle: NSLocalizedString("Manual Scrobble", comment: ""),
-                    localizedSubtitle: nil,
-                    icon: UIApplicationShortcutIcon(systemImageName: "plus.circle"),
-                    userInfo: nil
-                )
+        items.append(
+            UIApplicationShortcutItem(
+                type: "com.fastscrobbler.help",
+                localizedTitle: NSLocalizedString("Help", comment: ""),
+                localizedSubtitle: nil,
+                icon: UIApplicationShortcutIcon(systemImageName: "questionmark.circle"),
+                userInfo: nil
             )
-        }
+        )
         
         UIApplication.shared.shortcutItems = items
     }
 
     private func handleShortcutItem(_ shortcutItem: UIApplicationShortcutItem) -> Bool {
         switch shortcutItem.type {
-        case "com.fastscrobbler.manualScrobble":
-            NotificationCenter.default.post(name: .openManualScrobble, object: nil)
+        case "com.fastscrobbler.help":
+            AppSettings.requestPendingHelpLaunch()
+            NotificationCenter.default.post(name: .openHelp, object: nil)
             return true
         case "com.fastscrobbler.scanHistory":
             let request: AppSettings.PendingListeningHistoryLaunchRequest =

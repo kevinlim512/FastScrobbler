@@ -12,6 +12,6 @@ struct SendNowPlayingControlWidget: ControlWidget {
             .tint(.red)
         }
         .displayName("Send Now Playing")
-        .description("Send the current track to Last.fm as now playing.")
+        .description("Send the current track as now playing.")
     }
 }

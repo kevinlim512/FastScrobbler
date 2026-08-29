@@ -2,6 +2,53 @@ import SwiftUI
 import ActivityKit
 
 let proYellow = Color(red: 0.89, green: 0.71, blue: 0.16)
+let darkOrange = Color(red: 0.85, green: 0.40, blue: 0.0)
+let scrobbleNowPurple = Color(UIColor { traitCollection in
+    traitCollection.userInterfaceStyle == .dark
+        ? UIColor(red: 0.66, green: 0.36, blue: 0.78, alpha: 1.0)
+        : UIColor(red: 0.58, green: 0.28, blue: 0.72, alpha: 1.0)
+})
+
+struct SettingsIconBadge: View {
+    let systemImage: String
+    let backgroundColor: Color
+    var foregroundColor: Color = .white
+    var iconSize: CGFloat = 13
+    var yOffset: CGFloat = 0
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                .fill(backgroundColor)
+                .frame(width: 28, height: 28)
+            Image(systemName: systemImage)
+                .font(.system(size: iconSize, weight: .medium))
+                .foregroundColor(foregroundColor)
+                .offset(y: yOffset)
+        }
+    }
+}
+
+struct SettingsBrandIconBadge: View {
+    let imageName: String
+    let backgroundColor: Color
+    var foregroundColor: Color = .white
+    var iconSize: CGFloat = 13
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                .fill(backgroundColor)
+                .frame(width: 28, height: 28)
+            Image(imageName)
+                .renderingMode(.template)
+                .resizable()
+                .scaledToFit()
+                .frame(width: iconSize, height: iconSize)
+                .foregroundColor(foregroundColor)
+        }
+    }
+}
 
 enum SettingsScrollTarget: String {
     case listeningHistory
@@ -17,47 +64,17 @@ struct SettingsScrollRequest: Equatable {
 }
 
 struct SettingsView: View {
-    private static let repositoryURL = URL(string: "https://github.com/kevinlim512/FastScrobbler")!
-    private static let redditURL = URL(string: "https://www.reddit.com/r/FastScrobbler/")!
-    private static let redditSubmitURL = URL(string: "https://www.reddit.com/r/FastScrobbler/submit")!
-    private static let writeReviewURL = URL(string: "https://apps.apple.com/app/id6759501541?action=write-review")!
-    // Last.fm brand red, used for the links section background
-    private static let linksSectionRed = Color(red: 0.72, green: 0.14, blue: 0.14)
-    // Insets position the Pro badge overlay to sit just inside the disclosure indicator / toggle
-    private static let iosLockedProNavigationBadgeTrailingInset: CGFloat = 24
-    private static let iosLockedProToggleBadgeTrailingInset: CGFloat = 75
-
-    private func localized(_ key: String) -> String {
-        NSLocalizedString(key, comment: "")
-    }
-
-    @AppStorage(LiveActivityManager.enabledDefaultsKey) private var liveActivityEnabled = false
-    @AppStorage(ProSettings.Keys.loveOnFavoriteEnabled, store: AppGroup.userDefaults) private var loveOnFavoriteEnabled = false
-    @AppStorage(ProSettings.Keys.scrobbleThresholdIndex, store: AppGroup.userDefaults) private var scrobbleThresholdIndex = ProSettings.defaultScrobbleThresholdIndex
-    @AppStorage(ProSettings.Keys.useAlbumArtistForScrobbling, store: AppGroup.userDefaults) private var useAlbumArtistForScrobbling = false
-    @AppStorage(ProSettings.Keys.useFirstArtistOnlyForScrobbling, store: AppGroup.userDefaults) private var useFirstArtistOnlyForScrobbling = false
-    @AppStorage(ProSettings.Keys.removeBracketsFromSongTitlesEnabled, store: AppGroup.userDefaults) private var removeBracketsFromSongTitlesEnabled = false
-    @AppStorage(ProSettings.Keys.removeAllBracketsFromSongTitlesEnabled, store: AppGroup.userDefaults) private var removeAllBracketsFromSongTitlesEnabled = false
-    @AppStorage(ProSettings.Keys.removeBracketsFromAlbumTitlesEnabled, store: AppGroup.userDefaults) private var removeBracketsFromAlbumTitlesEnabled = false
-    @AppStorage(ProSettings.Keys.removeAllBracketsFromAlbumTitlesEnabled, store: AppGroup.userDefaults) private var removeAllBracketsFromAlbumTitlesEnabled = false
-    @AppStorage(ProSettings.Keys.preventDuplicateScrobblesEnabled, store: AppGroup.userDefaults) private var preventDuplicateScrobblesEnabled = true
-    @AppStorage(AppSettings.Keys.scrobbleOnlyNonLibraryAppleMusicAPITracks, store: AppGroup.userDefaults) private var scrobbleOnlyNonLibraryAppleMusicAPITracks = true
-    @AppStorage(AppSettings.Keys.extendedListeningHistoryScanEnabled, store: AppGroup.userDefaults) private var extendedListeningHistoryScanEnabled = false
-    @AppStorage(AppSettings.Keys.listeningHistoryRequireConfirmationEnabled, store: AppGroup.userDefaults) private var listeningHistoryRequireConfirmationEnabled = true
-    @AppStorage(AppSettings.Keys.sendNowPlayingAutomaticallyEnabled, store: AppGroup.userDefaults) private var sendNowPlayingAutomaticallyEnabled = true
-    @AppStorage(AppSettings.Keys.themeSelection) private var themeSelectionRawValue = AppTheme.system.rawValue
-    @AppStorage(AppSettings.Keys.buttonThemeSelection) private var buttonThemeSelectionRawValue = ButtonTheme.colorful.rawValue
-
     @EnvironmentObject private var auth: LastFMAuthManager
+    @EnvironmentObject private var listenBrainzAuth: ListenBrainzAuthManager
     @EnvironmentObject private var engine: ScrobbleEngine
     @EnvironmentObject private var scrobbleLog: ScrobbleLogStore
     @EnvironmentObject private var pro: ProPurchaseManager
-    @Environment(\.openURL) private var openURL
     @Environment(\.dismiss) private var dismiss
     @Environment(\.isEmbeddedInTab) private var isEmbeddedInTab
 
-    private enum ActiveAlert: Identifiable {
+    fileprivate enum ActiveAlert: Identifiable {
         case logoutConfirmation
+        case listenBrainzLogoutConfirmation
         case resetConfirmation
         case listeningHistoryScanResult(message: String)
 
@@ -65,6 +82,8 @@ struct SettingsView: View {
             switch self {
             case .logoutConfirmation:
                 return "logoutConfirmation"
+            case .listenBrainzLogoutConfirmation:
+                return "listenBrainzLogoutConfirmation"
             case .resetConfirmation:
                 return "resetConfirmation"
             case .listeningHistoryScanResult(let message):
@@ -74,35 +93,36 @@ struct SettingsView: View {
     }
 
     fileprivate enum SettingsRoute: Hashable {
+        case scrobbleControls
+        case listeningHistory
+        case theme
+        case liveActivity
+        case account
+        case about
+        case advanced
+
         case appStorage
+        case icloudSync
         case appleMusicAPI
         case debug
         case help
         case removeBracketsFromSongTitles
         case removeBracketsFromAlbumTitles
         case textReplacement
+        case firstArtistOnly
         case proUpgrade
+        case scanButtonLocation
     }
 
     @State private var activeAlert: ActiveAlert?
     @State private var isSigningInToLastFM = false
     @State private var lastFMLoginErrorText: String?
     @State private var isScanningListeningHistory = false
-
-    private var autoScrobbleListeningHistoryBinding: Binding<Bool> {
-        Binding(
-            get: { !listeningHistoryRequireConfirmationEnabled },
-            set: { isEnabled in
-                let requireConfirmation = !isEnabled
-                guard listeningHistoryRequireConfirmationEnabled != requireConfirmation else { return }
-                listeningHistoryRequireConfirmationEnabled = requireConfirmation
-                Task { await AppModel.shared.handleListeningHistoryRequireConfirmationChanged(isEnabled: requireConfirmation) }
-            }
-        )
-    }
+    @State private var isShowingListenBrainzConnectSheet = false
     @State private var isShowingWhatsNew = false
     @State private var isShowingListeningHistoryReview = false
     @State private var navigationPath = NavigationPath()
+
     var isShowingSetup: Binding<Bool>?
     let scrollRequest: Binding<SettingsScrollRequest?>
 
@@ -120,8 +140,33 @@ struct SettingsView: View {
                 settingsRootContent
                     .navigationDestination(for: SettingsRoute.self) { route in
                         switch route {
+                        case .scrobbleControls:
+                            ScrobbleControlsSettingsPage()
+                        case .listeningHistory:
+                            ListeningHistorySettingsPage(
+                                activeAlert: $activeAlert,
+                                isScanningListeningHistory: $isScanningListeningHistory,
+                                isShowingListeningHistoryReview: $isShowingListeningHistoryReview
+                            )
+                        case .theme:
+                            ThemeSettingsPage()
+                        case .liveActivity:
+                            LiveActivitySettingsPage()
+                        case .account:
+                            AccountSettingsPage(
+                                activeAlert: $activeAlert,
+                                isSigningInToLastFM: $isSigningInToLastFM,
+                                lastFMLoginErrorText: $lastFMLoginErrorText,
+                                isShowingListenBrainzConnectSheet: $isShowingListenBrainzConnectSheet
+                            )
+                        case .about:
+                            AboutSettingsPage(isShowingWhatsNew: $isShowingWhatsNew)
+                        case .advanced:
+                            AdvancedSettingsPage(activeAlert: $activeAlert)
                         case .appStorage:
                             AppStorageSettingsPage()
+                        case .icloudSync:
+                            ICloudSyncSettingsPage()
                         case .appleMusicAPI:
                             AppleMusicAPISettingsPage()
                         case .debug:
@@ -134,12 +179,16 @@ struct SettingsView: View {
                             RemoveBracketsSettingsPage(target: .albumTitles)
                         case .textReplacement:
                             TextReplacementSettingsPage()
+                        case .firstArtistOnly:
+                            FirstArtistOnlySettingsPage()
                         case .proUpgrade:
                             ProUpgradeView()
+                        case .scanButtonLocation:
+                            ScanButtonLocationSettingsPage()
                         }
                     }
                     .navigationTitle("Settings")
-                    .navigationBarTitleDisplayMode(.large)
+                    .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
                         if !isEmbeddedInTab {
                             ToolbarItem(placement: .topBarTrailing) {
@@ -156,37 +205,48 @@ struct SettingsView: View {
                     .task(id: scrollRequest.wrappedValue?.token) {
                         guard let scrollRequest = scrollRequest.wrappedValue else { return }
                         await Task.yield()
-                        withAnimation(.easeInOut(duration: 0.25)) {
-                            proxy.scrollTo(scrollRequest.target.anchorID, anchor: .top)
+                        if scrollRequest.target == .listeningHistory {
+                            navigationPath.append(SettingsRoute.listeningHistory)
                         }
                         self.scrollRequest.wrappedValue = nil
                     }
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .openHelp)) { _ in
+            navigationPath = NavigationPath([SettingsRoute.help])
+        }
         .task {
             await auth.refreshUserInfoIfNeeded()
+            await listenBrainzAuth.refreshUserInfoIfNeeded()
         }
         .alert(item: $activeAlert) { alert in
             switch alert {
             case .logoutConfirmation:
                 Alert(
-                    title: Text("Sign Out of Last.fm?"),
-                    message: Text("You'll need to sign in again to scrobble."),
-                    primaryButton: .destructive(Text("Sign Out"), action: performLogout),
-                    secondaryButton: .cancel()
+                    title: Text(localized("Sign Out of Last.fm?")),
+                    message: Text(localized("You'll need to sign in again to scrobble.")),
+                    primaryButton: .destructive(Text(localized("Sign Out")), action: performLogout),
+                    secondaryButton: .cancel(Text(localized("Cancel")))
+                )
+            case .listenBrainzLogoutConfirmation:
+                Alert(
+                    title: Text(localized("Sign Out of ListenBrainz?")),
+                    message: Text(localized("You'll need to enter your token again to scrobble.")),
+                    primaryButton: .destructive(Text(localized("Sign Out")), action: performListenBrainzLogout),
+                    secondaryButton: .cancel(Text(localized("Cancel")))
                 )
             case .resetConfirmation:
                 Alert(
-                    title: Text("Reset Settings?"),
-                    message: Text("This will restore all settings to their defaults."),
-                    primaryButton: .destructive(Text("Reset"), action: resetToInitialSettings),
-                    secondaryButton: .cancel()
+                    title: Text(localized("Reset Settings?")),
+                    message: Text(localized("This resets settings back to their initial values (your Last.fm and ListenBrainz accounts stay connected).")),
+                    primaryButton: .destructive(Text(localized("Reset")), action: resetToInitialSettings),
+                    secondaryButton: .cancel(Text(localized("Cancel")))
                 )
             case .listeningHistoryScanResult(let message):
                 Alert(
-                    title: Text("Listening History"),
+                    title: Text(localized("Listening History")),
                     message: Text(message),
-                    dismissButton: .default(Text("OK"))
+                    dismissButton: .default(Text(localized("OK")))
                 )
             }
         }
@@ -215,39 +275,206 @@ struct SettingsView: View {
             .environmentObject(auth)
             .environmentObject(scrobbleLog)
         }
+        .sheet(isPresented: $isShowingListenBrainzConnectSheet) {
+            ListenBrainzConnectSheet()
+                .environmentObject(listenBrainzAuth)
+        }
     }
 
     @ViewBuilder
     private var settingsRootContent: some View {
         Form {
-            Section(pro.isPro ? "Thank you! ^_^" : "Unlock Pro features") {
-                proUpgradeNavigationRow
-            }
-
             Section {
+                if pro.isPro {
+                    NavigationLink(value: SettingsRoute.proUpgrade) {
+                        Label {
+                            Text("View Pro features")
+                        } icon: {
+                            SettingsIconBadge(systemImage: "star.square.fill", backgroundColor: proYellow, foregroundColor: .black, iconSize: 14)
+                        }
+                    }
+                } else {
+                    proUpgradeBannerRow
+                }
+
                 NavigationLink(value: SettingsRoute.help) {
-                    HStack(spacing: 12) {
-                        Image(systemName: "questionmark.circle")
+                    Label {
                         Text("Help")
-                            .fontWeight(.bold)
+                    } icon: {
+                        SettingsIconBadge(systemImage: "questionmark.circle", backgroundColor: .blue)
                     }
                 }
             }
-            .listSectionSpacing(.compact)
 
-            Section("Scrobble Controls") {
+            Section {
+                NavigationLink(value: SettingsRoute.scrobbleControls) {
+                    Label {
+                        Text("Scrobble Controls")
+                    } icon: {
+                        SettingsIconBadge(systemImage: "slider.horizontal.3", backgroundColor: darkOrange)
+                    }
+                }
+
+                NavigationLink(value: SettingsRoute.listeningHistory) {
+                    Label {
+                        Text("Listening History")
+                    } icon: {
+                        SettingsIconBadge(systemImage: "clock.arrow.circlepath", backgroundColor: scrobbleNowPurple)
+                    }
+                }
+                .id(SettingsScrollTarget.listeningHistory.anchorID)
+
+                NavigationLink(value: SettingsRoute.theme) {
+                    Label {
+                        Text("Theme")
+                    } icon: {
+                        SettingsIconBadge(systemImage: "circle.lefthalf.filled", backgroundColor: .black)
+                    }
+                }
+
+                NavigationLink(value: SettingsRoute.liveActivity) {
+                    Label {
+                        Text("Live Activity")
+                    } icon: {
+                        SettingsIconBadge(systemImage: "clock.badge", backgroundColor: .blue)
+                    }
+                }
+            }
+
+            Section {
+                NavigationLink(value: SettingsRoute.account) {
+                    Label {
+                        Text("Account")
+                    } icon: {
+                        SettingsIconBadge(systemImage: "person.circle", backgroundColor: Color.accentColor)
+                    }
+                }
+
+                NavigationLink(value: SettingsRoute.about) {
+                    Label {
+                        Text("About")
+                    } icon: {
+                        SettingsIconBadge(systemImage: "info.circle", backgroundColor: Color(white: 0.45))
+                    }
+                }
+            }
+
+            Section {
+                NavigationLink(value: SettingsRoute.advanced) {
+                    Label {
+                        Text("Advanced")
+                    } icon: {
+                        SettingsIconBadge(systemImage: "gearshape", backgroundColor: Color(white: 0.22))
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var proUpgradeBannerRow: some View {
+        Button {
+            navigationPath.append(SettingsRoute.proUpgrade)
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "star.square.fill")
+                Text("Upgrade to Pro")
+                    .fontWeight(.bold)
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.semibold))
+            }
+            .foregroundStyle(Color.black)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 8)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .listRowBackground(proYellow)
+    }
+
+    private func localized(_ key: String) -> String {
+        NSLocalizedString(key, comment: "")
+    }
+
+    private func performLogout() {
+        auth.disconnect()
+        engine.setUserPaused(false)
+        engine.stop()
+    }
+
+    private func performListenBrainzLogout() {
+        listenBrainzAuth.disconnect()
+    }
+
+    private func resetToInitialSettings() {
+        UserDefaults.standard.removeObject(forKey: LiveActivityManager.enabledDefaultsKey)
+        UserDefaults.standard.removeObject(forKey: LiveActivityManager.compactModeDefaultsKey)
+        UserDefaults.standard.removeObject(forKey: AppSettings.Keys.themeSelection)
+        UserDefaults.standard.removeObject(forKey: AppSettings.Keys.buttonThemeSelection)
+        Task { @MainActor in
+            await LiveActivityManager.shared.stop()
+        }
+
+        let defaults = AppGroup.userDefaults
+        defaults.removeObject(forKey: ProSettings.Keys.loveOnFavoriteEnabled)
+        defaults.removeObject(forKey: ProSettings.Keys.scrobbleThresholdIndex)
+        defaults.removeObject(forKey: ProSettings.Keys.useAlbumArtistForScrobbling)
+        defaults.removeObject(forKey: ProSettings.Keys.useFirstArtistOnlyForScrobbling)
+        defaults.removeObject(forKey: ProSettings.Keys.firstArtistOnlyIgnoredArtists)
+        defaults.removeObject(forKey: ProSettings.Keys.removeBracketsFromSongTitlesEnabled)
+        defaults.removeObject(forKey: ProSettings.Keys.removeAllBracketsFromSongTitlesEnabled)
+        defaults.removeObject(forKey: ProSettings.Keys.removeBracketsFromSongTitleKeywords)
+        defaults.removeObject(forKey: ProSettings.Keys.removeBracketsFromAlbumTitlesEnabled)
+        defaults.removeObject(forKey: ProSettings.Keys.removeAllBracketsFromAlbumTitlesEnabled)
+        defaults.removeObject(forKey: ProSettings.Keys.removeBracketsFromAlbumTitleKeywords)
+        defaults.removeObject(forKey: ProSettings.Keys.preventDuplicateScrobblesEnabled)
+        defaults.removeObject(forKey: AppSettings.Keys.scrobbleAppleMusicAPIEnabled)
+        defaults.removeObject(forKey: AppSettings.Keys.scrobbleOnlyNonLibraryAppleMusicAPITracks)
+        defaults.removeObject(forKey: AppSettings.Keys.extendedListeningHistoryScanEnabled)
+        defaults.removeObject(forKey: AppSettings.Keys.listeningHistoryRequireConfirmationEnabled)
+        defaults.removeObject(forKey: AppSettings.Keys.listeningHistoryResumeRecoveryCutoffDate)
+        defaults.removeObject(forKey: AppSettings.Keys.sendNowPlayingAutomaticallyEnabled)
+        defaults.removeObject(forKey: ProSettings.Keys.textReplacementRules)
+        AppleMusicRecentTracksImporter.shared.resetState()
+        ListeningHistoryReviewStore.shared.clear()
+    }
+}
+
+private struct ScrobbleControlsSettingsPage: View {
+    private static let iosLockedProNavigationBadgeTrailingInset: CGFloat = 24
+    private static let iosLockedProToggleBadgeTrailingInset: CGFloat = 75
+
+    private func localized(_ key: String) -> String {
+        NSLocalizedString(key, comment: "")
+    }
+
+    @AppStorage(ProSettings.Keys.loveOnFavoriteEnabled, store: AppGroup.userDefaults) private var loveOnFavoriteEnabled = false
+    @AppStorage(ProSettings.Keys.scrobbleThresholdIndex, store: AppGroup.userDefaults) private var scrobbleThresholdIndex = ProSettings.defaultScrobbleThresholdIndex
+    @AppStorage(ProSettings.Keys.useAlbumArtistForScrobbling, store: AppGroup.userDefaults) private var useAlbumArtistForScrobbling = false
+    @AppStorage(ProSettings.Keys.preventDuplicateScrobblesEnabled, store: AppGroup.userDefaults) private var preventDuplicateScrobblesEnabled = true
+    @AppStorage(AppSettings.Keys.sendNowPlayingAutomaticallyEnabled, store: AppGroup.userDefaults) private var sendNowPlayingAutomaticallyEnabled = true
+
+    @EnvironmentObject private var pro: ProPurchaseManager
+
+    var body: some View {
+        Form {
+            Section {
                 VStack(alignment: .leading, spacing: 6) {
                     Toggle("Prevent duplicate scrobbles", isOn: $preventDuplicateScrobblesEnabled)
-                    Text("Avoids sending the same playback session to Last.fm more than once within a short time window.")
+                    Text("Avoids sending the same playback session more than once within a short time window.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
                 VStack(alignment: .leading, spacing: 6) {
-                    Toggle("Send Now Playing status to Last.fm", isOn: $sendNowPlayingAutomaticallyEnabled)
-                    Text("Display the currently playing track on your Last.fm profile. Automatic scrobbles still work when this is off.")
+                    Toggle("Send Now Playing status", isOn: $sendNowPlayingAutomaticallyEnabled)
+                    Text("Display the currently playing track on your connected profile. Automatic scrobbles still work when this is off.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
+            }
+
+            Section {
                 scrobbleThresholdSlider()
                 removeBracketsNavigationLink(target: .songTitles)
                 removeBracketsNavigationLink(target: .albumTitles)
@@ -278,290 +505,11 @@ struct SettingsView: View {
                 .overlay(alignment: .trailing) {
                     lockedProBadgeOverlay(trailingInset: Self.iosLockedProToggleBadgeTrailingInset)
                 }
-                VStack(alignment: .leading, spacing: 6) {
-                    Toggle(isOn: proLockedBoolBinding($useFirstArtistOnlyForScrobbling, unlockedDefault: false)) {
-                        HStack {
-                            Text("Scrobble only the first credited artist")
-                                .foregroundStyle(pro.isPro ? .primary : .secondary)
-                            Spacer()
-                            proFeatureBadgePlaceholder
-                        }
-                    }
-                    .disabled(!pro.isPro)
-                    .tint(proYellow)
-                    .overlay(alignment: .trailing) {
-                        lockedProBadgeOverlay(trailingInset: Self.iosLockedProToggleBadgeTrailingInset)
-                    }
-
-                    Text("When a song lists multiple artists separated by \"&\" or commas, only scrobble the first artist.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            Section("Listening History") {
-                Button {
-                    Task { await scanListeningHistoryTapped() }
-                } label: {
-                    Label(
-                        isScanningListeningHistory ? NSLocalizedString("Scanning…", comment: "") : NSLocalizedString("Scan Listening History", comment: ""),
-                        systemImage: "clock.arrow.circlepath"
-                    )
-                    .foregroundStyle(auth.sessionKey != nil ? .primary : .secondary)
-                }
-                .padding(.vertical, 8)
-                .disabled(auth.sessionKey == nil || isScanningListeningHistory)
-
-                Text(
-                    listeningHistoryRequireConfirmationEnabled
-                        ? (
-                            extendedListeningHistoryScanEnabled
-                                ? NSLocalizedString("Scan Listening History will add plays from the past 7 days to the review list.", comment: "")
-                                : NSLocalizedString("Scan Listening History will add plays from the past 36 hours to the review list.", comment: "")
-                        )
-                        : (
-                            extendedListeningHistoryScanEnabled
-                                ? NSLocalizedString("Scan Listening History will import plays from the past 7 days.", comment: "")
-                                : NSLocalizedString("Scan Listening History will import plays from the past 36 hours.", comment: "")
-                        )
-                )
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-
-                appleMusicAPINavigationLink
-
-                VStack(alignment: .leading, spacing: 6) {
-                    Toggle("Auto-scrobble Listening History", isOn: autoScrobbleListeningHistoryBinding)
-                        .tint(.red)
-                    Text("When on, scans submit plays automatically. When off, scans add items to a review list in Home instead. This also applies to Recently Played API songs.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
-
-                VStack(alignment: .leading, spacing: 6) {
-                    Toggle("Extended History Scan", isOn: $extendedListeningHistoryScanEnabled)
-                    Text("When off, \"Scan Listening History\" checks the past 36 hours. When on, \"Scan Listening History\" checks the past 7 days.\n\nAutomatic scans always check the past 36 hours and only run when \"Auto-scrobble Listening History\" is on.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .id(SettingsScrollTarget.listeningHistory.anchorID)
-
-            Section("Theme") {
-                Picker("App Theme", selection: $themeSelectionRawValue) {
-                    Text("System").tag(AppTheme.system.rawValue)
-                    Text("Light").tag(AppTheme.light.rawValue)
-                    Text("Dark").tag(AppTheme.dark.rawValue)
-                }
-
-                Picker("Button Theme", selection: $buttonThemeSelectionRawValue) {
-                    Text("Colourful").tag(ButtonTheme.colorful.rawValue)
-                    Text("Monochrome").tag(ButtonTheme.monochrome.rawValue)
-                }
-            }
-
-            Section("Live Activity") {
-                Toggle("Show Live Activity", isOn: $liveActivityEnabled)
-                    .onValueChange(of: liveActivityEnabled) { isEnabled in
-                        if isEnabled {
-                            LiveActivityManager.shared.startIfPossible()
-                        } else {
-                            Task { @MainActor in
-                                await LiveActivityManager.shared.stop()
-                            }
-                        }
-                    }
-
-                if #available(iOS 16.1, *) {
-                    if !ActivityAuthorizationInfo().areActivitiesEnabled {
-                        Text("Live Activities are disabled in iOS Settings for FastScrobbler.")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-
-                Text("Beta feature: shows scrobbling status on your Lock Screen and Dynamic Island.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
-
-            Section("Account") {
-                HStack {
-                    Text("Last.fm")
-                    Spacer()
-                    if auth.sessionKey != nil {
-                        Text("Signed in")
-                            .foregroundColor(.green)
-                    } else {
-                        Text("Not connected")
-                            .foregroundColor(.secondary)
-                    }
-                }
-
-                if auth.sessionKey != nil {
-                    HStack {
-                        Text("Username")
-                        Spacer()
-                        Text(auth.username ?? NSLocalizedString("Loading…", comment: ""))
-                            .foregroundColor(.secondary)
-                            .multilineTextAlignment(.trailing)
-                            .textSelection(.enabled)
-                    }
-                }
-
-                let canViewProfile = (auth.sessionKey != nil && auth.profileURL != nil)
-                Button {
-                    if let url = auth.freshProfileURL() {
-                        openURL(url)
-                    }
-                } label: {
-                    Label("View Profile", systemImage: "person.circle")
-                        .foregroundStyle(canViewProfile ? .primary : .secondary)
-                }
-                .disabled(!canViewProfile)
-
-                if auth.sessionKey != nil {
-                    Button(role: .destructive) {
-                        activeAlert = .logoutConfirmation
-                    } label: {
-                        Label("Sign Out", systemImage: "power")
-                    }
-                } else {
-                    Button {
-                        Task { await connectTapped() }
-                    } label: {
-                        Label(isSigningInToLastFM ? NSLocalizedString("Signing In…", comment: "") : NSLocalizedString("Sign In", comment: ""), systemImage: "person.crop.circle")
-                    }
-                    .disabled(isSigningInToLastFM)
-                }
-            }
-
-            Section("Links") {
-                iosLinksBrandButton(title: "r/FastScrobbler", imageName: "reddit_logo") {
-                    openURL(Self.redditURL)
-                }
-
-                iosLinksButton(title: "Ask a Question or Report a Bug", systemImage: "questionmark.bubble") {
-                    openURL(Self.redditSubmitURL)
-                }
-
-                iosLinksButton(title: "Rate FastScrobbler", systemImage: "star.bubble") {
-                    openURL(Self.writeReviewURL)
-                }
-
-                iosLinksBrandButton(title: "GitHub", imageName: "github_logo") {
-                    openURL(Self.repositoryURL)
-                }
-            }
-
-            Section {
-                Button {
-                    isShowingWhatsNew = true
-                } label: {
-                    Label("What's New", systemImage: "sparkles")
-                }
-            }
-
-            Section {
-                appStorageNavigationLink
-                Button(role: .destructive) {
-                    activeAlert = .resetConfirmation
-                } label: {
-                    Label("Reset Settings", systemImage: "arrow.counterclockwise")
-                }
+                firstArtistOnlyNavigationLink
             }
         }
-    }
-
-    private func performLogout() {
-        auth.disconnect()
-        engine.setUserPaused(false)
-        engine.stop()
-    }
-
-    private func resetToInitialSettings() {
-        UserDefaults.standard.removeObject(forKey: LiveActivityManager.enabledDefaultsKey)
-        UserDefaults.standard.removeObject(forKey: AppSettings.Keys.themeSelection)
-        UserDefaults.standard.removeObject(forKey: AppSettings.Keys.buttonThemeSelection)
-        liveActivityEnabled = false
-        themeSelectionRawValue = AppTheme.system.rawValue
-        buttonThemeSelectionRawValue = ButtonTheme.colorful.rawValue
-        Task { @MainActor in
-            await LiveActivityManager.shared.stop()
-        }
-
-        let defaults = AppGroup.userDefaults
-        defaults.removeObject(forKey: ProSettings.Keys.loveOnFavoriteEnabled)
-        defaults.removeObject(forKey: ProSettings.Keys.scrobbleThresholdIndex)
-        defaults.removeObject(forKey: ProSettings.Keys.useAlbumArtistForScrobbling)
-        defaults.removeObject(forKey: ProSettings.Keys.useFirstArtistOnlyForScrobbling)
-        defaults.removeObject(forKey: ProSettings.Keys.removeBracketsFromSongTitlesEnabled)
-        defaults.removeObject(forKey: ProSettings.Keys.removeAllBracketsFromSongTitlesEnabled)
-        defaults.removeObject(forKey: ProSettings.Keys.removeBracketsFromSongTitleKeywords)
-        defaults.removeObject(forKey: ProSettings.Keys.removeBracketsFromAlbumTitlesEnabled)
-        defaults.removeObject(forKey: ProSettings.Keys.removeAllBracketsFromAlbumTitlesEnabled)
-        defaults.removeObject(forKey: ProSettings.Keys.removeBracketsFromAlbumTitleKeywords)
-        defaults.removeObject(forKey: ProSettings.Keys.preventDuplicateScrobblesEnabled)
-        defaults.removeObject(forKey: AppSettings.Keys.scrobbleAppleMusicAPIEnabled)
-        defaults.removeObject(forKey: AppSettings.Keys.scrobbleOnlyNonLibraryAppleMusicAPITracks)
-        defaults.removeObject(forKey: AppSettings.Keys.extendedListeningHistoryScanEnabled)
-        defaults.removeObject(forKey: AppSettings.Keys.listeningHistoryRequireConfirmationEnabled)
-        defaults.removeObject(forKey: AppSettings.Keys.listeningHistoryResumeRecoveryCutoffDate)
-        defaults.removeObject(forKey: AppSettings.Keys.sendNowPlayingAutomaticallyEnabled)
-        defaults.removeObject(forKey: ProSettings.Keys.textReplacementRules)
-        AppleMusicRecentTracksImporter.shared.resetState()
-        ListeningHistoryReviewStore.shared.clear()
-
-        loveOnFavoriteEnabled = false
-        scrobbleThresholdIndex = ProSettings.defaultScrobbleThresholdIndex
-        preventDuplicateScrobblesEnabled = true
-        useAlbumArtistForScrobbling = false
-        useFirstArtistOnlyForScrobbling = false
-        removeBracketsFromSongTitlesEnabled = false
-        removeAllBracketsFromSongTitlesEnabled = false
-        removeBracketsFromAlbumTitlesEnabled = false
-        removeAllBracketsFromAlbumTitlesEnabled = false
-        scrobbleOnlyNonLibraryAppleMusicAPITracks = true
-        extendedListeningHistoryScanEnabled = false
-        listeningHistoryRequireConfirmationEnabled = true
-        sendNowPlayingAutomaticallyEnabled = true
-    }
-
-    @MainActor
-    private func scanListeningHistoryTapped() async {
-        guard auth.sessionKey != nil else { return }
-        guard !isScanningListeningHistory else { return }
-        isScanningListeningHistory = true
-        defer { isScanningListeningHistory = false }
-
-        let result = await AppModel.shared.runUserInitiatedListeningHistoryScan(
-            allowExtendedLookback: true,
-            allowSubmissionWhilePaused: true,
-            bypassRecentTrackCooldown: true
-        )
-        if result.requiresConfirmation, result.pendingReviewCount > 0 {
-            isShowingListeningHistoryReview = true
-        } else {
-            activeAlert = .listeningHistoryScanResult(
-                message: listeningHistoryScanMessage(for: result)
-            )
-        }
-    }
-
-    @MainActor
-    private func connectTapped() async {
-        guard !isSigningInToLastFM else { return }
-        isSigningInToLastFM = true
-        lastFMLoginErrorText = nil
-        defer { isSigningInToLastFM = false }
-
-        do {
-            try await auth.connect()
-            engine.start()
-        } catch {
-            if error is CancellationError { return }
-            lastFMLoginErrorText = error.localizedDescription
-        }
+        .navigationTitle("Scrobble Controls")
+        .navigationBarTitleDisplayMode(.inline)
     }
 
     @ViewBuilder
@@ -603,46 +551,26 @@ struct SettingsView: View {
         }
     }
 
-    @ViewBuilder
-    private var proUpgradeNavigationRow: some View {
-        if pro.isPro {
-            NavigationLink(value: SettingsRoute.proUpgrade) {
-                Text("View Pro features")
-            }
-        } else {
-            Button {
-                navigationPath.append(SettingsRoute.proUpgrade)
-            } label: {
-                HStack {
-                    Text("Upgrade to Pro")
-                        .fontWeight(.bold)
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.footnote.weight(.semibold))
-                }
-                .foregroundStyle(Color.black)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.vertical, 8)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .listRowBackground(proYellow)
-        }
-    }
-
     private func removeBracketsNavigationLink(target: RemoveBracketsSettingsPage.Target) -> some View {
-        let route: SettingsRoute
+        let route: SettingsView.SettingsRoute
+        let iconName: String
         switch target {
         case .songTitles:
             route = .removeBracketsFromSongTitles
+            iconName = "parentheses"
         case .albumTitles:
             route = .removeBracketsFromAlbumTitles
+            iconName = "parentheses"
         }
         return NavigationLink(value: route) {
-            HStack {
-                Text(target.settingsLabel)
-                Spacer()
-                proFeatureBadgePlaceholder
+            Label {
+                HStack {
+                    Text(target.settingsLabel)
+                    Spacer()
+                    proFeatureBadgePlaceholder
+                }
+            } icon: {
+                SettingsIconBadge(systemImage: iconName, backgroundColor: .black, iconSize: 11)
             }
         }
         .overlay(alignment: .trailing) {
@@ -651,20 +579,17 @@ struct SettingsView: View {
     }
 
     @ViewBuilder
-    private var appleMusicAPINavigationLink: some View {
-        NavigationLink(value: SettingsRoute.appleMusicAPI) {
-            Text(localized("Scrobble Recently Played from Apple Music API"))
-        }
-    }
-
-    @ViewBuilder
     private var textReplacementNavigationLink: some View {
-        NavigationLink(value: SettingsRoute.textReplacement) {
-            HStack {
-                Text(localized("Text replacement"))
-                    .foregroundStyle(pro.isPro ? .primary : .secondary)
-                Spacer()
-                proFeatureBadgePlaceholder
+        NavigationLink(value: SettingsView.SettingsRoute.textReplacement) {
+            Label {
+                HStack {
+                    Text(localized("Text replacement"))
+                        .foregroundStyle(pro.isPro ? .primary : .secondary)
+                    Spacer()
+                    proFeatureBadgePlaceholder
+                }
+            } icon: {
+                SettingsIconBadge(systemImage: "character.textbox", backgroundColor: .black, iconSize: 11)
             }
         }
         .disabled(!pro.isPro)
@@ -673,11 +598,22 @@ struct SettingsView: View {
         }
     }
 
-    private var appStorageNavigationLink: some View {
-        NavigationLink(value: SettingsRoute.appStorage) {
-            Label("App Storage", systemImage: "externaldrive")
+    @ViewBuilder
+    private var firstArtistOnlyNavigationLink: some View {
+        NavigationLink(value: SettingsView.SettingsRoute.firstArtistOnly) {
+            Label {
+                HStack {
+                    Text(localized("Scrobble only the first credited artist"))
+                    Spacer()
+                    proFeatureBadgePlaceholder
+                }
+            } icon: {
+                SettingsIconBadge(systemImage: "person.fill", backgroundColor: .black, iconSize: 11)
+            }
         }
-        .foregroundStyle(.red)
+        .overlay(alignment: .trailing) {
+            lockedProBadgeOverlay(trailingInset: Self.iosLockedProNavigationBadgeTrailingInset)
+        }
     }
 
     @ViewBuilder
@@ -689,8 +625,6 @@ struct SettingsView: View {
 
     @ViewBuilder
     private var proFeatureBadgePlaceholder: some View {
-        // Invisible badge reserves the same trailing space so row content stays
-        // left-aligned regardless of Pro status, avoiding layout shifts.
         if !pro.isPro {
             ProFeatureBadge()
                 .hidden()
@@ -707,39 +641,6 @@ struct SettingsView: View {
         }
     }
 
-    private func iosLinksBrandButton(title: LocalizedStringKey, imageName: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            settingsBrandLabel(title: title, imageName: imageName, color: .white)
-        }
-        .listRowBackground(Self.linksSectionRed)
-        .listRowSeparatorTint(.white.opacity(0.35))
-    }
-
-    private func iosLinksButton(title: LocalizedStringKey, systemImage: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Label(title, systemImage: systemImage)
-                .foregroundStyle(.white)
-        }
-        .listRowBackground(Self.linksSectionRed)
-        .listRowSeparatorTint(.white.opacity(0.35))
-    }
-
-    private func settingsBrandLabel(title: LocalizedStringKey, imageName: String, color: Color, iconSize: CGFloat = 24) -> some View {
-        Label {
-            Text(title)
-        } icon: {
-            Image(imageName)
-                .renderingMode(.template)
-                .resizable()
-                .scaledToFit()
-                .frame(width: iconSize, height: iconSize)
-                .frame(width: iconSize + 5, alignment: .center)
-        }
-        .foregroundStyle(color)
-    }
-
-    // Returns a binding that reads/writes the real storage only when Pro is active;
-    // non-Pro users always see unlockedDefault and writes are silently dropped.
     private func proLockedBoolBinding(_ storage: Binding<Bool>, unlockedDefault: Bool) -> Binding<Bool> {
         Binding(
             get: { pro.isPro ? storage.wrappedValue : unlockedDefault },
@@ -751,13 +652,523 @@ struct SettingsView: View {
     }
 }
 
-private struct AppStorageSettingsPage: View {
+private struct ListeningHistorySettingsPage: View {
+    @AppStorage(AppSettings.Keys.extendedListeningHistoryScanEnabled, store: AppGroup.userDefaults) private var extendedListeningHistoryScanEnabled = false
+    @AppStorage(AppSettings.Keys.listeningHistoryRequireConfirmationEnabled, store: AppGroup.userDefaults) private var listeningHistoryRequireConfirmationEnabled = true
+
+    @EnvironmentObject private var auth: LastFMAuthManager
+    @EnvironmentObject private var listenBrainzAuth: ListenBrainzAuthManager
+
+    @Binding var activeAlert: SettingsView.ActiveAlert?
+    @Binding var isScanningListeningHistory: Bool
+    @Binding var isShowingListeningHistoryReview: Bool
+
+    private var hasAnyAccount: Bool {
+        auth.sessionKey != nil || listenBrainzAuth.isConnected
+    }
+
+    private var autoScrobbleListeningHistoryBinding: Binding<Bool> {
+        Binding(
+            get: { !listeningHistoryRequireConfirmationEnabled },
+            set: { isEnabled in
+                let requireConfirmation = !isEnabled
+                guard listeningHistoryRequireConfirmationEnabled != requireConfirmation else { return }
+                listeningHistoryRequireConfirmationEnabled = requireConfirmation
+                Task {
+                    if isEnabled { isScanningListeningHistory = true }
+                    defer { if isEnabled { isScanningListeningHistory = false } }
+                    await AppModel.shared.handleListeningHistoryRequireConfirmationChanged(isEnabled: requireConfirmation)
+                }
+            }
+        )
+    }
+
+    var body: some View {
+        Form {
+            Section {
+                Button {
+                    Task { await scanListeningHistoryTapped() }
+                } label: {
+                    Label {
+                        Text(isScanningListeningHistory ? NSLocalizedString("Scanning…", comment: "") : NSLocalizedString("Scan Listening History", comment: ""))
+                            .fontWeight(.medium)
+                    } icon: {
+                        Image(systemName: "clock.arrow.circlepath")
+                    }
+                    .foregroundStyle(hasAnyAccount ? .primary : .secondary)
+                }
+                .padding(.vertical, 8)
+                .disabled(!hasAnyAccount || isScanningListeningHistory)
+
+                Text(
+                    listeningHistoryRequireConfirmationEnabled
+                        ? (
+                            extendedListeningHistoryScanEnabled
+                                ? NSLocalizedString("Scan Listening History will add plays from the past 7 days to the review list.", comment: "")
+                                : NSLocalizedString("Scan Listening History will add plays from the past 36 hours to the review list.", comment: "")
+                        )
+                        : (
+                            extendedListeningHistoryScanEnabled
+                                ? NSLocalizedString("Scan Listening History will import plays from the past 7 days.", comment: "")
+                                : NSLocalizedString("Scan Listening History will import plays from the past 36 hours.", comment: "")
+                        )
+                )
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+            }
+
+            Section {
+                NavigationLink(value: SettingsView.SettingsRoute.appleMusicAPI) {
+                    Label {
+                        Text(NSLocalizedString("Scrobble Recently Played from Apple Music API", comment: ""))
+                    } icon: {
+                        SettingsIconBadge(systemImage: "music.note", backgroundColor: Color.accentColor)
+                    }
+                }
+            }
+
+            Section {
+                VStack(alignment: .leading, spacing: 6) {
+                    Toggle("Auto-scrobble Listening History", isOn: autoScrobbleListeningHistoryBinding)
+                        .tint(Color.accentColor)
+                    Text("When on, scans submit plays automatically. When off, scans add items to a review list in Home instead. This also applies to Recently Played API songs.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Toggle("Extended History Scan", isOn: $extendedListeningHistoryScanEnabled)
+                    Text("When off, \"Scan Listening History\" checks the past 36 hours. When on, \"Scan Listening History\" checks the past 7 days.\n\nAutomatic scans always check the past 36 hours and only run when \"Auto-scrobble Listening History\" is on.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Section {
+                NavigationLink(value: SettingsView.SettingsRoute.scanButtonLocation) {
+                    Text("Scan History Shortcut")
+                }
+            }
+        }
+        .navigationTitle("Listening History")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    @MainActor
+    private func scanListeningHistoryTapped() async {
+        guard auth.sessionKey != nil || listenBrainzAuth.isConnected else { return }
+        guard !isScanningListeningHistory else { return }
+        isScanningListeningHistory = true
+        defer { isScanningListeningHistory = false }
+
+        let result = await AppModel.shared.runUserInitiatedListeningHistoryScan(
+            allowExtendedLookback: true,
+            allowSubmissionWhilePaused: true,
+            bypassRecentTrackCooldown: true
+        )
+        if result.requiresConfirmation, result.pendingReviewCount > 0 {
+            isShowingListeningHistoryReview = true
+        } else {
+            activeAlert = .listeningHistoryScanResult(
+                message: listeningHistoryScanMessage(for: result)
+            )
+        }
+    }
+}
+
+private struct ThemeSettingsPage: View {
+    @AppStorage(AppSettings.Keys.themeSelection) private var themeSelectionRawValue = AppTheme.system.rawValue
+    @AppStorage(AppSettings.Keys.buttonThemeSelection) private var buttonThemeSelectionRawValue = ButtonTheme.colorful.rawValue
+
+    var body: some View {
+        Form {
+            Section {
+                Picker("App Theme", selection: $themeSelectionRawValue) {
+                    Text("System").tag(AppTheme.system.rawValue)
+                    Text("Light").tag(AppTheme.light.rawValue)
+                    Text("Dark").tag(AppTheme.dark.rawValue)
+                }
+
+                Picker("Button Theme", selection: $buttonThemeSelectionRawValue) {
+                    Text("Colourful").tag(ButtonTheme.colorful.rawValue)
+                    Text("Monochrome").tag(ButtonTheme.monochrome.rawValue)
+                }
+            }
+        }
+        .navigationTitle("Theme")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+private struct LiveActivitySettingsPage: View {
+    @AppStorage(LiveActivityManager.enabledDefaultsKey) private var liveActivityEnabled = false
+    @AppStorage(LiveActivityManager.compactModeDefaultsKey) private var liveActivityCompactModeEnabled = false
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle("Show Live Activity", isOn: $liveActivityEnabled)
+                    .onValueChange(of: liveActivityEnabled) { isEnabled in
+                        if isEnabled {
+                            Task { @MainActor in
+                                await LiveActivityManager.shared.startIfPossible()
+                            }
+                        } else {
+                            Task { @MainActor in
+                                await LiveActivityManager.shared.stop()
+                            }
+                        }
+                    }
+
+                Picker("Live Activity Size", selection: $liveActivityCompactModeEnabled) {
+                    Text("Default").tag(false)
+                    Text("Compact").tag(true)
+                }
+                .disabled(!liveActivityEnabled)
+                .allowsHitTesting(liveActivityEnabled)
+                .opacity(liveActivityEnabled ? 1.0 : 0.5)
+                .onValueChange(of: liveActivityCompactModeEnabled) { _ in
+                    LiveActivityManager.shared.refreshActiveActivity()
+                }
+
+                if #available(iOS 16.1, *) {
+                    if !ActivityAuthorizationInfo().areActivitiesEnabled {
+                        Text("Live Activities are disabled in iOS Settings for FastScrobbler.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Text("Beta feature: shows scrobbling status on your Lock Screen and Dynamic Island.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .navigationTitle("Live Activity")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+private struct AccountSettingsPage: View {
+    @EnvironmentObject private var auth: LastFMAuthManager
+    @EnvironmentObject private var listenBrainzAuth: ListenBrainzAuthManager
+    @EnvironmentObject private var engine: ScrobbleEngine
+    @Environment(\.openURL) private var openURL
+
+    @Binding var activeAlert: SettingsView.ActiveAlert?
+    @Binding var isSigningInToLastFM: Bool
+    @Binding var lastFMLoginErrorText: String?
+    @Binding var isShowingListenBrainzConnectSheet: Bool
+
+    var body: some View {
+        Form {
+            Section("Last.fm Account") {
+                HStack {
+                    Text("Last.fm")
+                    Spacer()
+                    if auth.sessionKey != nil {
+                        Text("Signed in")
+                            .foregroundColor(.green)
+                    } else {
+                        Text("Not connected")
+                            .foregroundColor(.secondary)
+                    }
+                }
+
+                if auth.sessionKey != nil {
+                    HStack {
+                        Text("Username")
+                        Spacer()
+                        Text(auth.username ?? NSLocalizedString("Loading…", comment: ""))
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.trailing)
+                            .textSelection(.enabled)
+                    }
+                }
+
+                let canViewProfile = (auth.sessionKey != nil && auth.profileURL != nil)
+                Button {
+                    if let url = auth.freshProfileURL() {
+                        openURL(url)
+                    }
+                } label: {
+                    Label {
+                        Text("View Profile")
+                            .fontWeight(.medium)
+                    } icon: {
+                        Image(systemName: "person.circle")
+                    }
+                    .foregroundStyle(canViewProfile ? Color.accentColor : .secondary)
+                }
+                .disabled(!canViewProfile)
+
+                if auth.sessionKey != nil {
+                    Button {
+                        activeAlert = .logoutConfirmation
+                    } label: {
+                        Label {
+                            Text("Sign Out")
+                                .fontWeight(.medium)
+                        } icon: {
+                            Image(systemName: "power")
+                        }
+                        .foregroundStyle(Color.accentColor)
+                    }
+                } else {
+                    Button {
+                        Task { await connectTapped() }
+                    } label: {
+                        Label {
+                            Text(isSigningInToLastFM ? NSLocalizedString("Signing In…", comment: "") : NSLocalizedString("Sign In", comment: ""))
+                                .fontWeight(.medium)
+                        } icon: {
+                            Image(systemName: "person.crop.circle")
+                        }
+                        .foregroundStyle(Color.accentColor)
+                    }
+                    .disabled(isSigningInToLastFM)
+                }
+            }
+
+            Section(header: Text("ListenBrainz Account"), footer: Text("ListenBrainz support is currently in beta.").foregroundStyle(.secondary)) {
+                HStack {
+                    Text("ListenBrainz")
+                    Spacer()
+                    if listenBrainzAuth.isConnected {
+                        Text("Signed in")
+                            .foregroundColor(.green)
+                    } else {
+                        Text("Not connected")
+                            .foregroundColor(.secondary)
+                    }
+                }
+
+                if listenBrainzAuth.isConnected {
+                    if let username = listenBrainzAuth.username {
+                        HStack {
+                            Text("Username")
+                            Spacer()
+                            Text(username)
+                                .foregroundColor(.secondary)
+                                .textSelection(.enabled)
+                        }
+                    }
+
+                    let canViewProfile = listenBrainzAuth.profileURL != nil
+                    Button {
+                        if let url = listenBrainzAuth.freshProfileURL() {
+                            openURL(url)
+                        }
+                    } label: {
+                        Label {
+                            Text("View Profile")
+                                .fontWeight(.medium)
+                        } icon: {
+                            Image(systemName: "person.circle")
+                        }
+                        .foregroundStyle(canViewProfile ? Color.accentColor : .secondary)
+                    }
+                    .disabled(!canViewProfile)
+
+                    Button {
+                        activeAlert = .listenBrainzLogoutConfirmation
+                    } label: {
+                        Label {
+                            Text("Sign Out")
+                                .fontWeight(.medium)
+                        } icon: {
+                            Image(systemName: "power")
+                        }
+                        .foregroundStyle(Color.accentColor)
+                    }
+                } else {
+                    Button {
+                        isShowingListenBrainzConnectSheet = true
+                    } label: {
+                        Label {
+                            Text("Connect ListenBrainz")
+                                .fontWeight(.medium)
+                        } icon: {
+                            Image(systemName: "waveform.path.ecg")
+                        }
+                        .foregroundStyle(Color.accentColor)
+                    }
+                }
+            }
+        }
+        .foregroundStyle(.primary)
+        .navigationTitle("Account")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    @MainActor
+    private func connectTapped() async {
+        guard !isSigningInToLastFM else { return }
+        isSigningInToLastFM = true
+        lastFMLoginErrorText = nil
+        defer { isSigningInToLastFM = false }
+
+        do {
+            try await auth.connect()
+            engine.start()
+        } catch {
+            if error is CancellationError { return }
+            lastFMLoginErrorText = error.localizedDescription
+        }
+    }
+}
+
+private struct AboutSettingsPage: View {
+    private static let repositoryURL = URL(string: "https://github.com/kevinlim512/FastScrobbler")!
+    private static let redditURL = URL(string: "https://www.reddit.com/r/FastScrobbler/")!
+    private static let redditSubmitURL = URL(string: "https://www.reddit.com/r/FastScrobbler/submit")!
+    private static let writeReviewURL = URL(string: "https://apps.apple.com/app/id6759501541?action=write-review")!
+    private static let privacyPolicyURL = URL(string: "https://github.com/kevinlim512/FastScrobbler/blob/main/PRIVACY_POLICY.md")!
+
+    @Environment(\.openURL) private var openURL
+    @Binding var isShowingWhatsNew: Bool
+
+    private var appVersionString: String {
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "7.0"
+        return String.localizedStringWithFormat(NSLocalizedString("Version %@", comment: ""), version)
+    }
+
+    var body: some View {
+        Form {
+            Section("Links") {
+                Button {
+                    openURL(Self.redditURL)
+                } label: {
+                    Label {
+                        Text("r/FastScrobbler")
+                            .fontWeight(.medium)
+                    } icon: {
+                        SettingsBrandIconBadge(imageName: "reddit_logo", backgroundColor: Color(red: 1.0, green: 0.27, blue: 0.0), iconSize: 18)
+                    }
+                }
+
+                Button {
+                    openURL(Self.redditSubmitURL)
+                } label: {
+                    Label {
+                        Text("Ask a Question or Report a Bug")
+                            .fontWeight(.medium)
+                    } icon: {
+                        SettingsIconBadge(systemImage: "questionmark.bubble.fill", backgroundColor: .blue)
+                    }
+                }
+
+                Button {
+                    openURL(Self.writeReviewURL)
+                } label: {
+                    Label {
+                        Text("Rate FastScrobbler")
+                            .fontWeight(.medium)
+                    } icon: {
+                        SettingsIconBadge(systemImage: "star.bubble.fill", backgroundColor: .orange)
+                    }
+                }
+
+                Button {
+                    openURL(Self.repositoryURL)
+                } label: {
+                    Label {
+                        Text("GitHub")
+                            .fontWeight(.medium)
+                    } icon: {
+                        SettingsBrandIconBadge(imageName: "github_logo", backgroundColor: Color(white: 0.2), iconSize: 18)
+                    }
+                }
+            }
+
+            Section("Legal") {
+                Button {
+                    openURL(Self.privacyPolicyURL)
+                } label: {
+                    Label {
+                        Text("Privacy Policy")
+                            .fontWeight(.medium)
+                    } icon: {
+                        Image(systemName: "lock.shield")
+                    }
+                    .foregroundStyle(Color.accentColor)
+                }
+            }
+
+            Section {
+                Button {
+                    isShowingWhatsNew = true
+                } label: {
+                    HStack {
+                        Label {
+                            Text("What's New")
+                        } icon: {
+                            SettingsIconBadge(systemImage: "sparkles", backgroundColor: .purple)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+            } footer: {
+                Text(appVersionString)
+                    .fontWeight(.bold)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .foregroundStyle(.primary)
+        .navigationTitle("About")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+private struct AdvancedSettingsPage: View {
+    @Binding var activeAlert: SettingsView.ActiveAlert?
+
+    var body: some View {
+        Form {
+            Section {
+                NavigationLink(value: SettingsView.SettingsRoute.icloudSync) {
+                    Label {
+                        Text("iCloud Sync")
+                    } icon: {
+                        SettingsIconBadge(systemImage: "icloud.fill", backgroundColor: .blue)
+                    }
+                }
+
+                NavigationLink(value: SettingsView.SettingsRoute.appStorage) {
+                    Label {
+                        Text("App Storage")
+                    } icon: {
+                        SettingsIconBadge(systemImage: "externaldrive.fill", backgroundColor: .gray)
+                    }
+                }
+            }
+
+            Section {
+                Button {
+                    activeAlert = .resetConfirmation
+                } label: {
+                    Label {
+                        Text("Reset Settings")
+                            .fontWeight(.medium)
+                    } icon: {
+                        Image(systemName: "arrow.counterclockwise")
+                    }
+                    .foregroundStyle(Color.accentColor)
+                }
+            }
+        }
+        .navigationTitle("Advanced")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+private struct ICloudSyncSettingsPage: View {
     @ObservedObject private var iCloudSync = ICloudSyncCoordinator.shared
-    @State private var isRunningStorageMaintenance = false
-    @State private var storageUsageSnapshot: StorageUsageSnapshot?
-    @State private var storageMaintenanceAlertMessage: String?
     @State private var isConfirmingICloudDeletion = false
-    @State private var isDebugUnlocked = false
+    @State private var alertMessage: String?
 
     private var canDeleteICloudData: Bool {
         !iCloudSync.isBusy && (iCloudSync.isSyncEnabled || iCloudSync.hasCloudData)
@@ -769,18 +1180,6 @@ private struct AppStorageSettingsPage: View {
 
     var body: some View {
         Form {
-            Section {
-                Button {
-                    Task { await runStorageMaintenanceTapped() }
-                } label: {
-                    Label(
-                        isRunningStorageMaintenance ? localized("Cleaning Up…") : localized("Trim Local Storage"),
-                        systemImage: "externaldrive.badge.timemachine"
-                    )
-                }
-                .disabled(isRunningStorageMaintenance)
-            }
-
             Section {
                 Toggle(isOn: Binding(
                     get: { iCloudSync.isSyncEnabled },
@@ -796,11 +1195,10 @@ private struct AppStorageSettingsPage: View {
                     isConfirmingICloudDeletion = true
                 } label: {
                     Label(localized("Delete iCloud Data"), systemImage: "trash")
-                        .foregroundStyle(canDeleteICloudData ? .red : .secondary)
+                        .fontWeight(.medium)
+                        .foregroundStyle(canDeleteICloudData ? Color.accentColor : .secondary)
                 }
                 .disabled(!canDeleteICloudData)
-            } header: {
-                Text(localized("iCloud Sync"))
             } footer: {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(localized("Back up your FastScrobbler data to iCloud and keep it synced across your devices."))
@@ -815,6 +1213,82 @@ private struct AppStorageSettingsPage: View {
                         Text(status)
                     }
                 }
+            }
+        }
+        .navigationTitle(localized("iCloud Sync"))
+        .navigationBarTitleDisplayMode(.inline)
+        .task {
+            await iCloudSync.refreshStatus()
+        }
+        .alert(localized("iCloud Sync"), isPresented: Binding(
+            get: { alertMessage != nil },
+            set: { isPresented in
+                if !isPresented {
+                    alertMessage = nil
+                }
+            }
+        )) {
+            Button(localized("OK"), role: .cancel) {}
+        } message: {
+            Text(alertMessage ?? "")
+        }
+        .alert(localized("Delete iCloud Data?"), isPresented: $isConfirmingICloudDeletion) {
+            Button(localized("Delete iCloud Data"), role: .destructive) {
+                Task { await deleteICloudDataTapped() }
+            }
+            Button(localized("Cancel"), role: .cancel) {}
+        } message: {
+            Text(localized("This removes only the iCloud copy of your synced FastScrobbler data. Local data on this iPhone stays intact, and iCloud sync will be turned off here."))
+        }
+    }
+
+    @MainActor
+    private func setICloudSyncEnabled(_ isEnabled: Bool) async {
+        if isEnabled {
+            do {
+                try await iCloudSync.enableSync()
+            } catch {
+                alertMessage = error.localizedDescription
+            }
+        } else {
+            await iCloudSync.disableSync()
+        }
+    }
+
+    @MainActor
+    private func deleteICloudDataTapped() async {
+        do {
+            try await iCloudSync.deleteCloudData()
+        } catch {
+            alertMessage = error.localizedDescription
+        }
+    }
+}
+
+private struct AppStorageSettingsPage: View {
+    @State private var isRunningStorageMaintenance = false
+    @State private var storageUsageSnapshot: StorageUsageSnapshot?
+    @State private var storageMaintenanceAlertMessage: String?
+    @State private var isDebugUnlocked = false
+
+    private func localized(_ key: String) -> String {
+        NSLocalizedString(key, comment: "")
+    }
+
+    var body: some View {
+        Form {
+            Section {
+                Button {
+                    Task { await runStorageMaintenanceTapped() }
+                } label: {
+                    Label(
+                        isRunningStorageMaintenance ? localized("Cleaning Up…") : localized("Trim Local Storage"),
+                        systemImage: "externaldrive.badge.timemachine"
+                    )
+                    .fontWeight(.medium)
+                    .foregroundStyle(isRunningStorageMaintenance ? .secondary : Color.accentColor)
+                }
+                .disabled(isRunningStorageMaintenance)
             }
 
             Section {
@@ -845,7 +1319,6 @@ private struct AppStorageSettingsPage: View {
         .navigationBarTitleDisplayMode(.inline)
         .task {
             await refreshStorageUsageSnapshot()
-            await iCloudSync.refreshStatus()
         }
         .alert(localized("App Storage"), isPresented: Binding(
             get: { storageMaintenanceAlertMessage != nil },
@@ -858,14 +1331,6 @@ private struct AppStorageSettingsPage: View {
             Button(localized("OK"), role: .cancel) {}
         } message: {
             Text(storageMaintenanceAlertMessage ?? "")
-        }
-        .alert(localized("Delete iCloud Data?"), isPresented: $isConfirmingICloudDeletion) {
-            Button(localized("Delete iCloud Data"), role: .destructive) {
-                Task { await deleteICloudDataTapped() }
-            }
-            Button(localized("Cancel"), role: .cancel) {}
-        } message: {
-            Text(localized("This removes only the iCloud copy of your synced FastScrobbler data. Local data on this iPhone stays intact, and iCloud sync will be turned off here."))
         }
     }
 
@@ -883,28 +1348,6 @@ private struct AppStorageSettingsPage: View {
     @MainActor
     private func refreshStorageUsageSnapshot() async {
         storageUsageSnapshot = await AppModel.shared.collectStorageUsageSnapshot()
-    }
-
-    @MainActor
-    private func setICloudSyncEnabled(_ isEnabled: Bool) async {
-        if isEnabled {
-            do {
-                try await iCloudSync.enableSync()
-            } catch {
-                storageMaintenanceAlertMessage = error.localizedDescription
-            }
-        } else {
-            await iCloudSync.disableSync()
-        }
-    }
-
-    @MainActor
-    private func deleteICloudDataTapped() async {
-        do {
-            try await iCloudSync.deleteCloudData()
-        } catch {
-            storageMaintenanceAlertMessage = error.localizedDescription
-        }
     }
 
     private func storageUsageRow(title: String, value: String?, titleTapAction: (() -> Void)? = nil) -> some View {
@@ -939,11 +1382,12 @@ private struct DebugSettingsPage: View {
                     }
                 }
 
-                Button(role: .destructive) {
+                Button {
                     fatalError("Crashlytics test crash")
                 }
                 label: {
                     Text("Test Crashlytics")
+                        .foregroundStyle(Color.accentColor)
                 }
             }
         }
@@ -962,5 +1406,41 @@ struct ProFeatureBadge: View {
             .background(proYellow)
             .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
             .accessibilityLabel("Pro")
+    }
+}
+
+struct ScanButtonLocationSettingsPage: View {
+    @AppStorage(AppSettings.Keys.scanButtonLocation) private var scanButtonLocationRawValue = ScanButtonLocation.recentScrobbles.rawValue
+
+    private func localized(_ key: String) -> String {
+        NSLocalizedString(key, comment: "")
+    }
+
+    var body: some View {
+        Form {
+            Section {
+                ForEach(ScanButtonLocation.allCases) { location in
+                    Button {
+                        scanButtonLocationRawValue = location.rawValue
+                    } label: {
+                        HStack {
+                            Text(location.localizedName)
+                                .foregroundStyle(.primary)
+                            Spacer()
+                            if scanButtonLocationRawValue == location.rawValue {
+                                Image(systemName: "checkmark")
+                                    .font(.body.weight(.semibold))
+                                    .foregroundStyle(.blue)
+                            }
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+            } footer: {
+                Text(localized("Choose where to display the \"Scan Listening History\" shortcut button, or disable it."))
+            }
+        }
+        .navigationTitle(localized("Scan History Shortcut"))
+        .navigationBarTitleDisplayMode(.inline)
     }
 }

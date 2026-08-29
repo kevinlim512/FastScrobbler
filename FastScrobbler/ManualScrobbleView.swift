@@ -1,5 +1,15 @@
 import SwiftUI
 
+struct GroupedManualScrobbleEntry: Identifiable {
+    let representativeEntry: ScrobbleLogStore.Entry
+    let count: Int
+    let memberIDs: [UUID]
+
+    var id: UUID {
+        representativeEntry.id
+    }
+}
+
 struct ManualScrobbleView: View {
     var onBack: (() -> Void)? = nil
 
@@ -13,6 +23,7 @@ struct ManualScrobbleView: View {
     @State private var albumArtist = ""
     @State private var useCustomTimestamp = false
     @State private var customDate = Date()
+    @State private var quantity = 1
     @State private var isSubmitting = false
     @State private var isSubmitted = false
     @State private var errorText: String?
@@ -39,8 +50,19 @@ struct ManualScrobbleView: View {
         return Int(date.timeIntervalSince1970)
     }
 
-    private var manualLogEntries: [ScrobbleLogStore.Entry] {
-        scrobbleLog.manualEntries()
+    private var groupedManualLogEntries: [GroupedManualScrobbleEntry] {
+        ConsecutivePlayGrouper.groups(
+            from: scrobbleLog.manualEntries(),
+            shouldGroup: { _ in true },
+            dedupeKey: { "\($0.track.dedupeKey)" },
+            memberID: \.id
+        ).map {
+            GroupedManualScrobbleEntry(
+                representativeEntry: $0.representative,
+                count: $0.count,
+                memberIDs: $0.memberIDs
+            )
+        }
     }
 
     var body: some View {
@@ -88,6 +110,13 @@ struct ManualScrobbleView: View {
                     }
                 }
 
+                Section("Quantity") {
+                    Stepper(value: $quantity, in: 1...5) {
+                        Text("\(quantity)")
+                            .fontWeight(.medium)
+                    }
+                }
+
                 Section {
                     Button(action: submit) {
                         HStack(spacing: 8) {
@@ -96,9 +125,17 @@ struct ManualScrobbleView: View {
                                 ProgressView().controlSize(.small).tint(.white)
                             } else if isSubmitted {
                                 Image(systemName: "checkmark.circle.fill")
-                                Text("Submitted")
+                                if quantity > 1 {
+                                    Text(String(format: NSLocalizedString("Submitted %d Scrobbles", comment: ""), quantity))
+                                } else {
+                                    Text(NSLocalizedString("Submitted", comment: ""))
+                                }
                             } else {
-                                Text("Submit Scrobble")
+                                if quantity > 1 {
+                                    Text(String(format: NSLocalizedString("Submit %d Scrobbles", comment: ""), quantity))
+                                } else {
+                                    Text(NSLocalizedString("Submit Scrobble", comment: ""))
+                                }
                             }
                             Spacer()
                         }
@@ -114,15 +151,15 @@ struct ManualScrobbleView: View {
                 if let errorText {
                     Section {
                         Text(errorText)
-                            .foregroundStyle(.red)
+                            .foregroundStyle(Color.accentColor)
                             .font(.footnote)
                     }
                 }
 
-                if !manualLogEntries.isEmpty {
+                if !groupedManualLogEntries.isEmpty {
                     Section("Manual Scrobble Log") {
-                        ForEach(manualLogEntries) { entry in
-                            logEntryRow(entry, now: now)
+                        ForEach(groupedManualLogEntries) { groupedEntry in
+                            logEntryRow(groupedEntry, now: now)
                         }
                     }
                 }
@@ -151,36 +188,55 @@ struct ManualScrobbleView: View {
     }
 
     @ViewBuilder
-    private func logEntryRow(_ entry: ScrobbleLogStore.Entry, now: Date) -> some View {
+    private func logEntryRow(_ groupedEntry: GroupedManualScrobbleEntry, now: Date) -> some View {
+        let entry = groupedEntry.representativeEntry
         VStack(alignment: .leading, spacing: 4) {
-            Text("\(entry.track.artist) — \(entry.track.title)")
-                .font(.subheadline.weight(.semibold))
-            if let album = entry.track.album, !album.isEmpty {
-                Text(album)
-                    .font(.footnote)
-                    .foregroundColor(.secondary)
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(alignment: .top, spacing: 8) {
+                    Text(entry.track.title)
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(.primary)
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    if groupedEntry.count > 1 {
+                        Text("x\(groupedEntry.count)")
+                            .font(.subheadline.weight(.bold))
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 2)
+                            .background(Color.secondary.opacity(0.15))
+                            .clipShape(Capsule())
+                    }
+                }
+
+                Text(entry.track.artist)
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.primary.opacity(0.82))
+                    .multilineTextAlignment(.leading)
+
+                if let album = entry.track.album, !album.isEmpty {
+                    Text(album)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.leading)
+                }
             }
+
             HStack(spacing: 8) {
                 Text(RelativeScrobbleTimeFormatter.string(from: displayDate(for: entry), to: now))
                 if entry.lovedOnLastFM == true {
                     Text("Loved")
                         .padding(.horizontal, 8)
                         .padding(.vertical, 2)
-                        .foregroundColor(.white)
-                        .background(Color.red)
-                        .clipShape(Capsule())
-                }
-                if entry.source != .live && entry.source != .manual {
-                    Text(sourceLabel(entry.source))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 2)
-                        .background(Color.secondary.opacity(0.15))
+                        .foregroundStyle(.white)
+                        .background(Color.accentColor)
                         .clipShape(Capsule())
                 }
                 Spacer()
             }
+            .padding(.top, 2)
             .font(.caption)
-            .foregroundColor(.secondary)
+            .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -213,7 +269,8 @@ struct ManualScrobbleView: View {
                     title: title,
                     album: album.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : album,
                     albumArtist: albumArtist.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : albumArtist,
-                    timestamp: ts
+                    timestamp: ts,
+                    quantity: quantity
                 )
                 isSubmitting = false
                 withAnimation(.easeOut(duration: 0.25)) {

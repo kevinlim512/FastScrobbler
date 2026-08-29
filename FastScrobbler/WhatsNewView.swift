@@ -17,13 +17,52 @@ struct WhatsNewView: View {
 
     private let currentSections: [VersionSection] = [
         VersionSection(
+            id: "7.0",
+            version: "7.0",
+            features: [
+                Feature(
+                    systemImage: "waveform.path.ecg",
+                    title: "\nYou can now connect and scrobble your listening history to ListenBrainz.",
+                    boldPrefix: "ListenBrainz support",
+                    showsProBadge: false
+                ),
+                Feature(
+                    systemImage: "checkmark.circle",
+                    title: "\nFor new users, and users who had Auto-scrobble disabled.",
+                    boldPrefix: "\"Scrobble Recently Played from API\" is now ON by default",
+                    showsProBadge: false
+                ),
+                Feature(
+                    systemImage: "person.crop.rectangle.badge.plus",
+                    title: "Ignored artists list for \"Scrobble only the first credited artist\" feature",
+                    boldPrefix: nil,
+                    showsProBadge: true
+                ),
+                Feature(
+                    systemImage: "platter.filled.top.iphone",
+                    title: "Compact Live Activity size option",
+                    boldPrefix: nil,
+                    showsProBadge: false
+                ),
+                Feature(
+                    systemImage: "clock.arrow.circlepath",
+                    title: "New options for \"Scan Listening History\" shortcut button",
+                    boldPrefix: nil,
+                    showsProBadge: false
+                )
+            ]
+        )
+    ]
+
+    private let previousSections: [VersionSection] = [
+        VersionSection(
             id: "6.2",
             version: "6.2",
             features: [
                 Feature(
                     systemImage: "checkmark.circle",
                     title: "\nPlays detected from Listening History now require confirmation before they are scrobbled.",
-                    boldPrefix: "Auto-scrobbling for Listening History is now OFF by default.",
+                    boldPrefix: "Auto-scrobbling for Listening History is now OFF by default",
                     showsProBadge: false
                 ),
                 Feature(
@@ -51,10 +90,7 @@ struct WhatsNewView: View {
                     showsProBadge: false
                 )
             ]
-        )
-    ]
-
-    private let previousSections: [VersionSection] = [
+        ),
         VersionSection(
             id: "5.7",
             version: "5.7",
@@ -242,7 +278,7 @@ struct WhatsNewView: View {
             VStack(spacing: 18) {
                 ForEach(sections) { section in
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("Version \(section.version)")
+                        Text(String.localizedStringWithFormat(NSLocalizedString("Version %@", comment: ""), section.version))
                             .font(.headline.weight(.semibold))
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity, alignment: .leading)

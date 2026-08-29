@@ -160,7 +160,10 @@ As a result, the repository is not a complete drop-in build of the App Store app
 - FastScrobbler has no developer-run backend.
 - The app sends scrobble requests directly to Last.fm (`ws.audioscrobbler.com`) after you connect your account.
 - If Crashlytics is configured, the app also sends crash diagnostics and related metadata to Firebase / Google.
-- More details: `PRIVACY_POLICY.md`.
+
+### Privacy Policy
+
+For more details, see the [Privacy Policy](https://github.com/kevinlim512/FastScrobbler/blob/main/PRIVACY_POLICY.md).
 
 ## Project layout
 

@@ -1,6 +1,6 @@
 @main
 struct RunTestsMain {
-    static func main() {
+    static func main() async {
         runBracketRemovalTests()
         runHTTPTimeoutTests()
         runManualCooldownTests()
@@ -28,9 +28,10 @@ struct RunTestsMain {
         runSettingsDefaultsTests()
         runBacklogTimestampPreservationTests()
         runBacklogCleanupTests()
-        runStorageMaintenanceTests()
+        await runStorageMaintenanceTests()
         runListeningHistoryScanTests()
         runConsecutivePlayGroupingTests()
+        await runListenBrainzTests()
         finishTests()
     }
 }

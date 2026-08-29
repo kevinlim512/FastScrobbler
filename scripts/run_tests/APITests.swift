@@ -144,4 +144,61 @@ func runAPITests() {
     expectEqual("HTTP error JSON message is extracted", responseMessage(from: jsonErrorData), "Rate Limit Exceeded")
     expectEqual("HTTP error text body is trimmed", responseMessage(from: Data("  unavailable  ".utf8)), "unavailable")
     expectEqual("empty HTTP error body has no message", responseMessage(from: Data()), nil)
+
+    // ─── Last.fm ClientError retry classification ───────────────────────────────
+
+    section("API · Last.fm ClientError retry classification")
+
+    expect("API error 8 (Operation failed) is retryable", LastFMClient.ClientError.apiError(code: 8, message: "Failed").shouldRetryScrobble)
+    expect("API error 11 (Service offline) is retryable", LastFMClient.ClientError.apiError(code: 11, message: "Offline").shouldRetryScrobble)
+    expect("API error 16 (Service unavailable) is retryable", LastFMClient.ClientError.apiError(code: 16, message: "Unavailable").shouldRetryScrobble)
+    expect("API error 29 (Rate limit) is retryable", LastFMClient.ClientError.apiError(code: 29, message: "Rate limit").shouldRetryScrobble)
+
+    expect("API error 4 (Auth failed) is not retryable", !LastFMClient.ClientError.apiError(code: 4, message: "Auth failed").shouldRetryScrobble)
+    expect("API error 9 (Invalid session key) is not retryable", !LastFMClient.ClientError.apiError(code: 9, message: "Invalid session").shouldRetryScrobble)
+    expect("API error 10 (Invalid API key) is not retryable", !LastFMClient.ClientError.apiError(code: 10, message: "Invalid key").shouldRetryScrobble)
+    expect("API error 13 (Invalid signature) is not retryable", !LastFMClient.ClientError.apiError(code: 13, message: "Invalid signature").shouldRetryScrobble)
+    expect("API error 26 (Suspended key) is not retryable", !LastFMClient.ClientError.apiError(code: 26, message: "Suspended").shouldRetryScrobble)
+
+    expect("missingApiKey is not retryable", !LastFMClient.ClientError.missingApiKey.shouldRetryScrobble)
+    expect("missingSessionKey is not retryable", !LastFMClient.ClientError.missingSessionKey.shouldRetryScrobble)
+    expect("invalidResponse is not retryable", !LastFMClient.ClientError.invalidResponse.shouldRetryScrobble)
+
+    expect("scrobbleIgnored code 5 (Daily limit) is retryable", LastFMClient.ClientError.scrobbleIgnored(code: 5, message: "Daily limit").shouldRetryScrobble)
+    expect("scrobbleIgnored code 1 is not retryable", !LastFMClient.ClientError.scrobbleIgnored(code: 1, message: "Filtered").shouldRetryScrobble)
+
+    // ─── Last.fm Batch Scrobble Parameter Creation ────────────────────────────────
+
+    section("API · Last.fm Batch Scrobble Parameter Formatting")
+
+    func buildBatchParams(items: [(artist: String, title: String, timestamp: Int)]) -> [String: String] {
+        var params: [String: String] = [:]
+        for (index, item) in items.enumerated() {
+            let i = "[\(index)]"
+            params["artist\(i)"] = item.artist
+            params["track\(i)"] = item.title
+            params["timestamp\(i)"] = String(item.timestamp)
+        }
+        return params
+    }
+
+    let batchInput = [
+        (artist: "Radiohead", title: "Karma Police", timestamp: 1700000000),
+        (artist: "Coldplay", title: "Yellow", timestamp: 1700000200)
+    ]
+    let batchParams = buildBatchParams(items: batchInput)
+
+    expectEqual("batch artist[0]", batchParams["artist[0]"], "Radiohead")
+    expectEqual("batch track[0]", batchParams["track[0]"], "Karma Police")
+    expectEqual("batch timestamp[0]", batchParams["timestamp[0]"], "1700000000")
+    expectEqual("batch artist[1]", batchParams["artist[1]"], "Coldplay")
+    expectEqual("batch track[1]", batchParams["track[1]"], "Yellow")
+    expectEqual("batch timestamp[1]", batchParams["timestamp[1]"], "1700000200")
+
+    let batchSig = apiSignature(
+        params: batchParams.merging(["method": "track.scrobble", "api_key": "testkey", "sk": "testsk"], uniquingKeysWith: { $1 }),
+        secret: "testsecret"
+    )
+    expect("batch signature generates valid 32-char MD5", batchSig.count == 32)
 }
+

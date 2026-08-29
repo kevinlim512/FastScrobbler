@@ -542,12 +542,12 @@ func runListeningHistoryScanTests() {
     expectEqual("submitting selected items leaves unselected rows pending", pendingQueueAfterSubmit(totalCount: 6, selectedCount: 2), 4)
     expectEqual("submitting all items drains the pending queue", pendingQueueAfterSubmit(totalCount: 6, selectedCount: 0), 0)
 
-    func queueClearedWhenConfirmationTurnsOff(existingPending: Int, isEnabled: Bool) -> Int {
-        isEnabled ? existingPending : 0
+    func pendingQueueWhenConfirmationChanges(existingPending: Int, requireConfirmation: Bool) -> Int {
+        requireConfirmation ? existingPending : 0
     }
 
-    expectEqual("turning confirmation off clears the pending review queue", queueClearedWhenConfirmationTurnsOff(existingPending: 5, isEnabled: false), 0)
-    expectEqual("keeping confirmation on preserves the pending review queue", queueClearedWhenConfirmationTurnsOff(existingPending: 5, isEnabled: true), 5)
+    expectEqual("turning confirmation off submits the pending review queue", pendingQueueWhenConfirmationChanges(existingPending: 5, requireConfirmation: false), 0)
+    expectEqual("keeping confirmation on preserves the pending review queue", pendingQueueWhenConfirmationChanges(existingPending: 5, requireConfirmation: true), 5)
 
     section("Listening History scan · empty-result retry")
 

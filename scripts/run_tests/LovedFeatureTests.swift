@@ -63,20 +63,26 @@ func runLovedFeatureTests() {
 
     section("Loved feature · Track identity matching")
 
+    func isValidPlaybackStoreID(_ id: String?) -> Bool {
+        guard let id else { return false }
+        let trimmed = id.trimmingCharacters(in: .whitespacesAndNewlines)
+        return !trimmed.isEmpty && trimmed != "0"
+    }
+
     struct FavoritesIndex {
         var persistentIDs: Set<UInt64>
         var playbackStoreIDs: Set<String>
 
         func contains(persistentID: UInt64, playbackStoreID: String?) -> Bool {
             if persistentID != 0, persistentIDs.contains(persistentID) { return true }
-            guard let playbackStoreID, !playbackStoreID.isEmpty else { return false }
-            return playbackStoreIDs.contains(playbackStoreID)
+            guard isValidPlaybackStoreID(playbackStoreID), let playbackStoreID else { return false }
+            return playbackStoreIDs.contains(playbackStoreID.trimmingCharacters(in: .whitespacesAndNewlines))
         }
     }
 
     let exactTrackIndex = FavoritesIndex(
         persistentIDs: [101],
-        playbackStoreIDs: ["clairo-blouse"]
+        playbackStoreIDs: ["clairo-blouse", "0"]
     )
     expect(
         "same persistent ID is treated as favorited",
@@ -85,6 +91,10 @@ func runLovedFeatureTests() {
     expect(
         "same playbackStoreID is treated as favorited",
         exactTrackIndex.contains(persistentID: 0, playbackStoreID: "clairo-blouse")
+    )
+    expect(
+        "fallback store ID '0' for uploaded/custom tracks is ignored and not treated as favorited",
+        !exactTrackIndex.contains(persistentID: 0, playbackStoreID: "0")
     )
     expect(
         "different live-version identity is not treated as favorited",

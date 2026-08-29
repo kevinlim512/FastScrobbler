@@ -38,4 +38,42 @@ func runControlWidgetStatusTests() {
         resolvedPhase(entry: SimEntry(phase: "success", expiresAt: now.addingTimeInterval(1.5)), now: now.addingTimeInterval(1.5)),
         "idle"
     )
+
+    section("AppIntents · Pending manual scrobble launch request")
+
+    _ = AppSettings.consumePendingManualScrobbleLaunchRequest()
+    expect(
+        "initially consumePendingManualScrobbleLaunchRequest is false",
+        !AppSettings.consumePendingManualScrobbleLaunchRequest()
+    )
+
+    AppSettings.requestPendingManualScrobbleLaunch()
+    expect(
+        "requestPendingManualScrobbleLaunch sets pending request state",
+        AppSettings.consumePendingManualScrobbleLaunchRequest()
+    )
+
+    expect(
+        "consuming pending request clears state so subsequent calls return false",
+        !AppSettings.consumePendingManualScrobbleLaunchRequest()
+    )
+
+    section("AppIntents · Pending help launch request")
+
+    _ = AppSettings.consumePendingHelpLaunchRequest()
+    expect(
+        "initially consumePendingHelpLaunchRequest is false",
+        !AppSettings.consumePendingHelpLaunchRequest()
+    )
+
+    AppSettings.requestPendingHelpLaunch()
+    expect(
+        "requestPendingHelpLaunch sets pending request state",
+        AppSettings.consumePendingHelpLaunchRequest()
+    )
+
+    expect(
+        "consuming pending help request clears state so subsequent calls return false",
+        !AppSettings.consumePendingHelpLaunchRequest()
+    )
 }

@@ -67,6 +67,7 @@ enum ListeningHistoryScanService {
         backlog: ScrobbleBacklog,
         scrobbleLog: ScrobbleLogStore,
         sessionKey: String?,
+        listenBrainzToken: String? = nil,
         maxItems: Int = 200,
         allowExtendedLookback: Bool = false,
         bypassRecentTrackCooldown: Bool = false,
@@ -188,7 +189,8 @@ enum ListeningHistoryScanService {
         }
 
         let shouldSuppressFlushWhilePaused = isUserPaused && pauseBehavior == .respectPause
-        guard let sessionKey, !shouldSuppressFlushWhilePaused else {
+        let hasAccount = (sessionKey?.isEmpty == false) || (listenBrainzToken?.isEmpty == false)
+        guard hasAccount, !shouldSuppressFlushWhilePaused else {
             return Result(
                 deliveryMode: deliveryMode,
                 importedCount: totalImported,
@@ -213,6 +215,7 @@ enum ListeningHistoryScanService {
                 backlog: backlog,
                 scrobbleLog: scrobbleLog,
                 sessionKey: sessionKey,
+                listenBrainzToken: listenBrainzToken,
                 recordSuccessfulScrobble: recordSuccessfulScrobble
             )
             let flushedPlaybackHistoryCount = flushResult.sentItems.reduce(into: 0) { count, item in
@@ -249,7 +252,8 @@ enum ListeningHistoryScanService {
     private static func flushBacklog(
         backlog: ScrobbleBacklog,
         scrobbleLog: ScrobbleLogStore,
-        sessionKey: String,
+        sessionKey: String?,
+        listenBrainzToken: String?,
         recordSuccessfulScrobble: (() -> Void)?
     ) async -> ScrobbleBacklog.FlushResult {
         let pending = await backlog.pendingCount()
@@ -259,7 +263,7 @@ enum ListeningHistoryScanService {
 
         AppGroup.userDefaults.set(Date(), forKey: Keys.lastBacklogFlushAt)
 
-        let result = await backlog.flush(sessionKey: sessionKey)
+        let result = await backlog.flush(sessionKey: sessionKey, listenBrainzToken: listenBrainzToken)
         let preventDuplicates = ProSettings.preventDuplicateScrobblesEnabled()
         for item in result.sentItems {
             scrobbleLog.record(

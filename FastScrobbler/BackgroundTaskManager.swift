@@ -30,15 +30,10 @@ final class BackgroundTaskManager {
     private var isRegistered = false
 #if os(iOS)
     private static let liveScrobbleExpirationSafetyMarginSeconds: TimeInterval = 2
-    private static let maxLiveScrobbleGraceRenewals = 3
-    private static let minLiveScrobbleGraceRenewalIntervalSeconds: TimeInterval = 6
     private var liveScrobbleGraceTaskID: UIBackgroundTaskIdentifier = .invalid
-    private var liveScrobbleGraceWatchdogTask: Task<Void, Never>?
     private var liveScrobbleGraceDidExpire = false
-    private var liveScrobbleGraceRenewalCount = 0
     private var liveScrobbleGraceProjectionAttempted = false
     private var liveScrobbleGraceStartedAt: Date?
-    private var liveScrobbleGraceRenewedAt: Date?
     private var liveScrobbleGraceOnExpired: (@MainActor () async -> Void)?
 #endif
 
@@ -161,10 +156,8 @@ final class BackgroundTaskManager {
         endLiveScrobbleGracePeriod()
 
         liveScrobbleGraceDidExpire = false
-        liveScrobbleGraceRenewalCount = 0
         liveScrobbleGraceProjectionAttempted = false
         liveScrobbleGraceStartedAt = Date()
-        liveScrobbleGraceRenewedAt = nil
         liveScrobbleGraceOnExpired = onExpired
 
         let taskIDBox = BackgroundTaskIdentifierBox()
@@ -181,7 +174,6 @@ final class BackgroundTaskManager {
         }
 
         liveScrobbleGraceTaskID = taskID
-        liveScrobbleGraceWatchdogTask = makeLiveScrobbleGraceWatchdogTask()
 
         logger.info("started live scrobble grace period")
         return true
@@ -189,14 +181,10 @@ final class BackgroundTaskManager {
 
     @MainActor
     func endLiveScrobbleGracePeriod() {
-        liveScrobbleGraceWatchdogTask?.cancel()
-        liveScrobbleGraceWatchdogTask = nil
         liveScrobbleGraceOnExpired = nil
         liveScrobbleGraceDidExpire = false
-        liveScrobbleGraceRenewalCount = 0
         liveScrobbleGraceProjectionAttempted = false
         liveScrobbleGraceStartedAt = nil
-        liveScrobbleGraceRenewedAt = nil
 
         guard liveScrobbleGraceTaskID != .invalid else { return }
         UIApplication.shared.endBackgroundTask(liveScrobbleGraceTaskID)
@@ -207,51 +195,6 @@ final class BackgroundTaskManager {
     @MainActor
     var isLiveScrobbleGracePeriodActive: Bool {
         liveScrobbleGraceTaskID != .invalid && !liveScrobbleGraceDidExpire
-    }
-
-    @MainActor
-    func attemptLiveScrobbleGraceRenewalIfAllowed() -> Bool {
-        guard liveScrobbleGraceTaskID != .invalid else { return false }
-        guard !liveScrobbleGraceDidExpire else { return false }
-        guard liveScrobbleGraceRenewalCount < Self.maxLiveScrobbleGraceRenewals else { return false }
-        guard UIApplication.shared.applicationState != .active else { return false }
-
-        let now = Date()
-        if let liveScrobbleGraceRenewedAt,
-           now.timeIntervalSince(liveScrobbleGraceRenewedAt) < Self.minLiveScrobbleGraceRenewalIntervalSeconds {
-            return false
-        }
-
-        liveScrobbleGraceRenewalCount += 1
-
-        let oldTaskID = liveScrobbleGraceTaskID
-        UIApplication.shared.endBackgroundTask(oldTaskID)
-        liveScrobbleGraceTaskID = .invalid
-
-        let taskIDBox = BackgroundTaskIdentifierBox()
-        let taskID = UIApplication.shared.beginBackgroundTask(withName: "FastScrobbler.LiveScrobbleGrace.Renewed") { [weak self] in
-            self?.expireLiveScrobbleGracePeriodFromSystemExpiration(taskID: taskIDBox.value)
-        }
-        taskIDBox.value = taskID
-
-        guard taskID != .invalid else {
-            logger.warning("failed to renew live scrobble grace period")
-            return false
-        }
-
-        liveScrobbleGraceTaskID = taskID
-        liveScrobbleGraceRenewedAt = now
-
-        liveScrobbleGraceWatchdogTask?.cancel()
-        liveScrobbleGraceWatchdogTask = makeLiveScrobbleGraceWatchdogTask()
-
-        let remaining = UIApplication.shared.backgroundTimeRemaining
-        if remaining.isFinite {
-            logger.info("renewed live scrobble grace period \(self.liveScrobbleGraceRenewalCount, privacy: .public)/\(Self.maxLiveScrobbleGraceRenewals, privacy: .public) (remaining: \(remaining, privacy: .public)s)")
-        } else {
-            logger.info("renewed live scrobble grace period \(self.liveScrobbleGraceRenewalCount, privacy: .public)/\(Self.maxLiveScrobbleGraceRenewals, privacy: .public)")
-        }
-        return true
     }
 
     @MainActor
@@ -278,28 +221,6 @@ final class BackgroundTaskManager {
         UIApplication.shared.backgroundTimeRemaining
     }
 
-    private func makeLiveScrobbleGraceWatchdogTask() -> Task<Void, Never> {
-        Task { @MainActor [weak self] in
-            while !Task.isCancelled {
-                do {
-                    try await Task.sleep(nanoseconds: 1_000_000_000)
-                } catch {
-                    return
-                }
-
-                guard let self else { return }
-                let remaining = UIApplication.shared.backgroundTimeRemaining
-                guard remaining.isFinite else { continue }
-                guard remaining <= Self.liveScrobbleExpirationSafetyMarginSeconds else { continue }
-
-                await self.expireLiveScrobbleGracePeriod(
-                    reason: "background time nearly exhausted",
-                    remainingBackgroundTime: remaining
-                )
-            }
-        }
-    }
-
     @MainActor
     private func expireLiveScrobbleGracePeriod(
         reason: StaticString,
@@ -309,8 +230,6 @@ final class BackgroundTaskManager {
         guard !liveScrobbleGraceDidExpire else { return }
 
         liveScrobbleGraceDidExpire = true
-        liveScrobbleGraceWatchdogTask?.cancel()
-        liveScrobbleGraceWatchdogTask = nil
 
         let onExpired = liveScrobbleGraceOnExpired
         liveScrobbleGraceOnExpired = nil
@@ -324,46 +243,44 @@ final class BackgroundTaskManager {
 
         await onExpired?()
         liveScrobbleGraceDidExpire = false
-        liveScrobbleGraceRenewalCount = 0
         liveScrobbleGraceProjectionAttempted = false
         liveScrobbleGraceStartedAt = nil
-        liveScrobbleGraceRenewedAt = nil
     }
 
     private func expireLiveScrobbleGracePeriodFromSystemExpiration(taskID: UIBackgroundTaskIdentifier) {
         guard taskID != .invalid else { return }
-        guard liveScrobbleGraceTaskID == taskID else {
-            UIApplication.shared.endBackgroundTask(taskID)
-            return
-        }
-        guard !liveScrobbleGraceDidExpire else {
-            UIApplication.shared.endBackgroundTask(taskID)
-            liveScrobbleGraceTaskID = .invalid
-            return
-        }
-
-        liveScrobbleGraceDidExpire = true
-        liveScrobbleGraceWatchdogTask?.cancel()
-        liveScrobbleGraceWatchdogTask = nil
-
-        let onExpired = liveScrobbleGraceOnExpired
-        liveScrobbleGraceOnExpired = nil
-
-        let remaining = UIApplication.shared.backgroundTimeRemaining
-        logLiveScrobbleGraceExpirationSummary(
-            reason: "system expiration",
-            remainingBackgroundTime: remaining.isFinite ? remaining : nil
-        )
-        UIApplication.shared.endBackgroundTask(taskID)
-        liveScrobbleGraceTaskID = .invalid
-
         Task { @MainActor [weak self] in
+            guard let self else {
+                UIApplication.shared.endBackgroundTask(taskID)
+                return
+            }
+            guard self.liveScrobbleGraceTaskID == taskID else {
+                UIApplication.shared.endBackgroundTask(taskID)
+                return
+            }
+            guard !self.liveScrobbleGraceDidExpire else {
+                UIApplication.shared.endBackgroundTask(taskID)
+                self.liveScrobbleGraceTaskID = .invalid
+                return
+            }
+
+            self.liveScrobbleGraceDidExpire = true
+
+            let onExpired = self.liveScrobbleGraceOnExpired
+            self.liveScrobbleGraceOnExpired = nil
+
+            let remaining = UIApplication.shared.backgroundTimeRemaining
+            self.logLiveScrobbleGraceExpirationSummary(
+                reason: "system expiration",
+                remainingBackgroundTime: remaining.isFinite ? remaining : nil
+            )
+            UIApplication.shared.endBackgroundTask(taskID)
+            self.liveScrobbleGraceTaskID = .invalid
+
             await onExpired?()
-            self?.liveScrobbleGraceDidExpire = false
-            self?.liveScrobbleGraceRenewalCount = 0
-            self?.liveScrobbleGraceProjectionAttempted = false
-            self?.liveScrobbleGraceStartedAt = nil
-            self?.liveScrobbleGraceRenewedAt = nil
+            self.liveScrobbleGraceDidExpire = false
+            self.liveScrobbleGraceProjectionAttempted = false
+            self.liveScrobbleGraceStartedAt = nil
         }
     }
 
@@ -373,11 +290,11 @@ final class BackgroundTaskManager {
     ) {
         if let remainingBackgroundTime {
             logger.info(
-                "expiring live scrobble grace period: \(reason, privacy: .public) (remaining: \(remainingBackgroundTime, privacy: .public)s, renewals: \(self.liveScrobbleGraceRenewalCount, privacy: .public)/\(Self.maxLiveScrobbleGraceRenewals, privacy: .public), projectionAttempted: \(self.liveScrobbleGraceProjectionAttempted, privacy: .public))"
+                "expiring live scrobble grace period: \(reason, privacy: .public) (remaining: \(remainingBackgroundTime, privacy: .public)s, projectionAttempted: \(self.liveScrobbleGraceProjectionAttempted, privacy: .public))"
             )
         } else {
             logger.info(
-                "expiring live scrobble grace period: \(reason, privacy: .public) (renewals: \(self.liveScrobbleGraceRenewalCount, privacy: .public)/\(Self.maxLiveScrobbleGraceRenewals, privacy: .public), projectionAttempted: \(self.liveScrobbleGraceProjectionAttempted, privacy: .public))"
+                "expiring live scrobble grace period: \(reason, privacy: .public) (projectionAttempted: \(self.liveScrobbleGraceProjectionAttempted, privacy: .public))"
             )
         }
     }

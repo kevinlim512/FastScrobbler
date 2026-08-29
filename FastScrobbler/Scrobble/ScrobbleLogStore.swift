@@ -493,7 +493,6 @@ final class ScrobbleLogStore: ObservableObject {
         )
 
         if !allowExactDuplicates,
-           source != .playbackHistory,
            entries.contains(where: { $0.startTimestamp == startTimestamp && $0.track.dedupeKey == track.dedupeKey })
         {
             return

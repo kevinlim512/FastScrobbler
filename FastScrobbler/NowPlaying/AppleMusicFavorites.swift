@@ -2,11 +2,32 @@ import Foundation
 import MediaPlayer
 
 enum AppleMusicFavorites {
-    /// iOS Music currently surfaces the user's "Favorite Songs" as a smart playlist.
+    /// iOS Music currently surfaces the user's "Favorite Songs" as a smart playlist across localized titles.
     private static let candidatePlaylistNames: Set<String> = [
         "Favorite Songs",
         "Favourite Songs",
+        "Canciones favoritas",
+        "Morceaux préférés",
+        "Titres préférés",
+        "お気に入りの曲",
+        "喜爱歌曲",
+        "最爱歌曲",
+        "喜愛的歌曲",
+        "最愛的歌曲",
+        "Lieblingssongs",
+        "Lieblingstitel",
+        "Brani preferiti",
+        "Músicas Favoritas",
+        "Músicas Preferidas",
+        "Любимые песни",
+        "즐겨찾는 노래"
     ]
+
+    static func isValidPlaybackStoreID(_ id: String?) -> Bool {
+        guard let id else { return false }
+        let trimmed = id.trimmingCharacters(in: .whitespacesAndNewlines)
+        return !trimmed.isEmpty && trimmed != "0"
+    }
 
     struct Index: Sendable {
         fileprivate var persistentIDs: Set<UInt64>
@@ -16,13 +37,17 @@ enum AppleMusicFavorites {
             let pid = item.persistentID
             if pid != 0, persistentIDs.contains(pid) { return true }
             let sid = item.playbackStoreID
-            if !sid.isEmpty, playbackStoreIDs.contains(sid) { return true }
+            if AppleMusicFavorites.isValidPlaybackStoreID(sid) {
+                let trimmed = sid.trimmingCharacters(in: .whitespacesAndNewlines)
+                if playbackStoreIDs.contains(trimmed) { return true }
+            }
             return false
         }
 
         func contains(playbackStoreID: String?) -> Bool {
-            guard let playbackStoreID, !playbackStoreID.isEmpty else { return false }
-            return playbackStoreIDs.contains(playbackStoreID)
+            guard AppleMusicFavorites.isValidPlaybackStoreID(playbackStoreID), let playbackStoreID else { return false }
+            let trimmed = playbackStoreID.trimmingCharacters(in: .whitespacesAndNewlines)
+            return playbackStoreIDs.contains(trimmed)
         }
     }
 
@@ -49,8 +74,8 @@ enum AppleMusicFavorites {
             let pid = item.persistentID
             if pid != 0 { pids.insert(pid) }
 
-            let sid = item.playbackStoreID
-            if !sid.isEmpty { sids.insert(sid) }
+            let sid = item.playbackStoreID.trimmingCharacters(in: .whitespacesAndNewlines)
+            if isValidPlaybackStoreID(sid) { sids.insert(sid) }
         }
 
         return Index(persistentIDs: pids, playbackStoreIDs: sids)
@@ -72,9 +97,8 @@ enum AppleMusicLibrarySongs {
         fileprivate var playbackStoreIDs: Set<String>
 
         func contains(playbackStoreID: String?) -> Bool {
-            guard let playbackStoreID else { return false }
+            guard AppleMusicFavorites.isValidPlaybackStoreID(playbackStoreID), let playbackStoreID else { return false }
             let trimmed = playbackStoreID.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !trimmed.isEmpty else { return false }
             return playbackStoreIDs.contains(trimmed)
         }
     }
@@ -93,7 +117,7 @@ enum AppleMusicLibrarySongs {
 
         for item in items {
             let sid = item.playbackStoreID.trimmingCharacters(in: .whitespacesAndNewlines)
-            if !sid.isEmpty {
+            if AppleMusicFavorites.isValidPlaybackStoreID(sid) {
                 storeIDs.insert(sid)
             }
         }

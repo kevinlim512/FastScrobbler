@@ -265,10 +265,10 @@ struct RemoveBracketsSettingsPage: View {
             .foregroundStyle(.secondary)
         Toggle(localized("Remove ALL brackets"), isOn: removeAllBracketsEnabledBinding)
             .disabled(!removeBracketsEnabledBinding.wrappedValue)
-            .tint(.red)
+            .tint(Color.accentColor)
         Text(target.warningText)
             .font(.footnote)
-            .foregroundStyle(.red)
+            .foregroundStyle(Color.accentColor)
     }
 
     @ViewBuilder
@@ -321,14 +321,14 @@ struct RemoveBracketsSettingsPage: View {
                 .textFieldStyle(.roundedBorder)
 #endif
 
-            Button(role: .destructive) {
+            Button {
                 removeKeyword(id: draft.id)
             } label: {
                 Image(systemName: "minus.circle.fill")
-                    .foregroundStyle(.red)
+                    .foregroundStyle(Color.accentColor)
             }
             .buttonStyle(.plain)
-            .tint(.red)
+            .tint(Color.accentColor)
             .accessibilityLabel("Remove keyword")
         }
     }

@@ -38,6 +38,7 @@ final class AppModel {
     }
 
     let auth: LastFMAuthManager
+    let listenBrainzAuth: ListenBrainzAuthManager
     let observer: AppleMusicNowPlayingObserver
     let engine: ScrobbleEngine
     let backlog: ScrobbleBacklog
@@ -48,8 +49,10 @@ final class AppModel {
 
     private init() {
         let auth = LastFMAuthManager()
+        let listenBrainzAuth = ListenBrainzAuthManager()
         let observer = AppleMusicNowPlayingObserver()
         self.auth = auth
+        self.listenBrainzAuth = listenBrainzAuth
         self.observer = observer
         let permissions = PermissionStatusStore()
         self.permissions = permissions
@@ -57,7 +60,13 @@ final class AppModel {
         self.backlog = backlog
         let scrobbleLog = ScrobbleLogStore.shared
         self.scrobbleLog = scrobbleLog
-        self.engine = ScrobbleEngine(auth: auth, observer: observer, backlog: backlog, scrobbleLog: scrobbleLog)
+        self.engine = ScrobbleEngine(
+            auth: auth,
+            listenBrainzAuth: listenBrainzAuth,
+            observer: observer,
+            backlog: backlog,
+            scrobbleLog: scrobbleLog
+        )
     }
 
     func startIfNeeded() {
@@ -85,9 +94,9 @@ final class AppModel {
         }
         guard !Task.isCancelled else { return }
 
-        if auth.sessionKey == nil {
+        if auth.sessionKey == nil && !listenBrainzAuth.isConnected {
             await LiveActivityManager.shared.update(
-                status: NSLocalizedString("Connect Last.fm to scrobble.", comment: ""),
+                status: NSLocalizedString("Connect Last.fm or ListenBrainz to scrobble.", comment: ""),
                 track: observer.track,
                 lastEventAt: Date(),
                 isActivelyScrobbling: false,
@@ -96,10 +105,15 @@ final class AppModel {
             return
         }
 
-        if let sessionKey = auth.sessionKey {
-            await auth.refreshUserInfoIfNeeded()
+        if auth.sessionKey != nil || listenBrainzAuth.isConnected {
+            if auth.sessionKey != nil {
+                await auth.refreshUserInfoIfNeeded()
+            }
+            if listenBrainzAuth.isConnected {
+                await listenBrainzAuth.refreshUserInfoIfNeeded()
+            }
             UserDefaults.standard.removeObject(forKey: Keys.lastEnteredBackgroundAt)
-            await flushBacklogIfNeeded(sessionKey: sessionKey)
+            await flushBacklogIfNeeded()
             BackgroundTaskManager.shared.scheduleProcessingIfNeeded()
         }
 
@@ -122,8 +136,8 @@ final class AppModel {
         guard UserDefaults.standard.bool(forKey: Keys.hasSeenSetup) else { return }
 
         observer.refreshOnceIfAuthorized()
-        if let sessionKey = auth.sessionKey {
-            let result = await backlog.flush(sessionKey: sessionKey)
+        if auth.sessionKey != nil || listenBrainzAuth.isConnected {
+            let result = await backlog.flush(sessionKey: auth.sessionKey, listenBrainzToken: listenBrainzAuth.userToken)
             for item in result.sentItems {
                 scrobbleLog.record(
                     track: item.track,
@@ -138,8 +152,8 @@ final class AppModel {
     }
 
     func periodicFlush() async {
-        guard let sessionKey = auth.sessionKey else { return }
-        await flushBacklogIfNeeded(sessionKey: sessionKey)
+        guard auth.sessionKey != nil || listenBrainzAuth.isConnected else { return }
+        await flushBacklogIfNeeded()
     }
 
     func runStorageMaintenanceNow() async {
@@ -159,10 +173,10 @@ final class AppModel {
     }
 
     @discardableResult
-    private func flushBacklogIfNeeded(sessionKey: String, force: Bool = false) async -> ScrobbleBacklog.FlushResult {
+    private func flushBacklogIfNeeded(sessionKey: String? = nil, force: Bool = false) async -> ScrobbleBacklog.FlushResult {
         let pending = await backlog.pendingCount()
         guard pending > 0 else {
-            return ScrobbleBacklog.FlushResult(sentCount: 0, skippedCount: 0, remainingCount: 0, sentItems: [])
+            return ScrobbleBacklog.FlushResult(sentCount: 0, skippedCount: 0, remainingCount: pending, sentItems: [])
         }
 
         let now = Date()
@@ -180,7 +194,9 @@ final class AppModel {
 
         UserDefaults.standard.set(now, forKey: Keys.lastBacklogFlushAt)
 
-        let result = await backlog.flush(sessionKey: sessionKey)
+        let sk = sessionKey ?? auth.sessionKey
+        let lbt = listenBrainzAuth.userToken
+        let result = await backlog.flush(sessionKey: sk, listenBrainzToken: lbt)
         for item in result.sentItems {
             scrobbleLog.record(
                 track: item.track,

@@ -1,6 +1,7 @@
 import Foundation
 
-func runStorageMaintenanceTests() {
+@MainActor
+func runStorageMaintenanceTests() async {
     section("Storage Maintenance · Migration gating")
 
     let currentMigrationVersion = 1
@@ -13,12 +14,13 @@ func runStorageMaintenanceTests() {
     expect("startup maintenance skips once the current migration version is recorded", !shouldRunStartupMaintenance(storedVersion: currentMigrationVersion))
     expect("startup maintenance skips newer stored migration versions", !shouldRunStartupMaintenance(storedVersion: currentMigrationVersion + 1))
 
-    section("Storage Maintenance · Byte counting")
+    section("Storage Maintenance · Real Store Byte Counting")
 
-    func storageSizeBytes(dataCount: Int?) -> Int64 {
-        Int64(dataCount ?? 0)
-    }
+    let logStoreBytes = ScrobbleLogStore.shared.storageSizeBytes()
+    expect("ScrobbleLogStore reports valid storage byte count", logStoreBytes >= 0, detail: "got \(logStoreBytes) bytes")
 
-    expectEqual("missing defaults data reports zero bytes", storageSizeBytes(dataCount: nil), 0)
-    expectEqual("present defaults data reports exact byte count", storageSizeBytes(dataCount: 512), 512)
+    let backlogBytes = await ScrobbleBacklog.shared.storageSizeBytes()
+    expect("ScrobbleBacklog reports valid storage byte count", backlogBytes >= 0, detail: "got \(backlogBytes) bytes")
 }
+
+

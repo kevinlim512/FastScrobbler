@@ -145,7 +145,7 @@ struct TextReplacementSettingsPage: View {
                 } label: {
                     Label("Add Rule", systemImage: "plus.circle.fill")
                 }
-                .tint(.red)
+                .tint(Color.accentColor)
             } header: {
                 Text("Rules")
             } footer: {
@@ -223,14 +223,14 @@ struct TextReplacementSettingsPage: View {
             .frame(maxWidth: .infinity)
 
             if !isBuiltIn {
-                Button(role: .destructive) {
+                Button {
                     if let idx = drafts.firstIndex(where: { $0.id == draft.wrappedValue.id }) {
                         drafts.remove(at: idx)
                         persist()
                     }
                 } label: {
                     Image(systemName: "minus.circle.fill")
-                        .foregroundStyle(.red)
+                        .foregroundStyle(Color.accentColor)
                 }
                 .buttonStyle(.plain)
             } else {
@@ -257,7 +257,7 @@ struct TextReplacementSettingsPage: View {
                 } label: {
                     Image(systemName: "minus.circle.fill")
                         .font(.title3)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(Color.accentColor)
                 }
                 .buttonStyle(.plain)
                 .frame(width: 51)

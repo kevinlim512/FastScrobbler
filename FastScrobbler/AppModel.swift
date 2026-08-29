@@ -21,12 +21,12 @@ final class AppModel {
         static let tickIntervalSeconds: TimeInterval = 4
         static let backlogFlushIntervalSeconds: TimeInterval = 30
         static let backgroundTimeSafetyMarginSeconds: TimeInterval = 2
-        static let backgroundLastChanceWindowSeconds: TimeInterval = 18
         static let backgroundProjectionWindowSeconds: TimeInterval = 45
         static let inactivePlaybackToleranceSeconds: TimeInterval = 8
     }
 
     let auth: LastFMAuthManager
+    let listenBrainzAuth: ListenBrainzAuthManager
     let observer: AppleMusicNowPlayingObserver
     let engine: ScrobbleEngine
     let backlog: ScrobbleBacklog
@@ -38,14 +38,22 @@ final class AppModel {
 
     private init() {
         let auth = LastFMAuthManager()
+        let listenBrainzAuth = ListenBrainzAuthManager()
         let observer = AppleMusicNowPlayingObserver()
         self.auth = auth
+        self.listenBrainzAuth = listenBrainzAuth
         self.observer = observer
         let backlog = ScrobbleBacklog.shared
         self.backlog = backlog
         let scrobbleLog = ScrobbleLogStore.shared
         self.scrobbleLog = scrobbleLog
-        self.engine = ScrobbleEngine(auth: auth, observer: observer, backlog: backlog, scrobbleLog: scrobbleLog)
+        self.engine = ScrobbleEngine(
+            auth: auth,
+            listenBrainzAuth: listenBrainzAuth,
+            observer: observer,
+            backlog: backlog,
+            scrobbleLog: scrobbleLog
+        )
     }
 
     func startIfNeeded() {
@@ -62,6 +70,7 @@ final class AppModel {
 
     private func performStart() async {
         AppSettings.migrateLegacyAppGroupSettingsIfNeeded()
+        AppSettings.seedScrobbleAppleMusicAPIEnabledIfNeeded()
         AppSettings.seedScrobbleOnlyNonLibraryAppleMusicAPITracksIfNeeded()
         AppSettings.removeLegacyListeningHistoryScrobblingToggleIfNeeded()
         ProSettings.migrateLegacyAppGroupSettingsIfNeeded()
@@ -70,7 +79,7 @@ final class AppModel {
         guard UserDefaults.standard.bool(forKey: Keys.hasSeenSetup) else { return }
 
         if #available(iOS 16.2, *) {
-            LiveActivityManager.shared.startIfPossible()
+            await LiveActivityManager.shared.startIfPossible()
         }
 
         do {
@@ -89,9 +98,9 @@ final class AppModel {
 
         await backlog.cleanupNow()
 
-        if auth.sessionKey == nil {
+        if auth.sessionKey == nil && !listenBrainzAuth.isConnected {
             await LiveActivityManager.shared.update(
-                status: NSLocalizedString("Connect Last.fm to scrobble.", comment: ""),
+                status: NSLocalizedString("Connect Last.fm or ListenBrainz to scrobble.", comment: ""),
                 track: observer.track,
                 lastEventAt: Date(),
                 isActivelyScrobbling: false,
@@ -100,8 +109,13 @@ final class AppModel {
             return
         }
 
-        if let sessionKey = auth.sessionKey {
-            await auth.refreshUserInfoIfNeeded()
+        if auth.sessionKey != nil || listenBrainzAuth.isConnected {
+            if auth.sessionKey != nil {
+                await auth.refreshUserInfoIfNeeded()
+            }
+            if listenBrainzAuth.isConnected {
+                await listenBrainzAuth.refreshUserInfoIfNeeded()
+            }
 
             let shouldRunForegroundScan = !engine.isUserPaused && !AppSettings.listeningHistoryRequireConfirmationEnabled()
             if shouldRunForegroundScan {
@@ -124,7 +138,7 @@ final class AppModel {
             }
             UserDefaults.standard.removeObject(forKey: Keys.lastEnteredBackgroundAt)
             if !engine.isUserPaused {
-                await flushBacklogIfNeeded(sessionKey: sessionKey, force: imported > 0 || recentImported > 0)
+                await flushBacklogIfNeeded(sessionKey: auth.sessionKey, force: imported > 0 || recentImported > 0)
             }
             BackgroundTaskManager.shared.scheduleProcessingIfNeeded()
         }
@@ -161,9 +175,14 @@ final class AppModel {
         LiveActivityManager.shared.recordEnteredBackground(at: backgroundedAt)
         stopLiveBackgroundScrobbleLoop()
 
+        // Schedule BGAppRefreshTask and BGProcessingTask immediately so iOS gets maximum lead time
+        BackgroundTaskManager.shared.scheduleAppRefresh()
+        BackgroundTaskManager.shared.scheduleProcessingIfNeeded()
+
+        let hasAnyAccount = auth.sessionKey != nil || listenBrainzAuth.isConnected
         let shouldKeepLiveScrobbling =
             UserDefaults.standard.bool(forKey: Keys.hasSeenSetup) &&
-            auth.sessionKey != nil &&
+            hasAnyAccount &&
             !engine.isUserPaused &&
             engine.isRunning &&
             observer.isRunning &&
@@ -202,6 +221,19 @@ final class AppModel {
 
         stopLiveBackgroundScrobbleLoop()
         await engine.tickAsync()
+
+        // Persist last known playback snapshot if a track was playing when grace expired
+        if let track = observer.track, observer.playbackState == .playing {
+            let snapshot: [String: Any] = [
+                "dedupeKey": track.dedupeKey,
+                "title": track.title,
+                "artist": track.artist,
+                "playbackTimeSeconds": observer.playbackTimeSeconds,
+                "snapshotAt": Date()
+            ]
+            UserDefaults.standard.set(snapshot, forKey: "FastScrobbler.AppModel.lastGracePlaybackSnapshot")
+        }
+
         engine.pauseForBackground()
         BackgroundTaskManager.shared.scheduleAppRefresh()
         BackgroundTaskManager.shared.scheduleProcessingIfNeeded()
@@ -247,31 +279,18 @@ final class AppModel {
                     maxProjectionSeconds: LiveBackgroundScrobbling.backgroundProjectionWindowSeconds
                 )
 
+                let hasAnyAccount = self.auth.sessionKey != nil || self.listenBrainzAuth.isConnected
                 if now.timeIntervalSince(lastBacklogFlushAt) >= LiveBackgroundScrobbling.backlogFlushIntervalSeconds,
-                   let sessionKey = self.auth.sessionKey {
-                    await self.flushBacklogIfNeeded(sessionKey: sessionKey)
+                   hasAnyAccount {
+                    await self.flushBacklogIfNeeded()
                     lastBacklogFlushAt = now
                 }
 
                 let remainingBackgroundTime = BackgroundTaskManager.shared.liveScrobbleBackgroundTimeRemaining
                 if remainingBackgroundTime.isFinite,
-                   remainingBackgroundTime <= LiveBackgroundScrobbling.backgroundLastChanceWindowSeconds {
-                    let renewed = BackgroundTaskManager.shared.attemptLiveScrobbleGraceRenewalIfAllowed()
-
-                    if !renewed,
-                       remainingBackgroundTime <= LiveBackgroundScrobbling.backgroundTimeSafetyMarginSeconds {
-                        await BackgroundTaskManager.shared.expireLiveScrobbleGracePeriodBecauseBackgroundTimeIsNearlyExhausted(
-                            remaining: remainingBackgroundTime
-                        )
-                        return
-                    }
-                }
-
-                let currentRemainingBackgroundTime = BackgroundTaskManager.shared.liveScrobbleBackgroundTimeRemaining
-                if currentRemainingBackgroundTime.isFinite,
-                   currentRemainingBackgroundTime <= LiveBackgroundScrobbling.backgroundTimeSafetyMarginSeconds {
+                   remainingBackgroundTime <= LiveBackgroundScrobbling.backgroundTimeSafetyMarginSeconds {
                     await BackgroundTaskManager.shared.expireLiveScrobbleGracePeriodBecauseBackgroundTimeIsNearlyExhausted(
-                        remaining: currentRemainingBackgroundTime
+                        remaining: remainingBackgroundTime
                     )
                     return
                 }
@@ -294,8 +313,9 @@ final class AppModel {
     }
 
     private func shouldContinueLiveBackgroundScrobbling() -> Bool {
-        UserDefaults.standard.bool(forKey: Keys.hasSeenSetup) &&
-            auth.sessionKey != nil &&
+        let hasAnyAccount = auth.sessionKey != nil || listenBrainzAuth.isConnected
+        return UserDefaults.standard.bool(forKey: Keys.hasSeenSetup) &&
+            hasAnyAccount &&
             !engine.isUserPaused &&
             engine.isRunning &&
             observer.isRunning &&
@@ -325,8 +345,8 @@ final class AppModel {
             }
         }
 
-        if !engine.isUserPaused, let sessionKey = auth.sessionKey {
-            let result = await backlog.flush(sessionKey: sessionKey)
+        if !engine.isUserPaused, (auth.sessionKey != nil || listenBrainzAuth.isConnected) {
+            let result = await backlog.flush(sessionKey: auth.sessionKey, listenBrainzToken: listenBrainzAuth.userToken)
             let preventDuplicates = ProSettings.preventDuplicateScrobblesEnabled()
             for item in result.sentItems {
                 scrobbleLog.record(
@@ -399,6 +419,7 @@ final class AppModel {
             backlog: backlog,
             scrobbleLog: scrobbleLog,
             sessionKey: auth.sessionKey,
+            listenBrainzToken: listenBrainzAuth.userToken,
             maxItems: maxItems,
             allowExtendedLookback: allowExtendedLookback,
             bypassRecentTrackCooldown: bypassRecentTrackCooldown,
@@ -425,7 +446,8 @@ final class AppModel {
 
     func handleListeningHistoryRequireConfirmationChanged(isEnabled: Bool) async {
         guard !isEnabled else { return }
-        ListeningHistoryReviewStore.shared.clear()
+        await submitPendingListeningHistoryReviewItems()
+        _ = await runUserInitiatedListeningHistoryScan(allowExtendedLookback: true)
     }
 
     func handleAppleMusicAPIScrobblingChanged(isEnabled: Bool) async {
@@ -435,13 +457,13 @@ final class AppModel {
     }
 
     func periodicFlush() async {
-        guard let sessionKey = auth.sessionKey else { return }
-        await flushBacklogIfNeeded(sessionKey: sessionKey)
+        guard auth.sessionKey != nil || listenBrainzAuth.isConnected else { return }
+        await flushBacklogIfNeeded()
     }
 
     @discardableResult
     func submitPendingListeningHistoryReviewItems(ids: Set<UUID>? = nil) async -> Int {
-        guard let sessionKey = auth.sessionKey else { return 0 }
+        guard auth.sessionKey != nil || listenBrainzAuth.isConnected else { return 0 }
 
         let pendingEntries: [ListeningHistoryReviewStore.Entry]
         if let ids, !ids.isEmpty {
@@ -470,7 +492,7 @@ final class AppModel {
         }
 
         if enqueuedCount > 0 {
-            await flushBacklogIfNeeded(sessionKey: sessionKey, force: true)
+            await flushBacklogIfNeeded(force: true)
         }
 
         return enqueuedCount
@@ -495,7 +517,7 @@ final class AppModel {
     }
 
     @discardableResult
-    private func flushBacklogIfNeeded(sessionKey: String, force: Bool = false) async -> ScrobbleBacklog.FlushResult {
+    func flushBacklogIfNeeded(sessionKey: String? = nil, force: Bool = false) async -> ScrobbleBacklog.FlushResult {
         guard !engine.isUserPaused else {
             let pending = await backlog.pendingCount()
             return ScrobbleBacklog.FlushResult(
@@ -526,7 +548,9 @@ final class AppModel {
 
         UserDefaults.standard.set(now, forKey: Keys.lastBacklogFlushAt)
 
-        let result = await backlog.flush(sessionKey: sessionKey)
+        let sk = sessionKey ?? auth.sessionKey
+        let lbt = listenBrainzAuth.userToken
+        let result = await backlog.flush(sessionKey: sk, listenBrainzToken: lbt)
         let preventDuplicates = ProSettings.preventDuplicateScrobblesEnabled()
         for item in result.sentItems {
             scrobbleLog.record(

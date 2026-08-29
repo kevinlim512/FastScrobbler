@@ -12,8 +12,8 @@ func runConsecutivePlayGroupingTests() {
     func grouped(_ entries: [FakeEntry]) -> [ConsecutivePlayGrouper.Group<FakeEntry, Int>] {
         ConsecutivePlayGrouper.groups(
             from: entries,
-            shouldGroup: { $0.source == "playbackHistory" },
-            dedupeKey: { $0.key },
+            shouldGroup: { _ in true },
+            dedupeKey: { "\($0.source):\($0.key)" },
             memberID: { $0.id }
         )
     }
@@ -24,7 +24,7 @@ func runConsecutivePlayGroupingTests() {
         FakeEntry(id: 3, source: "playbackHistory", key: "song-a"),
         FakeEntry(id: 4, source: "live", key: "song-b")
     ])
-    expectEqual("consecutive Listening History repeats collapse into one group", consecutive.map(\.count), [3, 1])
+    expectEqual("consecutive repeats collapse into one group", consecutive.map(\.count), [3, 1])
     expectEqual("grouped runs keep the newest row as representative", consecutive.first?.representative.id, 1)
     expectEqual("grouped runs retain all underlying IDs", consecutive.first?.memberIDs ?? [], [1, 2, 3])
 
@@ -41,7 +41,7 @@ func runConsecutivePlayGroupingTests() {
         FakeEntry(id: 22, source: "recentlyPlayed", key: "song-a"),
         FakeEntry(id: 23, source: "playbackHistory", key: "song-a")
     ])
-    expectEqual("different sources break grouping even when the song matches", mixedSources.map(\.count), [1, 1, 1, 1])
+    expectEqual("different sources break grouping while identical consecutive sources group together", mixedSources.map(\.count), [1, 2, 1])
 
     let reviewScoped = grouped([
         FakeEntry(id: 30, source: "playbackHistory", key: "song-a"),
@@ -49,7 +49,7 @@ func runConsecutivePlayGroupingTests() {
         FakeEntry(id: 32, source: "recentlyPlayed", key: "song-b"),
         FakeEntry(id: 33, source: "recentlyPlayed", key: "song-b")
     ])
-    expectEqual("only Listening History rows participate in grouping", reviewScoped.map(\.count), [2, 1, 1])
+    expectEqual("both playbackHistory and recentlyPlayed sources group when consecutive", reviewScoped.map(\.count), [2, 2])
 
     section("Consecutive play selection")
 

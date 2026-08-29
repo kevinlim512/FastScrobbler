@@ -176,4 +176,61 @@ func runICloudSyncTests() {
     expectEqual("playback-history merge keeps the newest last-seen date per track", mergedHistory.lastSeenPlayedAtByTrackID["a"], newer)
     expectEqual("playback-history merge preserves local-only last-seen dates", mergedHistory.lastSeenPlayedAtByTrackID["b"], now)
     expectEqual("playback-history merge adds remote-only last-seen dates", mergedHistory.lastSeenPlayedAtByTrackID["c"], now)
+
+    section("iCloud Sync · Placeholder & download detection")
+
+    func placeholderFileName(for fileName: String) -> String {
+        "." + fileName + ".icloud"
+    }
+
+    expectEqual("settings.json placeholder name is correct", placeholderFileName(for: "settings.json"), ".settings.json.icloud")
+    expectEqual("scrobble_log.json placeholder name is correct", placeholderFileName(for: "scrobble_log.json"), ".scrobble_log.json.icloud")
+
+    section("iCloud Sync · Observer guard against loop")
+
+    func shouldSchedulePush(isApplyingCloudState: Bool) -> Bool {
+        !isApplyingCloudState
+    }
+
+    expect("local changes trigger push when not applying cloud state", shouldSchedulePush(isApplyingCloudState: false))
+    expect("local changes drop push when applying cloud state", !shouldSchedulePush(isApplyingCloudState: true))
+
+    section("iCloud Sync · Payload Codable roundtrips")
+
+    struct TestRule: Codable, Equatable {
+        var id: String
+        var pattern: String
+        var replacement: String
+        var isRegex: Bool
+    }
+
+    struct TestEntry: Codable, Equatable {
+        var key: String
+        var storage: String
+        var updatedAt: Date
+    }
+
+    struct TestPayload: Codable, Equatable {
+        var version: Int = 1
+        var entries: [TestEntry]
+    }
+
+    let payloadToTest = TestPayload(entries: [
+        TestEntry(key: "AppSettings.Keys.scrobbleAppleMusicAPIEnabled", storage: "appGroup", updatedAt: now),
+        TestEntry(key: "ProSettings.Keys.scrobbleThresholdIndex", storage: "appGroup", updatedAt: now)
+    ])
+
+    let encoder = JSONEncoder()
+    encoder.outputFormatting = [.sortedKeys]
+    let encodedData = try? encoder.encode(payloadToTest)
+    expect("settings payload encodes to non-empty JSON data", encodedData != nil && !(encodedData?.isEmpty ?? true))
+
+    let decodedPayload = try? JSONDecoder().decode(TestPayload.self, from: encodedData ?? Data())
+    expectEqual("decoded settings payload matches original", decodedPayload, payloadToTest)
+
+    section("iCloud Sync · Container Directory Path")
+    let containerID = "iCloud.com.kevin.FastScrobbler"
+    let relativeDir = "Documents/FastScrobblerSync"
+    let fullRelativePath = (containerID as NSString).appendingPathComponent(relativeDir)
+    expectEqual("relative directory path is constructed correctly", fullRelativePath, "iCloud.com.kevin.FastScrobbler/Documents/FastScrobblerSync")
 }

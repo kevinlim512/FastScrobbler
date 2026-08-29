@@ -1,7 +1,6 @@
 import Foundation
 import OSLog
 
-#if os(iOS)
 private enum ICloudSyncContainer {
     static let identifier = "iCloud.com.kevin.FastScrobbler"
     static let relativeDirectory = "Documents/FastScrobblerSync"
@@ -250,6 +249,12 @@ private enum SyncedSettingsStore {
             read: { .textReplacementRules(ProSettings.textReplacementRules()) },
             apply: { if case .textReplacementRules(let value) = $0 { ProSettings.setTextReplacementRules(value) } }
         ),
+        Definition(
+            key: ProSettings.Keys.firstArtistOnlyIgnoredArtists,
+            storage: .appGroup,
+            read: { .stringArray(ProSettings.firstArtistOnlyIgnoredArtists()) },
+            apply: { if case .stringArray(let value) = $0 { ProSettings.setFirstArtistOnlyIgnoredArtists(value) } }
+        ),
     ]
 
     private static let definitionsByKey = Dictionary(uniqueKeysWithValues: definitions.map { ($0.key, $0) })
@@ -269,7 +274,7 @@ private enum SyncedSettingsStore {
                 key: definition.key,
                 storage: definition.storage,
                 value: currentValue,
-                updatedAt: isFirstCapture ? Date.distantPast : now
+                updatedAt: now
             )
         }
 
@@ -473,7 +478,7 @@ final class ICloudSyncCoordinator: NSObject, ObservableObject {
             }
 
             await refreshStatus()
-            statusMessage = NSLocalizedString("iCloud data deleted. Sync remains off on this iPhone.", comment: "")
+            statusMessage = NSLocalizedString("iCloud data deleted. Sync remains off on this device.", comment: "")
         } catch {
             lastErrorMessage = error.localizedDescription
             throw error
@@ -518,7 +523,8 @@ final class ICloudSyncCoordinator: NSObject, ObservableObject {
         observers.append(
             center.addObserver(forName: UserDefaults.didChangeNotification, object: AppGroup.userDefaults, queue: nil) { [weak self] _ in
                 Task { @MainActor [weak self] in
-                    self?.schedulePush()
+                    guard let self = self, !self.isApplyingCloudState else { return }
+                    self.schedulePush()
                 }
             }
         )
@@ -526,7 +532,8 @@ final class ICloudSyncCoordinator: NSObject, ObservableObject {
         observers.append(
             center.addObserver(forName: UserDefaults.didChangeNotification, object: UserDefaults.standard, queue: nil) { [weak self] _ in
                 Task { @MainActor [weak self] in
-                    self?.schedulePush()
+                    guard let self = self, !self.isApplyingCloudState else { return }
+                    self.schedulePush()
                 }
             }
         )
@@ -534,7 +541,8 @@ final class ICloudSyncCoordinator: NSObject, ObservableObject {
         observers.append(
             center.addObserver(forName: ICloudSyncLocalChangeNotifier.name, object: nil, queue: nil) { [weak self] _ in
                 Task { @MainActor [weak self] in
-                    self?.schedulePush()
+                    guard let self = self, !self.isApplyingCloudState else { return }
+                    self.schedulePush()
                 }
             }
         )
@@ -667,8 +675,17 @@ final class ICloudSyncCoordinator: NSObject, ObservableObject {
     }
 
     private func readPayload<T: Decodable>(fileName: String) -> T? {
-        guard let fileURL = syncDirectoryURL()?.appendingPathComponent(fileName),
-              let data = try? Data(contentsOf: fileURL) else {
+        guard let directoryURL = syncDirectoryURL() else { return nil }
+        let fileURL = directoryURL.appendingPathComponent(fileName)
+        let placeholderURL = directoryURL.appendingPathComponent("." + fileName + ".icloud")
+
+        if !FileManager.default.fileExists(atPath: fileURL.path) && FileManager.default.fileExists(atPath: placeholderURL.path) {
+            logger.info("iCloud payload \(fileName, privacy: .public) is not downloaded locally; triggering download.")
+            try? FileManager.default.startDownloadingUbiquitousItem(at: fileURL)
+            return nil
+        }
+
+        guard let data = try? Data(contentsOf: fileURL) else {
             return nil
         }
 
@@ -708,7 +725,8 @@ final class ICloudSyncCoordinator: NSObject, ObservableObject {
 
         for fileName in FileName.all {
             let fileURL = directoryURL.appendingPathComponent(fileName)
-            if FileManager.default.fileExists(atPath: fileURL.path) {
+            let placeholderURL = directoryURL.appendingPathComponent("." + fileName + ".icloud")
+            if FileManager.default.fileExists(atPath: fileURL.path) || FileManager.default.fileExists(atPath: placeholderURL.path) {
                 return true
             }
         }
@@ -755,4 +773,3 @@ final class ICloudSyncCoordinator: NSObject, ObservableObject {
         }
     }
 }
-#endif

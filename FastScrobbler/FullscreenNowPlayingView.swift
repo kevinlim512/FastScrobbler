@@ -3,11 +3,12 @@ import MediaPlayer
 import SwiftUI
 
 struct FullscreenNowPlayingView: View {
-    let auth: LastFMAuthManager
-    let observer: AppleMusicNowPlayingObserver
-    let engine: ScrobbleEngine
+    @ObservedObject var auth: LastFMAuthManager
+    @ObservedObject var observer: AppleMusicNowPlayingObserver
+    @ObservedObject var engine: ScrobbleEngine
     let openURL: OpenURLAction
 
+    @EnvironmentObject private var listenBrainzAuth: ListenBrainzAuthManager
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
 
@@ -348,8 +349,8 @@ struct FullscreenNowPlayingView: View {
     }
 
     private var statusFallbackText: String? {
-        if auth.sessionKey == nil {
-            return NSLocalizedString("Connect Last.fm to scrobble.", comment: "")
+        if auth.sessionKey == nil && !listenBrainzAuth.isConnected {
+            return NSLocalizedString("Connect Last.fm or ListenBrainz to scrobble.", comment: "")
         }
 
         if observer.track == nil {

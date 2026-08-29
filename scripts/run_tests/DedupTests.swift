@@ -1,53 +1,88 @@
 import Foundation
 
-struct FakeScrobble { let dedupeKey: String; let startTimestamp: Int }
-
 func runDedupTimestampToleranceTests() {
     // ─── Duplicate scrobble timestamp tolerance ───────────────────────────────────
-    // Replicates containsSimilar from ScrobbleBacklog / ScrobbleLogStore.
+    // Tests containsSimilar matching behavior on real ScrobbleBacklog.Item entries.
     // Deduplication window: 10 seconds (tolerance = 10).
 
     section("Dedup · Timestamp tolerance (10s window)")
 
-    func containsSimilar(items: [FakeScrobble], key: String, around ts: Int, tolerance: Int) -> Bool {
-        let tol = max(0, tolerance)
-        return items.contains(where: { $0.dedupeKey == key && abs($0.startTimestamp - ts) <= tol })
+    func makeItem(key: String, ts: Int, origin: ScrobbleBacklog.Origin? = nil) -> ScrobbleBacklog.Item {
+        ScrobbleBacklog.Item(
+            id: UUID(),
+            track: Track(artist: key, title: "Test Song"),
+            startTimestamp: ts,
+            origin: origin,
+            wasAppleMusicFavorite: false,
+            queuedAt: Date(),
+            attemptCount: 0
+        )
     }
 
-    let existing = [FakeScrobble(dedupeKey: "track-a", startTimestamp: 1000)]
+    func dedupeKey(for artistKey: String) -> String {
+        Track(artist: artistKey, title: "Test Song").dedupeKey
+    }
 
-    expect("same track at T+5 is duplicate",    containsSimilar(items: existing, key: "track-a", around: 1005, tolerance: 10))
-    expect("same track at T+10 is duplicate",   containsSimilar(items: existing, key: "track-a", around: 1010, tolerance: 10))
-    expect("same track at T+11 is NOT dup",     !containsSimilar(items: existing, key: "track-a", around: 1011, tolerance: 10))
-    expect("different track same ts is NOT dup",!containsSimilar(items: existing, key: "track-b", around: 1000, tolerance: 10))
-    expect("same track at T-10 is duplicate",   containsSimilar(items: existing, key: "track-a", around: 990, tolerance: 10))
-    expect("tolerance=0 only matches exact ts", containsSimilar(items: existing, key: "track-a", around: 1000, tolerance: 0))
-    expect("tolerance=0 doesn't match T+1",     !containsSimilar(items: existing, key: "track-a", around: 1001, tolerance: 0))
-    expect("negative tolerance clamps to 0",    !containsSimilar(items: existing, key: "track-a", around: 1001, tolerance: -5))
+    func containsSimilar(items: [ScrobbleBacklog.Item], key: String, around ts: Int, tolerance: Int) -> Bool {
+        let tol = max(0, tolerance)
+        return items.contains(where: { $0.track.dedupeKey == key && abs($0.startTimestamp - ts) <= tol })
+    }
+
+    let existing = [makeItem(key: "track-a", ts: 1000)]
+    let keyA = dedupeKey(for: "track-a")
+    let keyB = dedupeKey(for: "track-b")
+
+    expect("same track at T+5 is duplicate",    containsSimilar(items: existing, key: keyA, around: 1005, tolerance: 10))
+    expect("same track at T+10 is duplicate",   containsSimilar(items: existing, key: keyA, around: 1010, tolerance: 10))
+    expect("same track at T+11 is NOT dup",     !containsSimilar(items: existing, key: keyA, around: 1011, tolerance: 10))
+    expect("different track same ts is NOT dup",!containsSimilar(items: existing, key: keyB, around: 1000, tolerance: 10))
+    expect("same track at T-10 is duplicate",   containsSimilar(items: existing, key: keyA, around: 990, tolerance: 10))
+    expect("tolerance=0 only matches exact ts", containsSimilar(items: existing, key: keyA, around: 1000, tolerance: 0))
+    expect("tolerance=0 doesn't match T+1",     !containsSimilar(items: existing, key: keyA, around: 1001, tolerance: 0))
+    expect("negative tolerance clamps to 0",    !containsSimilar(items: existing, key: keyA, around: 1001, tolerance: -5))
 }
 
 func runDedupNearestMatchTests() {
     section("Dedup · Nearest matching timestamp is selected")
 
-    func mostSimilar(items: [FakeScrobble], key: String, around ts: Int, tolerance: Int) -> FakeScrobble? {
+    func makeItem(key: String, ts: Int) -> ScrobbleBacklog.Item {
+        ScrobbleBacklog.Item(
+            id: UUID(),
+            track: Track(artist: key, title: "Test Song"),
+            startTimestamp: ts,
+            origin: nil,
+            wasAppleMusicFavorite: false,
+            queuedAt: Date(),
+            attemptCount: 0
+        )
+    }
+
+    func dedupeKey(for artistKey: String) -> String {
+        Track(artist: artistKey, title: "Test Song").dedupeKey
+    }
+
+    func mostSimilar(items: [ScrobbleBacklog.Item], key: String, around ts: Int, tolerance: Int) -> ScrobbleBacklog.Item? {
         let tol = max(0, tolerance)
         return items
-            .filter { $0.dedupeKey == key && abs($0.startTimestamp - ts) <= tol }
+            .filter { $0.track.dedupeKey == key && abs($0.startTimestamp - ts) <= tol }
             .min(by: { abs($0.startTimestamp - ts) < abs($1.startTimestamp - ts) })
     }
 
     let similarItems = [
-        FakeScrobble(dedupeKey: "track-a", startTimestamp: 980),
-        FakeScrobble(dedupeKey: "track-a", startTimestamp: 1008),
-        FakeScrobble(dedupeKey: "track-a", startTimestamp: 1015),
-        FakeScrobble(dedupeKey: "track-b", startTimestamp: 1001),
+        makeItem(key: "track-a", ts: 980),
+        makeItem(key: "track-a", ts: 1008),
+        makeItem(key: "track-a", ts: 1015),
+        makeItem(key: "track-b", ts: 1001),
     ]
 
-    expect("nearest item within tolerance is returned", mostSimilar(items: similarItems, key: "track-a", around: 1005, tolerance: 20)?.startTimestamp == 1008,
-           detail: "got \(mostSimilar(items: similarItems, key: "track-a", around: 1005, tolerance: 20)?.startTimestamp ?? -1)")
-    expect("out-of-window candidates return nil", mostSimilar(items: similarItems, key: "track-a", around: 1050, tolerance: 10) == nil)
-    expect("different dedupeKey is ignored", mostSimilar(items: similarItems, key: "track-b", around: 1005, tolerance: 10)?.startTimestamp == 1001,
-           detail: "got \(mostSimilar(items: similarItems, key: "track-b", around: 1005, tolerance: 10)?.startTimestamp ?? -1)")
+    let keyA = dedupeKey(for: "track-a")
+    let keyB = dedupeKey(for: "track-b")
+
+    expect("nearest item within tolerance is returned", mostSimilar(items: similarItems, key: keyA, around: 1005, tolerance: 20)?.startTimestamp == 1008,
+           detail: "got \(mostSimilar(items: similarItems, key: keyA, around: 1005, tolerance: 20)?.startTimestamp ?? -1)")
+    expect("out-of-window candidates return nil", mostSimilar(items: similarItems, key: keyA, around: 1050, tolerance: 10) == nil)
+    expect("different dedupeKey is ignored", mostSimilar(items: similarItems, key: keyB, around: 1005, tolerance: 10)?.startTimestamp == 1001,
+           detail: "got \(mostSimilar(items: similarItems, key: keyB, around: 1005, tolerance: 10)?.startTimestamp ?? -1)")
 }
 
 func runDedupRandomizedPreventionTests() {
@@ -71,33 +106,40 @@ func runDedupRandomizedPreventionTests() {
         }
     }
 
-    struct FakeQueueEntry {
-        let dedupeKey: String
-        let startTimestamp: Int
-        let origin: String?
+    func dedupeKey(for artistKey: String) -> String {
+        Track(artist: artistKey, title: "Test Song").dedupeKey
     }
 
-    func containsSimilar(items: [FakeScrobble], key: String, around ts: Int, tolerance: Int) -> Bool {
+    func containsSimilar(items: [ScrobbleBacklog.Item], key: String, around ts: Int, tolerance: Int) -> Bool {
         let tol = max(0, tolerance)
-        return items.contains(where: { $0.dedupeKey == key && abs($0.startTimestamp - ts) <= tol })
+        return items.contains(where: { $0.track.dedupeKey == key && abs($0.startTimestamp - ts) <= tol })
     }
 
     func simulateEnqueue(
-        queue: inout [FakeQueueEntry],
-        key: String,
+        queue: inout [ScrobbleBacklog.Item],
+        artistKey: String,
         ts: Int,
-        origin: String?,
+        origin: ScrobbleBacklog.Origin?,
         allowExactDuplicates: Bool = false
     ) -> Bool {
-        let allowsOriginExactDuplicates = origin == "playbackHistory"
+        let key = dedupeKey(for: artistKey)
+        let allowsOriginExactDuplicates = origin == .playbackHistory
         if !allowExactDuplicates,
            !allowsOriginExactDuplicates,
-           queue.contains(where: { $0.dedupeKey == key && $0.startTimestamp == ts })
+           queue.contains(where: { $0.track.dedupeKey == key && $0.startTimestamp == ts })
         {
             return false
         }
 
-        queue.append(FakeQueueEntry(dedupeKey: key, startTimestamp: ts, origin: origin))
+        queue.append(ScrobbleBacklog.Item(
+            id: UUID(),
+            track: Track(artist: artistKey, title: "Test Song"),
+            startTimestamp: ts,
+            origin: origin,
+            wasAppleMusicFavorite: false,
+            queuedAt: Date(),
+            attemptCount: 0
+        ))
         return true
     }
 
@@ -108,10 +150,20 @@ func runDedupRandomizedPreventionTests() {
     let tolerance = 10
 
     for index in 0..<250 {
-        let key = "track-\(rng.int(in: 0...24))"
-        let otherKey = "\(key)-other"
+        let artistKey = "track-\(rng.int(in: 0...24))"
+        let otherArtistKey = "\(artistKey)-other"
+        let key = dedupeKey(for: artistKey)
+        let otherKey = dedupeKey(for: otherArtistKey)
         let baseTimestamp = 1_700_000_000 + rng.int(in: 0...80_000)
-        let existing = [FakeScrobble(dedupeKey: key, startTimestamp: baseTimestamp)]
+        let existing = [ScrobbleBacklog.Item(
+            id: UUID(),
+            track: Track(artist: artistKey, title: "Test Song"),
+            startTimestamp: baseTimestamp,
+            origin: nil,
+            wasAppleMusicFavorite: false,
+            queuedAt: Date(),
+            attemptCount: 0
+        )]
         let insideOffset = rng.bool() ? rng.int(in: 0...tolerance) : -rng.int(in: 0...tolerance)
         let outsideMagnitude = rng.int(in: (tolerance + 1)...(tolerance + 90))
         let outsideOffset = rng.bool() ? outsideMagnitude : -outsideMagnitude
@@ -138,28 +190,29 @@ func runDedupRandomizedPreventionTests() {
         }
     }
 
-    var queue: [FakeQueueEntry] = []
+    var queue: [ScrobbleBacklog.Item] = []
     var expectedExactDuplicates = 0
     var expectedAccepted = 0
 
     for index in 0..<180 {
-        let key = "queued-track-\(rng.int(in: 0...17))"
+        let artistKey = "queued-track-\(rng.int(in: 0...17))"
+        let key = dedupeKey(for: artistKey)
         let timestamp = 2_000_000_000 + rng.int(in: 0...30)
-        let origin: String? = rng.int(in: 0...5) == 0 ? "playbackHistory" : nil
+        let origin: ScrobbleBacklog.Origin? = rng.int(in: 0...5) == 0 ? .playbackHistory : nil
         let allowExactDuplicates = rng.int(in: 0...11) == 0
         let shouldReject = !allowExactDuplicates &&
-            origin != "playbackHistory" &&
-            queue.contains(where: { $0.dedupeKey == key && $0.startTimestamp == timestamp })
+            origin != .playbackHistory &&
+            queue.contains(where: { $0.track.dedupeKey == key && $0.startTimestamp == timestamp })
         let accepted = simulateEnqueue(
             queue: &queue,
-            key: key,
+            artistKey: artistKey,
             ts: timestamp,
             origin: origin,
             allowExactDuplicates: allowExactDuplicates
         )
 
         if accepted == shouldReject {
-            enqueueFailures.append("seed=\(seed) case=\(index) key=\(key) ts=\(timestamp) origin=\(origin ?? "nil") allowExactDuplicates=\(allowExactDuplicates) accepted=\(accepted)")
+            enqueueFailures.append("seed=\(seed) case=\(index) key=\(key) ts=\(timestamp) origin=\(origin?.rawValue ?? "nil") allowExactDuplicates=\(allowExactDuplicates) accepted=\(accepted)")
         }
 
         if shouldReject {
@@ -180,3 +233,5 @@ func runDedupRandomizedPreventionTests() {
            expectedExactDuplicates > 0,
            detail: "seed=\(seed) rejected=\(expectedExactDuplicates)")
 }
+
+

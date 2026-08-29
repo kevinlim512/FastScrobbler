@@ -16,6 +16,7 @@ struct FastScrobblerMacApp: App {
         Settings {
             MacSettingsRootView()
                 .environmentObject(AppModel.shared.auth)
+                .environmentObject(AppModel.shared.listenBrainzAuth)
                 .environmentObject(AppModel.shared.engine)
                 .environmentObject(ProPurchaseManager.shared)
                 .environmentObject(appLanguage)
@@ -45,22 +46,17 @@ private extension FastScrobblerMacApp {
 @MainActor
 final class MacAppDelegate: NSObject, NSApplicationDelegate {
     private let model = AppModel.shared
-    private var activityToken: NSObjectProtocol?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // Prevent App Nap to keep scrobble engine ticking reliably in background
-        activityToken = ProcessInfo.processInfo.beginActivity(
-            options: [.userInitiated, .latencyCritical],
-            reason: "FastScrobbler Scrobble Engine tracking"
-        )
         let rootView = MacPopoverRootView(content: ContentView())
             .environmentObject(model.auth)
+            .environmentObject(model.listenBrainzAuth)
             .environmentObject(model.observer)
             .environmentObject(model.engine)
             .environmentObject(model.scrobbleLog)
             .environmentObject(model.permissions)
             .environmentObject(ProPurchaseManager.shared)
-                .environmentObject(AppLanguageStore.shared)
+            .environmentObject(AppLanguageStore.shared)
 
         MenuBarController.shared.start(rootView: rootView)
 
@@ -68,6 +64,7 @@ final class MacAppDelegate: NSObject, NSApplicationDelegate {
             model.permissions.startMonitoring(observer: model.observer)
             model.startIfNeeded()
             await ProPurchaseManager.shared.startIfNeeded()
+            await ICloudSyncCoordinator.shared.startIfNeeded()
         }
 
         Timer.scheduledTimer(withTimeInterval: 300, repeats: true) { _ in

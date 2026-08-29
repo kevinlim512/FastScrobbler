@@ -101,9 +101,16 @@ func runProMetadataTests() {
 
     section("Pro · First artist only parsing")
 
-    func firstArtistOnly(from artist: String) -> String? {
+    func firstArtistOnly(from artist: String, ignoredArtists: [String] = []) -> String? {
         let trimmedArtist = artist.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedArtist.isEmpty else { return nil }
+
+        let normalizedArtist = trimmedArtist.lowercased()
+        for ignored in ignoredArtists {
+            if ignored.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == normalizedArtist {
+                return nil
+            }
+        }
 
         let separators: [Character] = ["&", ","]
         var earliestSeparatorIndex: String.Index?
@@ -133,6 +140,8 @@ func runProMetadataTests() {
     expectEqual("no separator is unchanged", firstArtistOnly(from: "Lady Gaga"), nil)
     expectEqual("leading and trailing whitespace are trimmed", firstArtistOnly(from: "  Lady Gaga  "), "Lady Gaga")
     expectEqual("empty leading segment is ignored", firstArtistOnly(from: ", Doechii"), nil)
+    expectEqual("ignored artist matching case-insensitively skips splitting", firstArtistOnly(from: "Earth, Wind & Fire", ignoredArtists: ["earth, wind & fire"]), nil)
+    expectEqual("non-ignored artist is still split", firstArtistOnly(from: "Lady Gaga & Doechii", ignoredArtists: ["Earth, Wind & Fire"]), "Lady Gaga")
 
     // ─── Track dedup key (libraryIdentityKey) ────────────────────────────────────
     // Replicates stableLibraryIdentity from Track.swift.

@@ -114,6 +114,7 @@ struct ContentView: View {
     }
 
     @EnvironmentObject private var auth: LastFMAuthManager
+    @EnvironmentObject private var listenBrainzAuth: ListenBrainzAuthManager
     @EnvironmentObject private var observer: AppleMusicNowPlayingObserver
     @EnvironmentObject private var engine: ScrobbleEngine
     @EnvironmentObject private var scrobbleLog: ScrobbleLogStore
@@ -128,11 +129,19 @@ struct ContentView: View {
 
     @State private var lastScrobbleLogRefreshDate: Date = .distantPast
     @State private var errorText: String?
+    private enum ListenBrainzConnectReturnTarget {
+        case setup
+        case help
+        case settings
+    }
+
     @State private var isShowingSetup = false
     @State private var isShowingWhatsNew = false
     @State private var isShowingHelp = false
     @State private var isShowingSettings = false
     @State private var isShowingManualScrobble = false
+    @State private var isShowingListenBrainzConnect = false
+    @State private var listenBrainzConnectReturnTarget: ListenBrainzConnectReturnTarget = .settings
 
     var body: some View {
         Group {
@@ -164,6 +173,9 @@ struct ContentView: View {
         .onValueChange(of: auth.sessionKey) { _ in
             presentSetupIfNeeded()
         }
+        .onValueChange(of: listenBrainzAuth.isConnected) { _ in
+            presentSetupIfNeeded()
+        }
         .onValueChange(of: hasSeenSetup) { hasSeenSetup in
             guard hasSeenSetup else { return }
             presentWhatsNewIfNeeded()
@@ -179,8 +191,8 @@ struct ContentView: View {
                 VStack(alignment: .leading, spacing: Layout.sectionSpacing) {
                     macAttentionBanner
                     controls
-                    statusCard
                     trackCard
+                    statusCard
                     scrobbleLogCard
                     if let errorText {
                         Text(errorText)
@@ -193,6 +205,7 @@ struct ContentView: View {
                 .padding(.top, MacFloatingBarLayout.contentTopPadding) // room for the floating top buttons
                 .animation(.easeInOut(duration: 0.3), value: observer.track)
                 .animation(.easeInOut(duration: 0.3), value: auth.sessionKey != nil)
+                .animation(.easeInOut(duration: 0.3), value: listenBrainzAuth.isConnected)
                 .animation(.easeInOut(duration: 0.3), value: engine.statusText)
             }
 
@@ -272,10 +285,32 @@ struct ContentView: View {
     }
 
     private var statusCard: some View {
+        let hasLastFM = auth.sessionKey != nil
+        let hasListenBrainz = listenBrainzAuth.isConnected
+
+        return VStack(alignment: .leading, spacing: Layout.sectionSpacing) {
+            if !hasLastFM && !hasListenBrainz {
+                singleStatusCard(title: "Last.fm", isConnected: false)
+                singleStatusCard(title: "ListenBrainz", isConnected: false)
+            } else {
+                if hasLastFM {
+                    singleStatusCard(title: "Last.fm", isConnected: true)
+                }
+                if hasListenBrainz {
+                    singleStatusCard(title: "ListenBrainz", isConnected: true)
+                }
+            }
+        }
+        .animation(.easeInOut(duration: 0.3), value: hasLastFM)
+        .animation(.easeInOut(duration: 0.3), value: hasListenBrainz)
+        .animation(.easeInOut(duration: 0.3), value: engine.statusText)
+    }
+
+    private func singleStatusCard(title: String, isConnected: Bool) -> some View {
         VStack(alignment: .leading, spacing: Layout.statusLineSpacing) {
-            Text("Last.fm")
+            Text(title)
                 .font(.title2.weight(.semibold))
-            if auth.sessionKey != nil {
+            if isConnected {
                 Text("Signed in")
                     .font(.footnote)
                     .foregroundColor(.green)
@@ -286,15 +321,13 @@ struct ContentView: View {
             }
             engineStatusText(engine.statusText)
                 .font(.footnote)
-            if let blocker = engine.autoScrobbleBlocker, auth.sessionKey != nil {
+            if let blocker = engine.autoScrobbleBlocker, (auth.sessionKey != nil || listenBrainzAuth.isConnected) {
                 Text(blocker.statusText())
                     .font(.footnote)
                     .foregroundStyle(.orange)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .animation(.easeInOut(duration: 0.3), value: auth.sessionKey != nil)
-        .animation(.easeInOut(duration: 0.3), value: engine.statusText)
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(Layout.cardPadding)
         .background(contentCardBackground)
@@ -312,8 +345,8 @@ struct ContentView: View {
                 if let d = t.durationSeconds, d > 0 {
                     TrackPlaybackProgressView(track: t, engine: engine, formatTime: formatTime)
                         .padding(.top, Layout.progressTopPadding)
-                } else if auth.sessionKey != nil {
-                    Text("Auto-scrobble needs a stable playback duration and timestamp before it can submit automatically.")
+                } else if auth.sessionKey != nil || listenBrainzAuth.isConnected {
+                    Text(NSLocalizedString("Auto-scrobble needs a stable playback duration and timestamp before it can submit automatically.", comment: ""))
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                         .padding(.top, 4)
@@ -358,6 +391,7 @@ struct ContentView: View {
     private var controls: some View {
         let actionButtonHeight: CGFloat = 32
         let actionButtonSpacing: CGFloat = Layout.controlsSpacing
+        let hasAnyAccount = auth.sessionKey != nil || listenBrainzAuth.isConnected
 
         return VStack(spacing: Layout.controlsSpacing) {
             HStack(spacing: actionButtonSpacing) {
@@ -377,11 +411,11 @@ struct ContentView: View {
                 .tint(actionButtonTint(engine.isUserPaused ? ActionButtonPalette.resume : ActionButtonPalette.scrobbleNow))
                 .prominentButtonBackground(actionButtonFill(engine.isUserPaused ? ActionButtonPalette.resumeFill : ActionButtonPalette.scrobbleNowFill))
                 .brightButtonBorder(actionButtonBorder(engine.isUserPaused ? ActionButtonPalette.resumeBorder : ActionButtonPalette.scrobbleNowBorder))
-                .disabled(auth.sessionKey == nil)
+                .disabled(!hasAnyAccount)
 
-                if auth.sessionKey == nil {
+                if !hasAnyAccount {
                     Button {
-                        Task { await connectTapped() }
+                        isShowingSettings = true
                     } label: {
                         Label(NSLocalizedString("Sign In", comment: ""), systemImage: "person.crop.circle")
                             .font(.body.weight(.semibold))
@@ -417,23 +451,44 @@ struct ContentView: View {
                 }
             }
 
-            if auth.sessionKey != nil {
-                Button {
-                    if let url = auth.freshProfileURL() {
-                        openURL(url)
+            if hasAnyAccount {
+                if auth.sessionKey != nil {
+                    Button {
+                        if let url = auth.freshProfileURL() {
+                            openURL(url)
+                        }
+                    } label: {
+                        Label(NSLocalizedString("View Profile in Last.fm", comment: ""), systemImage: "person.circle")
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(actionButtonForeground(ActionButtonPalette.accountForeground))
+                            .frame(maxWidth: .infinity, minHeight: actionButtonHeight)
                     }
-                } label: {
-                    Label(NSLocalizedString("View Profile in Last.fm", comment: ""), systemImage: "person.circle")
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(actionButtonForeground(ActionButtonPalette.accountForeground))
-                        .frame(maxWidth: .infinity, minHeight: actionButtonHeight)
+                    .buttonStyle(.bordered)
+                    .pillButtonBorder()
+                    .tint(actionButtonTint(ActionButtonPalette.account))
+                    .prominentButtonBackground(actionButtonFill(ActionButtonPalette.accountFill))
+                    .brightButtonBorder(actionButtonBorder(ActionButtonPalette.accountBorder))
+                    .disabled(auth.profileURL == nil)
                 }
-                .buttonStyle(.bordered)
-                .pillButtonBorder()
-                .tint(actionButtonTint(ActionButtonPalette.account))
-                .prominentButtonBackground(actionButtonFill(ActionButtonPalette.accountFill))
-                .brightButtonBorder(actionButtonBorder(ActionButtonPalette.accountBorder))
-                .disabled(auth.profileURL == nil)
+
+                if listenBrainzAuth.isConnected {
+                    Button {
+                        if let url = listenBrainzAuth.freshProfileURL() {
+                            openURL(url)
+                        }
+                    } label: {
+                        Label(NSLocalizedString("View Profile in ListenBrainz", comment: ""), systemImage: "waveform.path.ecg")
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(actionButtonForeground(ActionButtonPalette.accountForeground))
+                            .frame(maxWidth: .infinity, minHeight: actionButtonHeight)
+                    }
+                    .buttonStyle(.bordered)
+                    .pillButtonBorder()
+                    .tint(actionButtonTint(ActionButtonPalette.account))
+                    .prominentButtonBackground(actionButtonFill(ActionButtonPalette.accountFill))
+                    .brightButtonBorder(actionButtonBorder(ActionButtonPalette.accountBorder))
+                    .disabled(listenBrainzAuth.profileURL == nil)
+                }
 
                 Button {
                     isShowingManualScrobble = true
@@ -456,14 +511,15 @@ struct ContentView: View {
 
     @ViewBuilder
     private var macAttentionBanner: some View {
-        let isLoggedOut = (auth.sessionKey == nil)
+        let hasAnyAccount = auth.sessionKey != nil || listenBrainzAuth.isConnected
+        let isLoggedOut = !hasAnyAccount
         let isMediaLibraryPermissionOff = (permissions.mediaLibraryStatus != .authorized)
         let isMusicControlPermissionOff = (permissions.automationStatus != .authorized)
         if isLoggedOut || isMediaLibraryPermissionOff || isMusicControlPermissionOff {
             VStack(alignment: .leading, spacing: 10) {
                 if isLoggedOut {
                     Label(
-                        "You're signed out of Last.fm.",
+                        "You're signed out of Last.fm and ListenBrainz.",
                         systemImage: "person.crop.circle.badge.exclamationmark"
                     )
                     .font(.subheadline.weight(.semibold))
@@ -555,11 +611,12 @@ struct ContentView: View {
                 Text("No scrobbles yet.")
                     .foregroundColor(.secondary)
             } else {
-                let entries = scrobbleLog.recentEntries()
+                let entries = groupedRecentScrobbleEntries(scrobbleLog.recentEntries())
                 VStack(spacing: Layout.logRowSpacing) {
                     ForEach(entries) { entry in
                         ScrobbleLogRowView(
-                            entry: entry,
+                            entry: entry.representativeEntry,
+                            consecutivePlayCount: entry.count,
                             isLast: entry.id == entries.last?.id,
                             engine: engine
                         )
@@ -641,7 +698,8 @@ struct ContentView: View {
     }
 
     private func presentSetupIfNeeded() {
-        let shouldShow = (!hasSeenSetup || auth.sessionKey == nil || permissions.automationStatus != .authorized)
+        let hasAnyAccount = auth.sessionKey != nil || listenBrainzAuth.isConnected
+        let shouldShow = (!hasSeenSetup || !hasAnyAccount || permissions.automationStatus != .authorized)
         guard shouldShow else { return }
 
         isShowingHelp = false
@@ -656,7 +714,8 @@ struct ContentView: View {
             observer.refreshOnceIfAuthorized()
             presentSetupIfNeeded()
 
-            if hasSeenSetup, auth.sessionKey != nil, permissions.automationStatus == .authorized {
+            let hasAnyAccount = auth.sessionKey != nil || listenBrainzAuth.isConnected
+            if hasSeenSetup, hasAnyAccount, permissions.automationStatus == .authorized {
                 AppModel.shared.startIfNeeded()
             }
         }
@@ -670,8 +729,49 @@ struct ContentView: View {
     }
 }
 
+private struct GroupedRecentScrobbleEntry: Identifiable {
+    let representativeEntry: ScrobbleLogStore.Entry
+    let count: Int
+    let memberIDs: [UUID]
+
+    var id: UUID {
+        representativeEntry.id
+    }
+}
+
+private struct ConsecutivePlayCountBadge: View {
+    let count: Int
+
+    var body: some View {
+        Text("x\(count)")
+            .font(.subheadline.weight(.bold))
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 2)
+            .background(Color.secondary.opacity(0.15))
+            .clipShape(Capsule())
+    }
+}
+
+private func groupedRecentScrobbleEntries(_ entries: [ScrobbleLogStore.Entry]) -> [GroupedRecentScrobbleEntry] {
+    ConsecutivePlayGrouper.groups(
+        from: entries,
+        shouldGroup: { _ in true },
+        dedupeKey: { "\($0.source.rawValue):\($0.track.dedupeKey)" },
+        memberID: \.id
+    )
+    .map {
+        GroupedRecentScrobbleEntry(
+            representativeEntry: $0.representative,
+            count: $0.count,
+            memberIDs: $0.memberIDs
+        )
+    }
+}
+
 private struct ScrobbleLogRowView: View {
     let entry: ScrobbleLogStore.Entry
+    var consecutivePlayCount: Int = 1
     let isLast: Bool
     let engine: ScrobbleEngine
 
@@ -708,10 +808,16 @@ private struct ScrobbleLogRowView: View {
     private var rowContent: some View {
         VStack(alignment: .leading, spacing: 4) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(entry.track.title)
-                    .font(.callout.weight(.semibold))
-                    .foregroundStyle(.primary)
-                    .multilineTextAlignment(.leading)
+                HStack(alignment: .top, spacing: 8) {
+                    Text(entry.track.title)
+                        .font(.callout.weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    if consecutivePlayCount > 1 {
+                        ConsecutivePlayCountBadge(count: consecutivePlayCount)
+                    }
+                }
 
                 HStack(spacing: 6) {
                     Text(entry.track.artist)
@@ -879,8 +985,8 @@ extension View {
 enum MacFloatingBarLayout {
     static let contentHorizontalPadding: CGFloat = 16
     static let topButtonsHeight: CGFloat = 40
-    static let topButtonsTopInset: CGFloat = 12
-    static let contentTopPadding: CGFloat = topButtonsHeight + topButtonsTopInset + 2
+    static let topButtonsTopInset: CGFloat = 24 // slightly increased top padding
+    static let contentTopPadding: CGFloat = 68 // yields a slightly reduced 16pt bottom gap below buttons
     static let circleButtonContentTopPadding: CGFloat = 28
 }
 
@@ -942,7 +1048,7 @@ struct MacFloatingCircleButton: View {
 extension ContentView {
     @ViewBuilder
     var macModalOverlay: some View {
-        let isPresented = (isShowingSetup || isShowingHelp || isShowingSettings || isShowingManualScrobble)
+        let isPresented = (isShowingSetup || isShowingHelp || isShowingSettings || isShowingManualScrobble || isShowingListenBrainzConnect)
         if isPresented {
             ZStack {
                 Color.black.opacity(0.18)
@@ -973,10 +1079,18 @@ extension ContentView {
     @ViewBuilder
     var macModalContent: some View {
         if isShowingSetup {
-            SetupHelpView(mode: .onboarding, onOpenSettings: {
-                isShowingSetup = false
-                isShowingSettings = true
-            }) {
+            SetupHelpView(
+                mode: .onboarding,
+                onOpenSettings: {
+                    isShowingSetup = false
+                    isShowingSettings = true
+                },
+                onOpenListenBrainzConnect: {
+                    listenBrainzConnectReturnTarget = .setup
+                    isShowingSetup = false
+                    isShowingListenBrainzConnect = true
+                }
+            ) {
                 hasSeenSetup = true
                 isShowingSetup = false
                 presentWhatsNewIfNeeded()
@@ -985,21 +1099,58 @@ extension ContentView {
                 }
             }
         } else if isShowingHelp {
-            SetupHelpView(mode: .help, onOpenSettings: {
-                isShowingHelp = false
-                isShowingSettings = true
-            }) {
+            SetupHelpView(
+                mode: .help,
+                onOpenSettings: {
+                    isShowingHelp = false
+                    isShowingSettings = true
+                },
+                onOpenListenBrainzConnect: {
+                    listenBrainzConnectReturnTarget = .help
+                    isShowingHelp = false
+                    isShowingListenBrainzConnect = true
+                }
+            ) {
                 isShowingHelp = false
             }
         } else if isShowingSettings {
-            SettingsView(onBack: { isShowingSettings = false })
+            SettingsView(
+                onBack: { isShowingSettings = false },
+                onOpenListenBrainzConnect: {
+                    listenBrainzConnectReturnTarget = .settings
+                    isShowingSettings = false
+                    isShowingListenBrainzConnect = true
+                }
+            )
+        } else if isShowingListenBrainzConnect {
+            ListenBrainzConnectView(onBack: {
+                isShowingListenBrainzConnect = false
+                switch listenBrainzConnectReturnTarget {
+                case .setup:
+                    isShowingSetup = true
+                case .help:
+                    isShowingHelp = true
+                case .settings:
+                    isShowingSettings = true
+                }
+            })
         } else if isShowingManualScrobble {
             ManualScrobbleView(onBack: { isShowingManualScrobble = false })
         }
     }
 
     func dismissMacModal() {
-        if isShowingSettings {
+        if isShowingListenBrainzConnect {
+            isShowingListenBrainzConnect = false
+            switch listenBrainzConnectReturnTarget {
+            case .setup:
+                isShowingSetup = true
+            case .help:
+                isShowingHelp = true
+            case .settings:
+                isShowingSettings = true
+            }
+        } else if isShowingSettings {
             isShowingSettings = false
         } else if isShowingHelp {
             isShowingHelp = false

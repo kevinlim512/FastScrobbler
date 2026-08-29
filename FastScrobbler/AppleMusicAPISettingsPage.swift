@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct AppleMusicAPISettingsPage: View {
-    @AppStorage(AppSettings.Keys.scrobbleAppleMusicAPIEnabled, store: AppGroup.userDefaults) private var scrobbleAppleMusicAPIEnabled = false
+    @AppStorage(AppSettings.Keys.scrobbleAppleMusicAPIEnabled, store: AppGroup.userDefaults) private var scrobbleAppleMusicAPIEnabled = true
     @AppStorage(AppSettings.Keys.scrobbleOnlyNonLibraryAppleMusicAPITracks, store: AppGroup.userDefaults) private var scrobbleOnlyNonLibraryAppleMusicAPITracks = true
 
     private func localized(_ key: String) -> String {
@@ -39,7 +39,7 @@ struct AppleMusicAPISettingsPage: View {
                         Toggle(localized("Only scrobble non-library songs"), isOn: $scrobbleOnlyNonLibraryAppleMusicAPITracks)
                             .disabled(!scrobbleAppleMusicAPIEnabled)
                             .foregroundStyle(scrobbleAppleMusicAPIEnabled ? .primary : .secondary)
-                            .tint(.red)
+                            .tint(Color.accentColor)
                     }
                     .padding(.bottom, 16)
 

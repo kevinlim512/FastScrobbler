@@ -17,6 +17,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         URLCache.shared.diskCapacity = 0
 
         AppSettings.migrateLegacyAppGroupSettingsIfNeeded()
+        AppSettings.seedScrobbleAppleMusicAPIEnabledIfNeeded()
         AppSettings.seedScrobbleOnlyNonLibraryAppleMusicAPITracksIfNeeded()
         AppSettings.removeLegacyListeningHistoryScrobblingToggleIfNeeded()
         ProSettings.migrateLegacyAppGroupSettingsIfNeeded()

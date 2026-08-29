@@ -35,7 +35,7 @@ struct SetupHelpView: View {
             switch level {
             case .good: return .green
             case .warning: return .orange
-            case .bad: return .red
+            case .bad: return .accentColor
             case .tip: return .blue
             }
         }
@@ -44,7 +44,7 @@ struct SetupHelpView: View {
             switch level {
             case .good: return .green.opacity(0.12)
             case .warning: return .orange.opacity(0.12)
-            case .bad: return .red.opacity(0.12)
+            case .bad: return Color.accentColor.opacity(0.12)
             case .tip: return .blue.opacity(0.12)
             }
         }
@@ -164,15 +164,111 @@ struct SetupHelpView: View {
         }
     }
 
+    private struct ServiceSubRow: View {
+        let icon: String
+        let title: String
+        let subtitle: String
+        let badgeText: String
+        let badgeLevel: StatusLevel
+        let actionTitle: String?
+        let action: (() -> Void)?
+        let actionSystemImage: String?
+        let actionDisabled: Bool
+        let actionTint: Color
+        let actionForeground: Color
+
+        init(
+            icon: String,
+            title: String,
+            subtitle: String,
+            badgeText: String,
+            badgeLevel: StatusLevel,
+            actionTitle: String?,
+            action: (() -> Void)?,
+            actionSystemImage: String? = nil,
+            actionDisabled: Bool = false,
+            actionTint: Color = .accentColor,
+            actionForeground: Color = .white
+        ) {
+            self.icon = icon
+            self.title = title
+            self.subtitle = subtitle
+            self.badgeText = badgeText
+            self.badgeLevel = badgeLevel
+            self.actionTitle = actionTitle
+            self.action = action
+            self.actionSystemImage = actionSystemImage
+            self.actionDisabled = actionDisabled
+            self.actionTint = actionTint
+            self.actionForeground = actionForeground
+        }
+
+        var body: some View {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: icon)
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(.primary)
+                    .frame(width: 40, height: 40)
+                    .background(.thinMaterial)
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(alignment: .top, spacing: 8) {
+                        Text(title)
+                            .font(.headline)
+                            .multilineTextAlignment(.leading)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .layoutPriority(1)
+
+                        Spacer()
+
+                        StatusBadge(text: badgeText, level: badgeLevel)
+                            .fixedSize(horizontal: true, vertical: false)
+                    }
+
+                    Text(subtitle)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+
+                    if let actionTitle, let action {
+                        Button {
+                            action()
+                        } label: {
+                            Group {
+                                if let actionSystemImage {
+                                    Label(actionTitle, systemImage: actionSystemImage)
+                                } else {
+                                    Text(actionTitle)
+                                }
+                            }
+                            .frame(maxWidth: .infinity)
+                        }
+                        .disabled(actionDisabled)
+                        .buttonStyle(GiantPillButtonStyle(tint: actionTint, foreground: actionForeground))
+                        .padding(.top, 10)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
     private struct GiantPillButtonStyle: ButtonStyle {
         let tint: Color
+        let foreground: Color
+
+        init(tint: Color, foreground: Color = .white) {
+            self.tint = tint
+            self.foreground = foreground
+        }
 
         @Environment(\.isEnabled) private var isEnabled
 
         func makeBody(configuration: Configuration) -> some View {
             configuration.label
                 .font(.headline.weight(.semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(foreground)
                 .padding(.horizontal, 24)
                 .frame(minHeight: 68)
                 .background(tint)
@@ -197,6 +293,7 @@ struct SetupHelpView: View {
     }
 
     @EnvironmentObject private var auth: LastFMAuthManager
+    @EnvironmentObject private var listenBrainzAuth: ListenBrainzAuthManager
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
     @Environment(\.scenePhase) private var scenePhase
@@ -205,6 +302,7 @@ struct SetupHelpView: View {
     @State private var backgroundRefreshStatus: UIBackgroundRefreshStatus = .restricted
     @State private var isSigningInToLastFM = false
     @State private var lastFMErrorText: String?
+    @State private var isShowingListenBrainzConnectSheet = false
 
     var body: some View {
         Group {
@@ -223,7 +321,7 @@ struct SetupHelpView: View {
             }
         }
         .alert(
-            NSLocalizedString("Last.fm Sign-in", comment: ""),
+            NSLocalizedString("Sign-in Error", comment: ""),
             isPresented: Binding(
                 get: { lastFMErrorText != nil },
                 set: { if !$0 { lastFMErrorText = nil } }
@@ -232,6 +330,10 @@ struct SetupHelpView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text(lastFMErrorText ?? "")
+        }
+        .sheet(isPresented: $isShowingListenBrainzConnectSheet) {
+            ListenBrainzConnectSheet()
+                .environmentObject(listenBrainzAuth)
         }
         .onAppear { refreshStatuses() }
         .onValueChange(of: scenePhase) { newValue in
@@ -248,7 +350,7 @@ struct SetupHelpView: View {
                     .padding(.top, mode == .help ? 12 : 30)
 
                 VStack(spacing: 12) {
-                    lastFMRow
+                    scrobbleServicesGroupCard
                     mediaLibraryRow
                     backgroundRefreshRow
                     shortcutsAndControlCenterRow
@@ -280,7 +382,7 @@ struct SetupHelpView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.blue)
-                    .disabled(auth.sessionKey == nil || mediaStatus != .authorized)
+                    .disabled((auth.sessionKey == nil && !listenBrainzAuth.isConnected) || mediaStatus != .authorized)
                     .padding(.top, 2)
                 }
             }
@@ -311,37 +413,126 @@ struct SetupHelpView: View {
         .padding(.horizontal, 8)
     }
 
-    private var lastFMRow: some View {
-        let isConnected = (auth.sessionKey != nil)
-        let badgeText = isConnected ? NSLocalizedString("Signed in", comment: "") : NSLocalizedString("Required", comment: "")
-        let badgeLevel: StatusLevel = isConnected ? .good : .bad
+    private var scrobbleServicesGroupCard: some View {
+        let isLastFMConnected = (auth.sessionKey != nil)
+        let isListenBrainzConnected = listenBrainzAuth.isConnected
+        let hasAnyAccount = isLastFMConnected || isListenBrainzConnected
 
-        return SettingRow(
-            icon: "person.crop.circle",
-            title: NSLocalizedString("Last.fm", comment: ""),
-            subtitle: NSLocalizedString("Sign in to start scrobbling to your Last.fm account.", comment: ""),
-            badgeText: badgeText,
-            badgeLevel: badgeLevel,
-            actionTitle: isConnected ? nil : (isSigningInToLastFM ? NSLocalizedString("Signing In…", comment: "") : NSLocalizedString("Sign In to Last.fm", comment: "")),
-            action: isConnected ? nil : {
-                guard !isSigningInToLastFM else { return }
-                isSigningInToLastFM = true
-                Task { @MainActor in
-                    defer { isSigningInToLastFM = false }
-                    do {
-                        try await auth.connect()
-                    } catch {
-                        if error is CancellationError { return }
-                        lastFMErrorText = error.localizedDescription
-                    }
+        let overallBadgeText = hasAnyAccount ? NSLocalizedString("Signed in", comment: "") : NSLocalizedString("Required", comment: "")
+        let overallBadgeLevel: StatusLevel = hasAnyAccount ? .good : .bad
+
+        let lastFMBadgeText = isLastFMConnected ? NSLocalizedString("Signed in", comment: "") : NSLocalizedString("Not connected", comment: "")
+        let lastFMBadgeLevel: StatusLevel = isLastFMConnected ? .good : .warning
+
+        let lastFMSubtitle: String = {
+            if isLastFMConnected {
+                if let username = auth.username, !username.isEmpty {
+                    return String(format: NSLocalizedString("Signed in as %@", comment: ""), username)
                 }
-            },
-            actionSystemImage: "music.note",
-            actionDisabled: isSigningInToLastFM,
-            actionProminent: true,
-            actionTint: .red
-        )
+                return NSLocalizedString("Signed in to your Last.fm account.", comment: "")
+            }
+            return NSLocalizedString("Sign in to start scrobbling to your Last.fm account.", comment: "")
+        }()
+
+        let listenBrainzBadgeText = isListenBrainzConnected ? NSLocalizedString("Signed in", comment: "") : NSLocalizedString("Not connected", comment: "")
+        let listenBrainzBadgeLevel: StatusLevel = isListenBrainzConnected ? .good : .warning
+
+        let listenBrainzSubtitle: String = {
+            if isListenBrainzConnected {
+                if let username = listenBrainzAuth.username, !username.isEmpty {
+                    return String(format: NSLocalizedString("Beta feature: Signed in as %@", comment: ""), username)
+                }
+                return NSLocalizedString("Beta feature: Signed in to your ListenBrainz account.", comment: "")
+            }
+            return NSLocalizedString("Beta feature: Sign in to start scrobbling to your ListenBrainz account.", comment: "")
+        }()
+
+        return VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: "arrow.triangle.branch")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(.primary)
+                    .frame(width: 40, height: 40)
+                    .background(.thinMaterial)
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(alignment: .top, spacing: 8) {
+                        Text(NSLocalizedString("Scrobble Services", comment: ""))
+                            .font(.headline)
+                            .multilineTextAlignment(.leading)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .layoutPriority(1)
+
+                        StatusBadge(text: overallBadgeText, level: overallBadgeLevel)
+                            .hidden()
+                            .fixedSize(horizontal: true, vertical: false)
+                    }
+
+                    Text(NSLocalizedString("Choose at least one service to start scrobbling.", comment: ""))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            Divider()
+
+            ServiceSubRow(
+                icon: "person.crop.circle",
+                title: NSLocalizedString("Last.fm", comment: ""),
+                subtitle: lastFMSubtitle,
+                badgeText: lastFMBadgeText,
+                badgeLevel: lastFMBadgeLevel,
+                actionTitle: isLastFMConnected ? nil : (isSigningInToLastFM ? NSLocalizedString("Signing In…", comment: "") : NSLocalizedString("Sign In to Last.fm", comment: "")),
+                action: isLastFMConnected ? nil : {
+                    guard !isSigningInToLastFM else { return }
+                    isSigningInToLastFM = true
+                    Task { @MainActor in
+                        defer { isSigningInToLastFM = false }
+                        do {
+                            try await auth.connect()
+                        } catch {
+                            if error is CancellationError { return }
+                            lastFMErrorText = error.localizedDescription
+                        }
+                    }
+                },
+                actionSystemImage: "music.note",
+                actionDisabled: isSigningInToLastFM,
+                actionTint: .accentColor,
+                actionForeground: .white
+            )
+
+            Divider()
+
+            ServiceSubRow(
+                icon: "waveform.path.ecg",
+                title: NSLocalizedString("ListenBrainz", comment: ""),
+                subtitle: listenBrainzSubtitle,
+                badgeText: listenBrainzBadgeText,
+                badgeLevel: listenBrainzBadgeLevel,
+                actionTitle: isListenBrainzConnected ? nil : NSLocalizedString("Sign In to ListenBrainz", comment: ""),
+                action: isListenBrainzConnected ? nil : {
+                    isShowingListenBrainzConnectSheet = true
+                },
+                actionSystemImage: "music.note",
+                actionDisabled: false,
+                actionTint: Color(uiColor: .systemGray4),
+                actionForeground: .primary
+            )
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding()
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(alignment: .topTrailing) {
+            StatusBadge(text: overallBadgeText, level: overallBadgeLevel)
+                .fixedSize(horizontal: true, vertical: false)
+                .padding()
+        }
     }
+
 
     private var mediaLibraryRow: some View {
         let (badgeText, badgeLevel) = badge(for: mediaStatus)
@@ -363,19 +554,19 @@ struct SetupHelpView: View {
             actionTitle = NSLocalizedString("Enable Media Library", comment: "")
             actionSystemImage = "music.note.list"
             actionProminent = true
-            actionTint = .red
+            actionTint = .accentColor
         case .denied, .restricted:
             action = openAppSettings
             actionTitle = NSLocalizedString("Open Settings", comment: "")
             actionSystemImage = "gearshape"
             actionProminent = true
-            actionTint = .red
+            actionTint = .accentColor
         @unknown default:
             action = openAppSettings
             actionTitle = NSLocalizedString("Open Settings", comment: "")
             actionSystemImage = "gearshape"
             actionProminent = true
-            actionTint = .red
+            actionTint = .accentColor
         }
 
         return SettingRow(
@@ -471,7 +662,7 @@ struct SetupHelpView: View {
         SettingRow(
             icon: "exclamationmark.circle",
             title: NSLocalizedString("Issues Scrobbling?", comment: ""),
-            subtitle: NSLocalizedString("Try signing out of Last.fm and signing in again.", comment: ""),
+            subtitle: NSLocalizedString("Try signing out and signing in again.", comment: ""),
             badgeText: NSLocalizedString("Note", comment: ""),
             badgeLevel: .warning,
             actionTitle: nil,

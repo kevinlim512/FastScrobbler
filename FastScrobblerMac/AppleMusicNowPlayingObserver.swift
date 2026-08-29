@@ -30,6 +30,9 @@ final class AppleMusicNowPlayingObserver: ObservableObject {
 
     private let logger = Logger(subsystem: "FastScrobbler", category: "MusicObserver")
     private var timer: Timer?
+    private var currentPollingInterval: TimeInterval = 0
+    nonisolated(unsafe) private var workspaceObservers: [NSObjectProtocol] = []
+    nonisolated(unsafe) private var distributedObservers: [NSObjectProtocol] = []
     nonisolated private static let scriptingQueue = DispatchQueue(label: "FastScrobbler.MusicAppleScript", qos: .userInitiated)
 
     init() {
@@ -37,6 +40,10 @@ final class AppleMusicNowPlayingObserver: ObservableObject {
         Task { @MainActor in
             await refreshFromMusic()
         }
+    }
+
+    deinit {
+        removeObservers()
     }
 
     func refreshOnceIfAuthorized() {
@@ -63,6 +70,8 @@ final class AppleMusicNowPlayingObserver: ObservableObject {
     }
 
     func start() async throws {
+        setupObservers()
+
         if isRunning {
             await refreshFromMusic()
             if authorizationStatus != .authorized { throw ObserverError.musicAutomationDenied }
@@ -72,21 +81,17 @@ final class AppleMusicNowPlayingObserver: ObservableObject {
         await refreshFromMusic()
         guard authorizationStatus == .authorized else { throw ObserverError.musicAutomationDenied }
 
-        timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            Task { @MainActor in
-                await self?.refreshFromMusic()
-            }
-        }
-
         isRunning = true
+        updatePollingTimerIfNeeded()
     }
 
     func stop() {
         guard isRunning else { return }
         isRunning = false
+        removeObservers()
         timer?.invalidate()
         timer = nil
+        currentPollingInterval = 0
     }
 
     func skipToNextItem() {
@@ -100,11 +105,20 @@ final class AppleMusicNowPlayingObserver: ObservableObject {
     }
 
     private func refreshFromMusic() async {
+        guard Self.isMusicAppRunning() else {
+            authorizationStatus = .authorized
+            resetPlaybackSnapshot()
+            updatePollingTimerIfNeeded()
+            return
+        }
+
         if authorizationStatus != .authorized {
             let status = await Self.determineMusicAutomationAuthorizationStatusAsync(askUserIfNeeded: false)
             applyAutomationAuthorization(status)
         }
-        guard authorizationStatus == .authorized else { return }
+        guard authorizationStatus == .authorized else {
+            return
+        }
 
         do {
             let snapshot = try await Self.readMusicSnapshotAsync()
@@ -128,6 +142,7 @@ final class AppleMusicNowPlayingObserver: ObservableObject {
                 // Music isn't running (or still launching).
                 authorizationStatus = .authorized
                 resetPlaybackSnapshot()
+                updatePollingTimerIfNeeded()
                 return
             }
             logger.debug("AppleScript error: \(error.message, privacy: .public) (\(error.number, privacy: .public))")
@@ -136,6 +151,103 @@ final class AppleMusicNowPlayingObserver: ObservableObject {
             logger.debug("Music snapshot error: \(error.localizedDescription, privacy: .public)")
             resetPlaybackSnapshot()
         }
+
+        updatePollingTimerIfNeeded()
+    }
+
+    private func updatePollingTimerIfNeeded() {
+        guard isRunning else { return }
+
+        let desiredInterval: TimeInterval
+        if !Self.isMusicAppRunning() {
+            desiredInterval = 30.0
+        } else if playbackState == .playing {
+            desiredInterval = 1.0
+        } else {
+            desiredInterval = 10.0
+        }
+
+        if timer == nil || currentPollingInterval != desiredInterval {
+            timer?.invalidate()
+            currentPollingInterval = desiredInterval
+            timer = Timer.scheduledTimer(withTimeInterval: desiredInterval, repeats: true) { [weak self] _ in
+                Task { @MainActor in
+                    await self?.refreshFromMusic()
+                }
+            }
+        }
+    }
+
+    private func setupObservers() {
+        removeObservers()
+
+        let wsNC = NSWorkspace.shared.notificationCenter
+        let launchObs = wsNC.addObserver(
+            forName: NSWorkspace.didLaunchApplicationNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] note in
+            guard let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication,
+                  app.bundleIdentifier == "com.apple.Music" || app.bundleIdentifier == "com.apple.iTunes" else { return }
+            Task { @MainActor [weak self] in
+                await self?.refreshFromMusic()
+            }
+        }
+
+        let termObs = wsNC.addObserver(
+            forName: NSWorkspace.didTerminateApplicationNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] note in
+            guard let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication,
+                  app.bundleIdentifier == "com.apple.Music" || app.bundleIdentifier == "com.apple.iTunes" else { return }
+            Task { @MainActor [weak self] in
+                await self?.refreshFromMusic()
+            }
+        }
+        workspaceObservers = [launchObs, termObs]
+
+        let distNC = DistributedNotificationCenter.default()
+        let playerObs1 = distNC.addObserver(
+            forName: NSNotification.Name("com.apple.Music.playerInfo"),
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                await self?.refreshFromMusic()
+            }
+        }
+        let playerObs2 = distNC.addObserver(
+            forName: NSNotification.Name("com.apple.iTunes.playerInfo"),
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                await self?.refreshFromMusic()
+            }
+        }
+        distributedObservers = [playerObs1, playerObs2]
+    }
+
+    nonisolated private func removeObservers() {
+        let wsNC = NSWorkspace.shared.notificationCenter
+        for obs in workspaceObservers {
+            wsNC.removeObserver(obs)
+        }
+        workspaceObservers.removeAll()
+
+        let distNC = DistributedNotificationCenter.default()
+        for obs in distributedObservers {
+            distNC.removeObserver(obs)
+        }
+        distributedObservers.removeAll()
+    }
+
+    nonisolated private static func isMusicAppRunning() -> Bool {
+        let musicApps = NSRunningApplication.runningApplications(withBundleIdentifier: "com.apple.Music")
+        if !musicApps.isEmpty { return true }
+        let iTunesApps = NSRunningApplication.runningApplications(withBundleIdentifier: "com.apple.iTunes")
+        return !iTunesApps.isEmpty
     }
 
     private func applyAutomationAuthorization(_ status: MPMediaLibraryAuthorizationStatus) {
@@ -256,8 +368,8 @@ final class AppleMusicNowPlayingObserver: ObservableObject {
         let artist = parts.count > 1 ? parts[1] : ""
         let title = parts.count > 2 ? parts[2] : ""
         let album = parts.count > 3 ? parts[3] : ""
-        let duration = parts.count > 4 ? TimeInterval(parts[4]) ?? 0 : 0
-        let position = parts.count > 5 ? TimeInterval(parts[5]) ?? 0 : 0
+        let duration = parts.count > 4 ? (parseTimeInterval(parts[4]) ?? 0) : 0
+        let position = parts.count > 5 ? (parseTimeInterval(parts[5]) ?? 0) : 0
         let albumArtist = parts.count > 6 ? parts[6] : ""
         let isCompilation = parts.count > 7 ? parseAppleScriptBool(parts[7]) : nil
         let streamTitle = parts.count > 8 ? parts[8] : ""
@@ -431,5 +543,12 @@ final class AppleMusicNowPlayingObserver: ObservableObject {
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }
         return UInt64(trimmed, radix: 16)
+    }
+
+    nonisolated private static func parseTimeInterval(_ value: String) -> TimeInterval? {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        let normalized = trimmed.replacingOccurrences(of: ",", with: ".")
+        return TimeInterval(normalized)
     }
 }

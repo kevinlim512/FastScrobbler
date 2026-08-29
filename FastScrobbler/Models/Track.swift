@@ -50,9 +50,12 @@ enum AppSettings {
         static let listeningHistoryResumeRecoveryCutoffDate = "FastScrobbler.App.listeningHistoryResumeRecoveryCutoffDate"
         static let pendingListeningHistoryLaunchRequest = "FastScrobbler.App.pendingListeningHistoryLaunchRequest"
         static let pendingListeningHistoryReviewOpenRequestToken = "FastScrobbler.App.pendingListeningHistoryReviewOpenRequestToken"
+        static let pendingManualScrobbleLaunchRequest = "FastScrobbler.App.pendingManualScrobbleLaunchRequest"
+        static let pendingHelpLaunchRequest = "FastScrobbler.App.pendingHelpLaunchRequest"
         static let sendNowPlayingAutomaticallyEnabled = "FastScrobbler.App.sendNowPlayingAutomaticallyEnabled"
         static let themeSelection = "FastScrobbler.App.themeSelection"
         static let buttonThemeSelection = "FastScrobbler.App.buttonThemeSelection"
+        static let scanButtonLocation = "FastScrobbler.App.scanButtonLocation"
         static let iCloudSyncEnabled = "FastScrobbler.App.iCloudSyncEnabled"
     }
 
@@ -128,10 +131,52 @@ enum AppSettings {
         consumePendingListeningHistoryLaunchRequest() == .openReviewOnly
     }
 
+    static func requestPendingManualScrobbleLaunch() {
+        AppGroup.userDefaults.set(true, forKey: Keys.pendingManualScrobbleLaunchRequest)
+    }
+
+    static func consumePendingManualScrobbleLaunchRequest() -> Bool {
+        guard AppGroup.userDefaults.bool(forKey: Keys.pendingManualScrobbleLaunchRequest) else { return false }
+        AppGroup.userDefaults.removeObject(forKey: Keys.pendingManualScrobbleLaunchRequest)
+        return true
+    }
+
+    static func requestPendingHelpLaunch() {
+        AppGroup.userDefaults.set(true, forKey: Keys.pendingHelpLaunchRequest)
+    }
+
+    static func consumePendingHelpLaunchRequest() -> Bool {
+        guard AppGroup.userDefaults.bool(forKey: Keys.pendingHelpLaunchRequest) else { return false }
+        AppGroup.userDefaults.removeObject(forKey: Keys.pendingHelpLaunchRequest)
+        return true
+    }
+
     static func scrobbleAppleMusicAPIEnabled() -> Bool {
         migrateLegacyAppGroupValueIfNeeded(forKey: Keys.scrobbleAppleMusicAPIEnabled)
-        if AppGroup.userDefaults.object(forKey: Keys.scrobbleAppleMusicAPIEnabled) == nil { return false }
+        if AppGroup.userDefaults.object(forKey: Keys.scrobbleAppleMusicAPIEnabled) == nil {
+            let hasSeenSetup = UserDefaults.standard.bool(forKey: "FastScrobbler.Setup.hasSeen") || AppGroup.userDefaults.bool(forKey: "FastScrobbler.Setup.hasSeen")
+            let isAutoScrobbleOff = listeningHistoryRequireConfirmationEnabled()
+            return !hasSeenSetup || isAutoScrobbleOff
+        }
         return AppGroup.userDefaults.bool(forKey: Keys.scrobbleAppleMusicAPIEnabled)
+    }
+
+    static func seedScrobbleAppleMusicAPIEnabledIfNeeded() {
+        migrateLegacyAppGroupValueIfNeeded(forKey: Keys.scrobbleAppleMusicAPIEnabled)
+        let migrationKey = "FastScrobbler.App.didMigrateApiScrobbleForAutoScrobbleOff_v2"
+        if !AppGroup.userDefaults.bool(forKey: migrationKey) {
+            let hasSeenSetup = UserDefaults.standard.bool(forKey: "FastScrobbler.Setup.hasSeen") || AppGroup.userDefaults.bool(forKey: "FastScrobbler.Setup.hasSeen")
+            let isAutoScrobbleOff = listeningHistoryRequireConfirmationEnabled()
+            let shouldEnable = !hasSeenSetup || isAutoScrobbleOff
+            AppGroup.userDefaults.set(shouldEnable, forKey: Keys.scrobbleAppleMusicAPIEnabled)
+            AppGroup.userDefaults.set(true, forKey: migrationKey)
+            return
+        }
+
+        guard AppGroup.userDefaults.object(forKey: Keys.scrobbleAppleMusicAPIEnabled) == nil else { return }
+        let hasSeenSetup = UserDefaults.standard.bool(forKey: "FastScrobbler.Setup.hasSeen") || AppGroup.userDefaults.bool(forKey: "FastScrobbler.Setup.hasSeen")
+        let isAutoScrobbleOff = listeningHistoryRequireConfirmationEnabled()
+        AppGroup.userDefaults.set(!hasSeenSetup || isAutoScrobbleOff, forKey: Keys.scrobbleAppleMusicAPIEnabled)
     }
 
     static func scrobbleOnlyNonLibraryAppleMusicAPITracks() -> Bool {
@@ -206,6 +251,27 @@ enum ButtonTheme: String, CaseIterable, Identifiable {
     }
 }
 
+enum ScanButtonLocation: String, CaseIterable, Identifiable {
+    case recentScrobbles
+    case homeTabActions
+    case disabled
+
+    var id: String {
+        rawValue
+    }
+
+    var localizedName: String {
+        switch self {
+        case .recentScrobbles:
+            return NSLocalizedString("Recent Scrobbles List", comment: "")
+        case .homeTabActions:
+            return NSLocalizedString("Home Tab Actions", comment: "")
+        case .disabled:
+            return NSLocalizedString("Off", comment: "")
+        }
+    }
+}
+
 enum ProEntitlement {
     static let productID = "com.kevin.FastScrobbler.pro"
 
@@ -235,6 +301,7 @@ enum ProSettings {
         static let scrobbleThresholdIndex = "FastScrobbler.Pro.scrobbleThresholdIndex"
         static let useAlbumArtistForScrobbling = "FastScrobbler.Pro.useAlbumArtistForScrobbling"
         static let useFirstArtistOnlyForScrobbling = "FastScrobbler.Pro.useFirstArtistOnlyForScrobbling"
+        static let firstArtistOnlyIgnoredArtists = "FastScrobbler.Pro.firstArtistOnlyIgnoredArtists"
         static let stripEpAndSingleSuffixFromAlbum = "FastScrobbler.Pro.stripEpAndSingleSuffixFromAlbum"
         static let removeBracketsFromSongTitlesEnabled = "FastScrobbler.Pro.removeBracketsEnabled"
         static let removeAllBracketsFromSongTitlesEnabled = "FastScrobbler.Pro.removeAllBracketsEnabled"
@@ -419,6 +486,41 @@ enum ProSettings {
         return pinned + userRules
     }
 
+    static func firstArtistOnlyIgnoredArtists() -> [String] {
+        migrateLegacyAppGroupValueIfNeeded(forKey: Keys.firstArtistOnlyIgnoredArtists)
+        guard let data = AppGroup.userDefaults.data(forKey: Keys.firstArtistOnlyIgnoredArtists) else {
+            return []
+        }
+
+        guard let decoded = try? JSONDecoder().decode([String].self, from: data) else {
+            return []
+        }
+
+        return sanitizedIgnoredArtists(decoded)
+    }
+
+    static func setFirstArtistOnlyIgnoredArtists(_ artists: [String]) {
+        let sanitized = sanitizedIgnoredArtists(artists)
+        guard let data = try? JSONEncoder().encode(sanitized) else { return }
+        AppGroup.userDefaults.set(data, forKey: Keys.firstArtistOnlyIgnoredArtists)
+    }
+
+    static func sanitizedIgnoredArtists(_ artists: [String]) -> [String] {
+        var seen = Set<String>()
+        var sanitized: [String] = []
+
+        for artist in artists {
+            let trimmed = artist.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { continue }
+
+            let normalized = trimmed.lowercased()
+            guard seen.insert(normalized).inserted else { continue }
+            sanitized.append(trimmed)
+        }
+
+        return sanitized
+    }
+
     static func setTextReplacementRules(_ rules: [TextReplacementRule]) {
         guard let data = try? JSONEncoder().encode(rules) else { return }
         AppGroup.userDefaults.set(data, forKey: Keys.textReplacementRules)
@@ -429,6 +531,7 @@ enum ProSettings {
         Keys.scrobbleThresholdIndex,
         Keys.useAlbumArtistForScrobbling,
         Keys.useFirstArtistOnlyForScrobbling,
+        Keys.firstArtistOnlyIgnoredArtists,
         Keys.stripEpAndSingleSuffixFromAlbum,
         Keys.removeBracketsFromSongTitlesEnabled,
         Keys.removeAllBracketsFromSongTitlesEnabled,
@@ -519,6 +622,7 @@ struct Track: Codable, Equatable, Hashable, Sendable {
 struct ScrobbleMetadataPreferences: Sendable {
     var useAlbumArtistForScrobbling: Bool
     var useFirstArtistOnlyForScrobbling: Bool
+    var firstArtistOnlyIgnoredArtists: [String]
     var removeBracketsFromSongTitles: Bool
     var removeAllBracketsFromSongTitles: Bool
     var songTitleBracketKeywords: [String]
@@ -531,6 +635,7 @@ struct ScrobbleMetadataPreferences: Sendable {
         ScrobbleMetadataPreferences(
             useAlbumArtistForScrobbling: ProSettings.useAlbumArtistForScrobbling(),
             useFirstArtistOnlyForScrobbling: ProSettings.useFirstArtistOnlyForScrobbling(),
+            firstArtistOnlyIgnoredArtists: ProSettings.firstArtistOnlyIgnoredArtists(),
             removeBracketsFromSongTitles: ProSettings.removeBracketsFromSongTitlesEnabled(),
             removeAllBracketsFromSongTitles: ProSettings.removeAllBracketsFromSongTitlesEnabled(),
             songTitleBracketKeywords: ProSettings.removeBracketsFromSongTitleKeywords(),
@@ -549,7 +654,7 @@ struct ScrobbleMetadataPreferences: Sendable {
         }
 
         if useFirstArtistOnlyForScrobbling {
-            copy = copy.applyingFirstArtistOnlyIfNeeded()
+            copy = copy.applyingFirstArtistOnlyIfNeeded(ignoredArtists: firstArtistOnlyIgnoredArtists)
         }
 
         if removeBracketsFromAlbumTitles {
@@ -684,8 +789,8 @@ extension Track {
         return copy
     }
 
-    func applyingFirstArtistOnlyIfNeeded() -> Track {
-        guard let firstArtist = Self.firstArtistOnly(from: artist) else {
+    func applyingFirstArtistOnlyIfNeeded(ignoredArtists: [String] = ProSettings.firstArtistOnlyIgnoredArtists()) -> Track {
+        guard let firstArtist = Self.firstArtistOnly(from: artist, ignoredArtists: ignoredArtists) else {
             return self
         }
 
@@ -758,9 +863,16 @@ extension Track {
     // Matches one level of (…) or […] — nested brackets require multiple passes.
     private static let parentheticalSegmentRegex = try? NSRegularExpression(pattern: #"\([^()]*\)|\[[^\[\]]*\]"#)
 
-    static func firstArtistOnly(from artist: String) -> String? {
+    static func firstArtistOnly(from artist: String, ignoredArtists: [String] = []) -> String? {
         let trimmedArtist = artist.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedArtist.isEmpty else { return nil }
+
+        let normalizedArtist = trimmedArtist.lowercased()
+        for ignored in ignoredArtists {
+            if ignored.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == normalizedArtist {
+                return nil
+            }
+        }
 
         let separators: [Character] = ["&", ","]
         var earliestSeparatorIndex: String.Index?

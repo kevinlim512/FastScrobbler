@@ -125,6 +125,59 @@ func runManualScrobbleTests() {
     expect("two-weeks-ago boundary is within allowed range",
            computeTimestamp(useCustom: true, customDate: twoWeeksAgo, now: tsNow) >= Int(twoWeeksAgo.timeIntervalSince1970))
 
+    // ─── Manual Scrobble — Batch Quantity Generation ─────────────────────────────
+    // Replicates submitManualScrobble batch item timestamp calculations.
+
+    section("Manual Scrobble · Batch Quantity Generation")
+
+    func generateBatchItems(baseTimestamp: Int, quantity: Int) -> [(timestamp: Int, index: Int)] {
+        let clamped = max(1, min(5, quantity))
+        return (0..<clamped).map { i in (timestamp: baseTimestamp + i, index: i) }
+    }
+
+    let b1 = generateBatchItems(baseTimestamp: 1_700_000_000, quantity: 1)
+    expect("quantity 1 produces 1 item", b1.count == 1)
+    expect("quantity 1 item timestamp matches base", b1.first?.timestamp == 1_700_000_000)
+
+    let b5 = generateBatchItems(baseTimestamp: 1_700_000_000, quantity: 5)
+    expect("quantity 5 produces 5 items", b5.count == 5)
+    expect("quantity 5 timestamps are incremented by 1 sec", b5.map { $0.timestamp } == [1_700_000_000, 1_700_000_001, 1_700_000_002, 1_700_000_003, 1_700_000_004])
+
+    let bClampUpper = generateBatchItems(baseTimestamp: 1_700_000_000, quantity: 10)
+    expect("quantity > 5 is clamped to 5", bClampUpper.count == 5)
+
+    let bClampLower = generateBatchItems(baseTimestamp: 1_700_000_000, quantity: 0)
+    expect("quantity < 1 is clamped to 1", bClampLower.count == 1)
+
+    // ─── Manual Scrobble · Consecutive Log Grouping ─────────────────────────────
+
+    section("Manual Scrobble · Consecutive Log Grouping")
+
+    struct SimManualLogItem {
+        let id: UUID
+        let artist: String
+        let title: String
+        let dedupeKey: String
+    }
+
+    let itemA1 = SimManualLogItem(id: UUID(), artist: "Beyoncé", title: "Halo", dedupeKey: "beyoncé|halo")
+    let itemA2 = SimManualLogItem(id: UUID(), artist: "Beyoncé", title: "Halo", dedupeKey: "beyoncé|halo")
+    let itemA3 = SimManualLogItem(id: UUID(), artist: "Beyoncé", title: "Halo", dedupeKey: "beyoncé|halo")
+    let itemB = SimManualLogItem(id: UUID(), artist: "Adele", title: "Hello", dedupeKey: "adele|hello")
+    let itemA4 = SimManualLogItem(id: UUID(), artist: "Beyoncé", title: "Halo", dedupeKey: "beyoncé|halo")
+
+    let groupedLog = ConsecutivePlayGrouper.groups(
+        from: [itemA1, itemA2, itemA3, itemB, itemA4],
+        shouldGroup: { _ in true },
+        dedupeKey: \.dedupeKey,
+        memberID: \.id
+    )
+
+    expect("consecutive manual log entries collapse into groups", groupedLog.count == 3)
+    expect("first group has count 3 for Beyoncé - Halo", groupedLog[0].count == 3)
+    expect("second group has count 1 for Adele - Hello", groupedLog[1].count == 1)
+    expect("third group has count 1 for non-consecutive Beyoncé - Halo", groupedLog[2].count == 1)
+
     // ─── Current-track manual scrobble timestamp avoidance ────────────────────────
     // Replicates ScrobbleEngine current-track manual timestamp selection.
 
@@ -304,4 +357,42 @@ func runManualScrobbleTests() {
            shouldEnqueueManualRetry(key: retryKey, timestamp: 10_000, error: .notConnected, backlog: [], log: []))
     expect("non-retryable ignored scrobble is not queued",
            !shouldEnqueueManualRetry(key: retryKey, timestamp: 10_000, error: .ignored(1), backlog: [], log: []))
+
+    // ─── Scrobble Now — duration and progress bypass validation ─────────────────
+
+    section("Scrobble Now · Duration and progress bypass validation")
+
+    struct SimScrobbleNowTrack {
+        let artist: String
+        let title: String
+        let durationSeconds: Double?
+    }
+
+    enum SimPlaybackState { case playing, paused, stopped }
+
+    struct SimScrobbleNowDecision {
+        let canScrobble: Bool
+        let reason: String?
+    }
+
+    func evaluateScrobbleNow(track: SimScrobbleNowTrack, state: SimPlaybackState, playbackTime: Double) -> SimScrobbleNowDecision {
+        let trimmedArtist = track.artist.trimmingCharacters(in: .whitespaces)
+        let trimmedTitle = track.title.trimmingCharacters(in: .whitespaces)
+        if trimmedArtist.isEmpty || trimmedTitle.isEmpty {
+            return SimScrobbleNowDecision(canScrobble: false, reason: "Missing required track metadata.")
+        }
+        // Scrobble Now bypasses playbackState, duration, and threshold checks!
+        return SimScrobbleNowDecision(canScrobble: true, reason: nil)
+    }
+
+    let tShort = SimScrobbleNowTrack(artist: "Artist", title: "Short Song", durationSeconds: 15.0)
+    let tNilDuration = SimScrobbleNowTrack(artist: "Artist", title: "Stream Song", durationSeconds: nil)
+    let tZeroDuration = SimScrobbleNowTrack(artist: "Artist", title: "Zero Song", durationSeconds: 0)
+    let tBlankArtist = SimScrobbleNowTrack(artist: "   ", title: "Song", durationSeconds: 180.0)
+
+    expect("Scrobble Now allows short track (<30s)", evaluateScrobbleNow(track: tShort, state: .playing, playbackTime: 2.0).canScrobble)
+    expect("Scrobble Now allows nil duration track", evaluateScrobbleNow(track: tNilDuration, state: .paused, playbackTime: 0.0).canScrobble)
+    expect("Scrobble Now allows zero duration track", evaluateScrobbleNow(track: tZeroDuration, state: .stopped, playbackTime: 0.0).canScrobble)
+    expect("Scrobble Now allows paused state at 0s progress", evaluateScrobbleNow(track: tShort, state: .paused, playbackTime: 0.0).canScrobble)
+    expect("Scrobble Now blocks blank metadata", !evaluateScrobbleNow(track: tBlankArtist, state: .playing, playbackTime: 10.0).canScrobble)
 }

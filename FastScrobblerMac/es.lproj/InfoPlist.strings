@@ -8,4 +8,4 @@
 "NSAppleEventsUsageDescription" = "FastScrobbler necesita permiso para controlar la app Música y leer los metadatos de la pista en reproducción.";
 
 /* Privacy - Media Library Usage Description */
-"NSAppleMusicUsageDescription" = "FastScrobbler necesita permiso para acceder a tu fototeca musical para hacer scrobbling.";
+"NSAppleMusicUsageDescription" = "FastScrobbler necesita permiso para acceder a tu biblioteca multimedia para hacer scrobbling.";

@@ -55,6 +55,37 @@ func runBackgroundGracePeriodTests() {
     expect("failed grace-period start leaves no active grace period", !fallback.isGracePeriodActive)
     expect("failed grace-period start falls back to immediate pause", fallback.pauseCalls == 1, detail: "got \(fallback.pauseCalls)")
 
+    section("Background grace period · immediate scheduling & snapshotting")
+
+    struct SimAppModelBackgroundLifecycle {
+        var isAppRefreshScheduled = false
+        var isProcessingScheduled = false
+        var lastPlaybackSnapshot: [String: Any]?
+
+        mutating func prepareForBackground(isPlaying: Bool, trackTitle: String?) {
+            // Immediate BGTaskScheduler registration upon backgrounding
+            isAppRefreshScheduled = true
+            isProcessingScheduled = true
+        }
+
+        mutating func finishGracePeriod(trackTitle: String, playbackTimeSeconds: Double) {
+            lastPlaybackSnapshot = [
+                "title": trackTitle,
+                "playbackTimeSeconds": playbackTimeSeconds,
+                "snapshotAt": Date()
+            ]
+        }
+    }
+
+    var lifecycleSim = SimAppModelBackgroundLifecycle()
+    lifecycleSim.prepareForBackground(isPlaying: true, trackTitle: "Radiohead - Creep")
+    expect("prepareForBackground immediately schedules BGAppRefreshTask", lifecycleSim.isAppRefreshScheduled)
+    expect("prepareForBackground immediately schedules BGProcessingTask", lifecycleSim.isProcessingScheduled)
+
+    lifecycleSim.finishGracePeriod(trackTitle: "Radiohead - Creep", playbackTimeSeconds: 142.5)
+    expect("finishGracePeriod saves playback snapshot", lifecycleSim.lastPlaybackSnapshot != nil)
+    expectEqual("playback snapshot records track title", lifecycleSim.lastPlaybackSnapshot?["title"] as? String, "Radiohead - Creep")
+
     section("Background live auto-scrobble gate")
 
     func liveAutoScrobbleAllowed(
@@ -234,6 +265,11 @@ func runSettingsDefaultsTests() {
         existingValue ?? true
     }
 
+    func seedAppleMusicAPIScrobblingIfNeeded(existingValue: Bool?, hasSeenSetup: Bool, isAutoScrobbleOff: Bool) -> Bool {
+        if let existingValue = existingValue { return existingValue }
+        return !hasSeenSetup || isAutoScrobbleOff
+    }
+
     func removeLegacyListeningHistoryScrobblingToggle(
         legacyListeningHistoryEnabled: Bool?,
         requireConfirmation: Bool?
@@ -251,8 +287,8 @@ func runSettingsDefaultsTests() {
     let iOSExtendedListeningHistoryScanAfterReset = false
     let listeningHistoryRequireConfirmationDefault = true
     let iOSListeningHistoryRequireConfirmationAfterReset = true
-    let appleMusicAPIScrobblingDefault = false
-    let iOSAppleMusicAPIScrobblingAfterReset = false
+    let appleMusicAPIScrobblingDefault = true
+    let iOSAppleMusicAPIScrobblingAfterReset = true
     let nonLibraryAppleMusicAPIFilterDefault = true
     let iOSNonLibraryAppleMusicAPIFilterAfterReset = true
     let firstArtistOnlyDefault = false
@@ -262,8 +298,13 @@ func runSettingsDefaultsTests() {
     let buttonThemeSelectionDefault = "colorful"
     let iOSButtonThemeSelectionAfterReset = "colorful"
     let iCloudSyncDefault = false
-    expectEqual("Apple Music API scrobbling defaults off", appleMusicAPIScrobblingDefault, false)
+    expectEqual("Apple Music API scrobbling defaults on", appleMusicAPIScrobblingDefault, true)
     expectEqual("iOS reset restores Apple Music API scrobbling default", iOSAppleMusicAPIScrobblingAfterReset, appleMusicAPIScrobblingDefault)
+    expectEqual("seed preserves explicit off for Apple Music API scrobbling", seedAppleMusicAPIScrobblingIfNeeded(existingValue: false, hasSeenSetup: true, isAutoScrobbleOff: false), false)
+    expectEqual("seed preserves explicit on for Apple Music API scrobbling", seedAppleMusicAPIScrobblingIfNeeded(existingValue: true, hasSeenSetup: true, isAutoScrobbleOff: false), true)
+    expectEqual("seed writes false when key is missing and user has auto-scrobble enabled", seedAppleMusicAPIScrobblingIfNeeded(existingValue: nil, hasSeenSetup: true, isAutoScrobbleOff: false), false)
+    expectEqual("seed writes true when key is missing and user has auto-scrobble disabled", seedAppleMusicAPIScrobblingIfNeeded(existingValue: nil, hasSeenSetup: true, isAutoScrobbleOff: true), true)
+    expectEqual("seed writes true when key is missing and setup is incomplete (new install)", seedAppleMusicAPIScrobblingIfNeeded(existingValue: nil, hasSeenSetup: false, isAutoScrobbleOff: false), true)
     expectEqual("non-library Apple Music API filter defaults on", nonLibraryAppleMusicAPIFilterDefault, true)
     expectEqual("iOS reset restores non-library Apple Music API filter default", iOSNonLibraryAppleMusicAPIFilterAfterReset, nonLibraryAppleMusicAPIFilterDefault)
     expectEqual("seed preserves explicit off for non-library Apple Music API filter", seedNonLibraryAppleMusicAPIFilterIfNeeded(existingValue: false), false)

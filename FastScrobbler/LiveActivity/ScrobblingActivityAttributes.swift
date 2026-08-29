@@ -11,6 +11,7 @@ struct ScrobblingActivityAttributes: ActivityAttributes {
         var title: String?
         var lastEventAt: Date
         var isActivelyScrobbling: Bool
+        var isCompact: Bool = false
     }
 
     var appName: String = "FastScrobbler"

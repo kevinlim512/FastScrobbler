@@ -24,8 +24,51 @@ let projectDirectory = scriptsDirectory.deletingLastPathComponent()
 let sharedSources = [
     projectDirectory
         .appendingPathComponent("FastScrobbler", isDirectory: true)
+        .appendingPathComponent("Models", isDirectory: true)
+        .appendingPathComponent("Track.swift"),
+    projectDirectory
+        .appendingPathComponent("FastScrobbler", isDirectory: true)
+        .appendingPathComponent("LastFM", isDirectory: true)
+        .appendingPathComponent("LastFMClient.swift"),
+    projectDirectory
+        .appendingPathComponent("FastScrobbler", isDirectory: true)
+        .appendingPathComponent("LastFMSecrets.swift"),
+    projectDirectory
+        .appendingPathComponent("FastScrobbler", isDirectory: true)
+        .appendingPathComponent("ListenBrainz", isDirectory: true)
+        .appendingPathComponent("ListenBrainzClient.swift"),
+    projectDirectory
+        .appendingPathComponent("FastScrobbler", isDirectory: true)
+        .appendingPathComponent("ListenBrainz", isDirectory: true)
+        .appendingPathComponent("ListenBrainzAuthManager.swift"),
+    projectDirectory
+        .appendingPathComponent("FastScrobbler", isDirectory: true)
+        .appendingPathComponent("ListenBrainz", isDirectory: true)
+        .appendingPathComponent("ListenBrainzSessionStore.swift"),
+    projectDirectory
+        .appendingPathComponent("FastScrobbler", isDirectory: true)
         .appendingPathComponent("Scrobble", isDirectory: true)
-        .appendingPathComponent("RelativeScrobbleTimeFormatter.swift")
+        .appendingPathComponent("ScrobbleService.swift"),
+    projectDirectory
+        .appendingPathComponent("FastScrobbler", isDirectory: true)
+        .appendingPathComponent("Scrobble", isDirectory: true)
+        .appendingPathComponent("RelativeScrobbleTimeFormatter.swift"),
+    projectDirectory
+        .appendingPathComponent("FastScrobbler", isDirectory: true)
+        .appendingPathComponent("Scrobble", isDirectory: true)
+        .appendingPathComponent("ScrobbleBacklog.swift"),
+    projectDirectory
+        .appendingPathComponent("FastScrobbler", isDirectory: true)
+        .appendingPathComponent("Scrobble", isDirectory: true)
+        .appendingPathComponent("ScrobbleLogStore.swift"),
+    projectDirectory
+        .appendingPathComponent("FastScrobbler", isDirectory: true)
+        .appendingPathComponent("Scrobble", isDirectory: true)
+        .appendingPathComponent("ManualScrobbleError.swift"),
+    projectDirectory
+        .appendingPathComponent("FastScrobbler", isDirectory: true)
+        .appendingPathComponent("Scrobble", isDirectory: true)
+        .appendingPathComponent("ScrobbleSkipReason.swift")
 ]
 
 let temporaryDirectory = fileManager.temporaryDirectory
@@ -52,7 +95,9 @@ if compileStatus != 0 {
     exit(compileStatus)
 }
 
-let testStatus = try run(executable.path, [])
+let passthroughArgs = Array(CommandLine.arguments.dropFirst())
+let testStatus = try run(executable.path, passthroughArgs)
 if testStatus != 0 {
     exit(testStatus)
 }
+

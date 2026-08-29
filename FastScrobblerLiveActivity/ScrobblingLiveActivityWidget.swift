@@ -44,26 +44,43 @@ private struct LockScreenView: View {
             HStack {
                 HStack(spacing: 6) {
                     Image(systemName: "music.note.arrow.trianglehead.clockwise")
-                    Text("FastScrobbler")
+                        .font(.headline)
+                    if state.isCompact {
+                        Group {
+                            if let artist = state.artist, let title = state.title, !artist.isEmpty, !title.isEmpty {
+                                Text("\(artist) - \(title)")
+                            } else if let title = state.title, !title.isEmpty {
+                                Text(title)
+                            } else {
+                                Text("Not Playing")
+                            }
+                        }
+                        .font(.subheadline)
+                    } else {
+                        Text("FastScrobbler")
+                            .font(.headline)
+                    }
                 }
-                .font(.headline)
+                .lineLimit(1)
                 Spacer()
             }
 
-            if let artist = state.artist, let title = state.title {
-                Text("\(artist) - \(title)")
-                    .font(.subheadline)
-                    .lineLimit(1)
-            } else {
-                Text("No track")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-            }
+            if !state.isCompact {
+                if let artist = state.artist, let title = state.title {
+                    Text("\(artist) - \(title)")
+                        .font(.subheadline)
+                        .lineLimit(1)
+                } else {
+                    Text("No track")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
 
-            Text("If the track isn’t updating, tap to open the app")
-                .font(.caption2)
-                .foregroundColor(.secondary)
-                .lineLimit(1)
+                Text("If the track isn’t updating, tap to open the app")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                    .lineLimit(1)
+            }
         }
         .padding(contentInsets)
     }

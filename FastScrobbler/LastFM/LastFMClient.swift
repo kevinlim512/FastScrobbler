@@ -37,9 +37,14 @@ struct LastFMClient {
             case .httpStatus(let code, _):
                 return code == 408 || code == 425 || code == 429 || (500...599).contains(code)
             case .apiError(let code, _):
+                // Retryable Last.fm API errors:
+                // 8: Operation failed - Most errors; try again.
+                // 11: Service Offline - This service is temporarily offline.
+                // 16: Service Unavailable - Try again later.
+                // 29: Rate limit exceeded.
                 return code == 8 || code == 11 || code == 16 || code == 29
-            default:
-                return true
+            case .missingApiKey, .missingApiSecret, .missingSessionKey, .invalidBaseURL, .invalidRequestURL, .invalidResponse:
+                return false
             }
         }
     }
@@ -65,17 +70,6 @@ struct LastFMClient {
             throw ClientError.invalidBaseURL
         }
         self.baseURL = baseURL
-    }
-
-    func getToken() async throws -> String {
-        let json = try await signedCall(
-            method: "auth.getToken",
-            sessionKey: nil,
-            params: [:],
-            httpMethod: "GET"
-        )
-        if let token = json["token"] as? String { return token }
-        throw ClientError.invalidResponse
     }
 
     func getSession(token: String) async throws -> String {
@@ -141,6 +135,27 @@ struct LastFMClient {
         try validateScrobbleAccepted(json)
     }
 
+    func scrobbleBatch(items: [(track: Track, startTimestamp: Int)], sessionKey: String) async throws {
+        guard !items.isEmpty else { return }
+        for chunk in stride(from: 0, to: items.count, by: 50).map({ Array(items[$0..<min($0 + 50, items.count)]) }) {
+            var params: [String: String] = [:]
+            for (index, item) in chunk.enumerated() {
+                let i = "[\(index)]"
+                params["artist\(i)"] = item.track.artist
+                params["track\(i)"] = item.track.title
+                params["timestamp\(i)"] = String(item.startTimestamp)
+                applyOptionalTrackMetadata(from: item.track, to: &params, indexSuffix: i)
+            }
+            let json = try await signedCall(
+                method: "track.scrobble",
+                sessionKey: sessionKey,
+                params: params,
+                httpMethod: "POST"
+            )
+            try validateScrobbleAccepted(json)
+        }
+    }
+
     func love(track: Track, sessionKey: String) async throws {
         let params: [String: String] = [
             "artist": track.artist,
@@ -154,15 +169,15 @@ struct LastFMClient {
         )
     }
 
-    private func applyOptionalTrackMetadata(from track: Track, to params: inout [String: String]) {
+    private func applyOptionalTrackMetadata(from track: Track, to params: inout [String: String], indexSuffix: String = "") {
         if let album = normalized(track.album) {
-            params["album"] = album
+            params["album\(indexSuffix)"] = album
         }
         if let albumArtist = Track.albumArtistForScrobbleMetadata(track.albumArtist) {
-            params["albumArtist"] = albumArtist
+            params["albumArtist\(indexSuffix)"] = albumArtist
         }
         if let durationSeconds = track.durationSeconds, durationSeconds > 0 {
-            params["duration"] = String(Int(durationSeconds.rounded()))
+            params["duration\(indexSuffix)"] = String(Int(durationSeconds.rounded()))
         }
     }
 

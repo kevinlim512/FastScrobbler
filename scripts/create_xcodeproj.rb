@@ -45,6 +45,9 @@ CRASHLYTICS_SCRIPT_INPUT_PATHS = [
   "${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${PRODUCT_NAME}.debug.dylib",
   "${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Info.plist",
   "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/GoogleService-Info.plist",
+  "$(SRCROOT)/GoogleService-Info.plist",
+  "$(SRCROOT)/FastScrobbler/GoogleService-Info.plist",
+  "$(SRCROOT)/FastScrobbler/Resources/GoogleService-Info.plist",
   "$(TARGET_BUILD_DIR)/$(EXECUTABLE_PATH)",
 ].freeze
 IOS_CRASHLYTICS_SCRIPT_INPUT_PATHS = [
@@ -52,26 +55,82 @@ IOS_CRASHLYTICS_SCRIPT_INPUT_PATHS = [
   *CRASHLYTICS_SCRIPT_INPUT_PATHS,
 ].freeze
 CRASHLYTICS_SCRIPT = <<~SCRIPT.chomp
-  if [ ! -d "${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}" ]; then
+  if [ -z "${DWARF_DSYM_FILE_NAME}" ] || [ ! -d "${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}" ]; then
     echo "Skipping Crashlytics symbol upload: dSYM not found for ${CONFIGURATION}."
     exit 0
   fi
-  "${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run"
+
+  gsp_path=""
+  if [ -f "${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/GoogleService-Info.plist" ]; then
+    gsp_path="${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/GoogleService-Info.plist"
+  elif [ -f "${SRCROOT}/GoogleService-Info.plist" ]; then
+    gsp_path="${SRCROOT}/GoogleService-Info.plist"
+  elif [ -f "${SRCROOT}/FastScrobbler/Resources/GoogleService-Info.plist" ]; then
+    gsp_path="${SRCROOT}/FastScrobbler/Resources/GoogleService-Info.plist"
+  elif [ -f "${SRCROOT}/FastScrobbler/GoogleService-Info.plist" ]; then
+    gsp_path="${SRCROOT}/FastScrobbler/GoogleService-Info.plist"
+  fi
+
+  if [ -z "${gsp_path}" ]; then
+    echo "Skipping Crashlytics symbol upload: GoogleService-Info.plist not found."
+    exit 0
+  fi
+
+  if ! grep -q "<key>GOOGLE_APP_ID</key>" "${gsp_path}" || grep -q "YOUR_GOOGLE_APP_ID" "${gsp_path}"; then
+    echo "Skipping Crashlytics symbol upload: GOOGLE_APP_ID not configured in GoogleService-Info.plist."
+    exit 0
+  fi
+
+  crashlytics_dir="${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics"
+  if [ -f "${crashlytics_dir}/run" ]; then
+    "${crashlytics_dir}/run" -gsp "${gsp_path}"
+  else
+    echo "Skipping Crashlytics symbol upload: run script not found."
+  fi
 SCRIPT
 IOS_CRASHLYTICS_SCRIPT = <<~SCRIPT.chomp
-  if [ ! -d "${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}" ]; then
+  if [ -z "${DWARF_DSYM_FILE_NAME}" ] || [ ! -d "${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}" ]; then
     echo "Skipping Crashlytics symbol upload: dSYM not found for ${CONFIGURATION}."
+    exit 0
+  fi
+
+  gsp_path=""
+  if [ -f "${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/GoogleService-Info.plist" ]; then
+    gsp_path="${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/GoogleService-Info.plist"
+  elif [ -f "${SRCROOT}/GoogleService-Info.plist" ]; then
+    gsp_path="${SRCROOT}/GoogleService-Info.plist"
+  elif [ -f "${SRCROOT}/FastScrobbler/Resources/GoogleService-Info.plist" ]; then
+    gsp_path="${SRCROOT}/FastScrobbler/Resources/GoogleService-Info.plist"
+  elif [ -f "${SRCROOT}/FastScrobbler/GoogleService-Info.plist" ]; then
+    gsp_path="${SRCROOT}/FastScrobbler/GoogleService-Info.plist"
+  fi
+
+  if [ -z "${gsp_path}" ]; then
+    echo "Skipping Crashlytics symbol upload: GoogleService-Info.plist not found."
+    exit 0
+  fi
+
+  if ! grep -q "<key>GOOGLE_APP_ID</key>" "${gsp_path}" || grep -q "YOUR_GOOGLE_APP_ID" "${gsp_path}"; then
+    echo "Skipping Crashlytics symbol upload: GOOGLE_APP_ID not configured in GoogleService-Info.plist."
     exit 0
   fi
 
   crashlytics_dir="${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics"
   if [ "${PLATFORM_NAME}" = "iphoneos" ]; then
-    "${crashlytics_dir}/upload-symbols" \
-      -gsp "${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/GoogleService-Info.plist" \
-      -p ios \
-      -- "${DWARF_DSYM_FOLDER_PATH}"
+    if [ -f "${crashlytics_dir}/upload-symbols" ]; then
+      "${crashlytics_dir}/upload-symbols" \
+        -gsp "${gsp_path}" \
+        -p ios \
+        -- "${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}"
+    else
+      echo "Skipping Crashlytics symbol upload: upload-symbols binary not found."
+    fi
   else
-    "${crashlytics_dir}/run"
+    if [ -f "${crashlytics_dir}/run" ]; then
+      "${crashlytics_dir}/run" -gsp "${gsp_path}"
+    else
+      echo "Skipping Crashlytics symbol upload: run script not found."
+    fi
   fi
 SCRIPT
 
@@ -206,17 +265,24 @@ SHARED_CORE_SOURCES = %w[
   FastScrobbler/LastFM/LastFMAuthManager.swift
   FastScrobbler/LastFM/LastFMClient.swift
   FastScrobbler/LastFM/LastFMSessionStore.swift
+  FastScrobbler/ListenBrainz/ListenBrainzAuthManager.swift
+  FastScrobbler/ListenBrainz/ListenBrainzClient.swift
+  FastScrobbler/ListenBrainz/ListenBrainzConnectSheet.swift
+  FastScrobbler/ListenBrainz/ListenBrainzSessionStore.swift
   FastScrobbler/LastFMSecrets.swift
   FastScrobbler/Models/Track.swift
   FastScrobbler/ProPurchaseManager.swift
+  FastScrobbler/Scrobble/LivePlaybackSnapshot.swift
   FastScrobbler/Scrobble/ScrobbleBacklog.swift
   FastScrobbler/Scrobble/ScrobbleEngine.swift
   FastScrobbler/Scrobble/ManualScrobbleError.swift
+  FastScrobbler/Scrobble/ScrobbleService.swift
   FastScrobbler/Scrobble/ScrobbleSkipReason.swift
   FastScrobbler/Scrobble/ScrobbleLogStore.swift
   FastScrobbler/Scrobble/RelativeScrobbleTimeFormatter.swift
   FastScrobbler/SettingsView.swift
   FastScrobbler/WhatsNewRelease.swift
+  FastScrobbler/ICloudSyncCoordinator.swift
 ].freeze
 
 IOS_APP_SOURCES = (SHARED_CORE_SOURCES + %w[
@@ -225,6 +291,7 @@ IOS_APP_SOURCES = (SHARED_CORE_SOURCES + %w[
   FastScrobbler/BackgroundTaskManager.swift
   FastScrobbler/Intents/ControlWidgetStatus.swift
   FastScrobbler/Intents/ScrobbleShortcutsIntents.swift
+  FastScrobbler/FullscreenNowPlayingView.swift
   FastScrobbler/LiveActivity/LiveActivityManager.swift
   FastScrobbler/LiveActivity/ScrobblingActivityAttributes.swift
   FastScrobbler/ManualScrobbleView.swift
@@ -245,13 +312,19 @@ MAC_APP_SOURCES = %w[
   FastScrobbler/LastFM/LastFMAuthManager.swift
   FastScrobbler/LastFM/LastFMClient.swift
   FastScrobbler/LastFM/LastFMSessionStore.swift
+  FastScrobbler/ListenBrainz/ListenBrainzAuthManager.swift
+  FastScrobbler/ListenBrainz/ListenBrainzClient.swift
+  FastScrobbler/ListenBrainz/ListenBrainzConnectSheet.swift
+  FastScrobbler/ListenBrainz/ListenBrainzSessionStore.swift
   FastScrobbler/LastFMSecrets.swift
   FastScrobbler/Models/Track.swift
   FastScrobbler/ProPurchaseManager.swift
   FastScrobbler/RemoveBracketsSettingsPage.swift
+  FastScrobbler/Scrobble/LivePlaybackSnapshot.swift
   FastScrobbler/Scrobble/ScrobbleBacklog.swift
   FastScrobbler/Scrobble/ScrobbleEngine.swift
   FastScrobbler/Scrobble/ManualScrobbleError.swift
+  FastScrobbler/Scrobble/ScrobbleService.swift
   FastScrobbler/Scrobble/ScrobbleSkipReason.swift
   FastScrobbler/Scrobble/ScrobbleLogStore.swift
   FastScrobbler/Scrobble/RelativeScrobbleTimeFormatter.swift
@@ -269,6 +342,7 @@ MAC_APP_SOURCES = %w[
   FastScrobblerMac/PlaybackHistoryImporter.swift
   FastScrobblerMac/SettingsView.swift
   FastScrobblerMac/SetupHelpView.swift
+  FastScrobblerMac/ListenBrainzConnectView.swift
 ].freeze
 
 LIVE_ACTIVITY_SOURCES = %w[
@@ -282,6 +356,8 @@ CONTROL_SHARED_SOURCES = %w[
   FastScrobbler/Intents/ScrobbleShortcutsIntents.swift
   FastScrobbler/LastFM/LastFMClient.swift
   FastScrobbler/LastFM/LastFMSessionStore.swift
+  FastScrobbler/ListenBrainz/ListenBrainzClient.swift
+  FastScrobbler/ListenBrainz/ListenBrainzSessionStore.swift
   FastScrobbler/LastFMSecrets.swift
   FastScrobbler/Models/Track.swift
   FastScrobbler/NowPlaying/AppleMusicFavorites.swift
@@ -289,6 +365,7 @@ CONTROL_SHARED_SOURCES = %w[
   FastScrobbler/NowPlaying/ListeningHistoryScanService.swift
   FastScrobbler/NowPlaying/PlaybackHistoryImporter.swift
   FastScrobbler/Scrobble/ScrobbleBacklog.swift
+  FastScrobbler/Scrobble/ScrobbleService.swift
   FastScrobbler/Scrobble/ScrobbleLogStore.swift
 ].freeze
 
@@ -308,22 +385,24 @@ LISTENING_HISTORY_CONTROL_SOURCES = (CONTROL_SHARED_SOURCES + %w[
   FastScrobblerListeningHistoryControl/ScanListeningHistoryControlWidget.swift
 ]).freeze
 
-IOS_APP_RESOURCES = %w[
-  AppIcon.icon
-  FastScrobbler/Resources/Assets.xcassets
-  FastScrobbler/Resources/LaunchScreen.storyboard
-] + localized_resources("FastScrobbler")
-IOS_APP_RESOURCES.freeze
+IOS_APP_RESOURCES = (
+  %w[
+    AppIcon.icon
+    FastScrobbler/Resources/Assets.xcassets
+    FastScrobbler/Resources/LaunchScreen.storyboard
+  ] + (File.exist?("GoogleService-Info.plist") ? ["GoogleService-Info.plist"] : []) + localized_resources("FastScrobbler")
+).freeze
 
-MAC_APP_RESOURCES = %w[
-  AppIcon.icon
-  FastScrobbler/Resources/Assets.xcassets
-] + localized_resources("FastScrobblerMac")
-MAC_APP_RESOURCES.freeze
+MAC_APP_RESOURCES = (
+  %w[
+    AppIcon.icon
+    FastScrobbler/Resources/Assets.xcassets
+  ] + (File.exist?("GoogleService-Info.plist") ? ["GoogleService-Info.plist"] : []) + localized_resources("FastScrobblerMac")
+).freeze
 
-ROOT_FILE_PATHS = %w[
-  AppIcon.icon
-].freeze
+ROOT_FILE_PATHS = (
+  %w[AppIcon.icon] + (File.exist?("GoogleService-Info.plist") ? ["GoogleService-Info.plist"] : [])
+).freeze
 
 ROOT_GROUP_PATHS = %w[
   FastScrobbler
@@ -738,9 +817,6 @@ TARGET_DEFINITIONS.each do |definition|
   Array(definition[:package_products]).each do |product_name|
     add_package_product_dependency(target, firebase_package, product_name)
   end
-  Array(definition[:shell_script_build_phases]).each do |phase_definition|
-    add_shell_script_build_phase(target, phase_definition)
-  end
   targets[definition[:name]] = target
 end
 
@@ -760,6 +836,13 @@ embedded_extensions.each do |extension_target|
   ios_app.add_dependency(extension_target)
   build_file = embed_phase.add_file_reference(extension_target.product_reference, true)
   build_file.settings = { "ATTRIBUTES" => %w[CodeSignOnCopy RemoveHeadersOnCopy] }
+end
+
+TARGET_DEFINITIONS.each do |definition|
+  target = targets.fetch(definition[:name])
+  Array(definition[:shell_script_build_phases]).each do |phase_definition|
+    add_shell_script_build_phase(target, phase_definition)
+  end
 end
 
 project.save
