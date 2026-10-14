@@ -244,6 +244,7 @@ enum AppTheme: String, CaseIterable, Identifiable {
 
 enum ButtonTheme: String, CaseIterable, Identifiable {
     case colorful
+    case red
     case monochrome
 
     var id: String {

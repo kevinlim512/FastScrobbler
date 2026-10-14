@@ -159,10 +159,12 @@ final class ListeningHistoryReviewStore: ObservableObject {
 
             entries = normalizedEntries(Array(map.values))
 
-            do {
-                try persist(entries, preferredURL: sharedURL, fallbackURL: legacyURL)
-            } catch {
-                logger.warning("failed to persist merged review queue: \(error.localizedDescription, privacy: .public)")
+            if !legacyEntries.isEmpty {
+                do {
+                    try persist(entries, preferredURL: sharedURL, fallbackURL: legacyURL)
+                } catch {
+                    logger.warning("failed to persist merged review queue: \(error.localizedDescription, privacy: .public)")
+                }
             }
         } else {
             entries = normalizedEntries(readEntries(from: legacyURL))
@@ -690,11 +692,13 @@ final class ScrobbleLogStore: ObservableObject {
 
             entries = normalizedEntries(Array(map.values), now: Date())
 
-            // Persist into the shared container so app + extensions share the same dedupe history.
-            do {
-                try persist(entries, preferredURL: sharedURL, fallbackURL: legacyURL)
-            } catch {
-                logger.warning("failed to persist merged scrobble log: \(error.localizedDescription, privacy: .public)")
+            if !legacyEntries.isEmpty {
+                // Persist into the shared container so app + extensions share the same dedupe history.
+                do {
+                    try persist(entries, preferredURL: sharedURL, fallbackURL: legacyURL)
+                } catch {
+                    logger.warning("failed to persist merged scrobble log: \(error.localizedDescription, privacy: .public)")
+                }
             }
         } else {
             entries = normalizedEntries(readEntries(from: legacyURL), now: Date())

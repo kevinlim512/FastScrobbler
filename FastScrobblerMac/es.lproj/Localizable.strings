@@ -8,7 +8,7 @@
 "Allow Music Control" = "Permitir controlar Música";
 "Avoids sending the same playback session to Last.fm more than once within a short time window." = "Evita enviar la misma sesión de reproducción a Last.fm más de una vez dentro de un corto intervalo de tiempo.";
 "Avoids sending the same playback session more than once within a short time window." = "Evita enviar la misma sesión de reproducción más de una vez dentro de un corto intervalo de tiempo.";
-"Beta feature: shows scrobbling status on your Lock Screen and Dynamic Island." = "Función beta: muestra el estado del scrobbling en la pantalla de bloqueo y en Dynamic Island.";
+"Shows scrobbling status on your Lock Screen and Dynamic Island." = "Muestra el estado del scrobbling en la pantalla de bloqueo y en Dynamic Island.";
 "Signed in" = "Conectado";
 "Done" = "Listo";
 "Duration: %@s | Playback: %@s" = "Duración: %1$@ s | Reproducción: %2$@ s";
@@ -173,7 +173,8 @@
 "Show Live Activity" = "Mostrar Actividad en Vivo";
 "Button Theme" = "Tema de los botones";
 "Colourful" = "Colorido";
-"Monochrome" = "Monocromo";
+"Red" = "Rojo";
+"Greyscale" = "Escala de grises";
 "Sign In" = "Iniciar sesión";
 "Sign In to Last.fm" = "Iniciar sesión en Last.fm";
 "Sign in to start scrobbling to your Last.fm account." = "Inicia sesión para empezar a hacer scrobble en tu cuenta de Last.fm.";
@@ -201,7 +202,7 @@
 "When macOS asks to let FastScrobbler control Music, click Allow. This lets FastScrobbler read what’s playing for scrobbling." = "Cuando macOS te pida permitir que FastScrobbler controle Música, pulsa Permitir. Esto permite que FastScrobbler lea lo que se está reproduciendo para hacer scrobbling.";
 "You’re signed out of Last.fm." = "Has cerrado sesión en Last.fm.";
 "interrupted" = "interrumpido";
-"loved" = "loved";
+"loved" = "favorita";
 "now playing sent" = "en reproducción enviado";
 "paused" = "pausado";
 "played %llds" = "reproducido %lld s";
@@ -348,3 +349,7 @@
 "Apple Music recent tracks were initialized from your current history. Future scans will only add newer plays to the review list." = "Las pistas recientes de Apple Music se inicializaron a partir de tu historial actual. Los próximos escaneos solo añadirán las reproducciones más recientes a la lista de revisión.";
 "Apple Music recent tracks were initialized from your current history. Future scans will only import newer plays." = "Las pistas recientes de Apple Music se inicializaron a partir de tu historial actual. Los próximos escaneos solo importarán las reproducciones más recientes.";
 "No new library plays found. Apple Music recent tracks could not be checked because the Apple Music API request failed." = "No se han encontrado reproducciones nuevas en la biblioteca. No se han podido comprobar las pistas recientes de Apple Music porque ha fallado la solicitud a la API de Apple Music.";
+"Apply to" = "Aplicar a";
+"Scrobble Again" = "Volver a hacer scrobble";
+"Show Setup" = "Mostrar configuración";
+"You're signed out of Last.fm and ListenBrainz." = "Has cerrado sesión en Last.fm y ListenBrainz.";

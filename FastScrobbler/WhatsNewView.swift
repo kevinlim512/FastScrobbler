@@ -17,6 +17,21 @@ struct WhatsNewView: View {
 
     private let currentSections: [VersionSection] = [
         VersionSection(
+            id: "7.1",
+            version: "7.1",
+            features: [
+                Feature(
+                    systemImage: "paintpalette",
+                    title: "New Red button theme option",
+                    boldPrefix: nil,
+                    showsProBadge: false
+                )
+            ]
+        )
+    ]
+
+    private let previousSections: [VersionSection] = [
+        VersionSection(
             id: "7.0",
             version: "7.0",
             features: [
@@ -51,10 +66,7 @@ struct WhatsNewView: View {
                     showsProBadge: false
                 )
             ]
-        )
-    ]
-
-    private let previousSections: [VersionSection] = [
+        ),
         VersionSection(
             id: "6.2",
             version: "6.2",
@@ -85,7 +97,7 @@ struct WhatsNewView: View {
                 ),
                 Feature(
                     systemImage: "paintpalette",
-                    title: "Choose between colourful and monochrome button themes",
+                    title: "Choose between colourful and greyscale button themes",
                     boldPrefix: nil,
                     showsProBadge: false
                 )

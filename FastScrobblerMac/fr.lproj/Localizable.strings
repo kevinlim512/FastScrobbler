@@ -8,7 +8,7 @@
 "Allow Music Control" = "Autoriser le contrôle de Musique";
 "Avoids sending the same playback session to Last.fm more than once within a short time window." = "Empêche d’envoyer la même session de lecture à Last.fm plus d’une fois dans un court laps de temps.";
 "Avoids sending the same playback session more than once within a short time window." = "Empêche d’envoyer la même session de lecture plus d’une fois dans un court laps de temps.";
-"Beta feature: shows scrobbling status on your Lock Screen and Dynamic Island." = "Fonction bêta : affiche l’état du scrobbling sur l’écran verrouillé et la Dynamic Island.";
+"Shows scrobbling status on your Lock Screen and Dynamic Island." = "Affiche l’état du scrobbling sur l’écran verrouillé et la Dynamic Island.";
 "Signed in" = "Connecté";
 "Done" = "Terminé";
 "Duration: %@s | Playback: %@s" = "Durée : %1$@ s | Lecture : %2$@ s";
@@ -160,7 +160,7 @@
 "Scrobbled" = "Scrobblé";
 "Scrobbled: %@ — %@" = "Scrobblé : %@ — %@";
 "Scrobbling from Listening History may be affected when AutoMix is on." = "Le scrobbling depuis l’historique d’écoute peut être affecté lorsque AutoMix est activé.";
-"Scrobbling…" = "Scrobbling…";
+"Scrobbling…" = "Scrobble en cours…";
 "Questions or Bug Reports?" = "Des questions ou des bugs à signaler ?";
 "[Submit a post to r/FastScrobbler](https://www.reddit.com/r/FastScrobbler/submit/), and FastScrobbler will respond to your post." = "[Publiez un post sur r/FastScrobbler](https://www.reddit.com/r/FastScrobbler/submit/), et FastScrobbler répondra à votre publication.";
 "Submit a post to r/FastScrobbler, and FastScrobbler will respond to your post." = "Publiez un post sur r/FastScrobbler, et FastScrobbler répondra à votre publication.";
@@ -172,7 +172,8 @@
 "Show Live Activity" = "Afficher l’Activité en direct";
 "Button Theme" = "Thème des boutons";
 "Colourful" = "Coloré";
-"Monochrome" = "Monochrome";
+"Red" = "Rouge";
+"Greyscale" = "Niveaux de gris";
 "Sign In" = "Se connecter";
 "Sign In to Last.fm" = "Se connecter à Last.fm";
 "Sign in to start scrobbling to your Last.fm account." = "Connectez-vous pour commencer à scrobbler sur votre compte Last.fm.";
@@ -348,3 +349,7 @@
 "Apple Music recent tracks were initialized from your current history. Future scans will only add newer plays to the review list." = "Les morceaux récents d'Apple Music ont été initialisés à partir de votre historique actuel. Les prochaines analyses n'ajouteront que les lectures plus récentes à la liste de révision.";
 "Apple Music recent tracks were initialized from your current history. Future scans will only import newer plays." = "Les morceaux récents d'Apple Music ont été initialisés à partir de votre historique actuel. Les prochaines analyses n'importeront que les lectures plus récentes.";
 "No new library plays found. Apple Music recent tracks could not be checked because the Apple Music API request failed." = "Aucune nouvelle lecture de bibliothèque trouvée. Les morceaux récents d'Apple Music n'ont pas pu être vérifiés car la requête d'API Apple Music a échoué.";
+"Apply to" = "Appliquer à";
+"Scrobble Again" = "Scrobbler à nouveau";
+"Show Setup" = "Afficher la configuration";
+"You're signed out of Last.fm and ListenBrainz." = "Vous êtes déconnecté de Last.fm et ListenBrainz.";

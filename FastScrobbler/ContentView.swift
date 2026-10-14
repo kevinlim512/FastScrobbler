@@ -92,6 +92,26 @@ struct ContentView: View {
             light: UIColor(white: 0.72, alpha: 1.0),
             dark: UIColor(white: 0.42, alpha: 1.0)
         )
+        static let red = dynamicColor(
+            light: UIColor(red: 0.88, green: 0.26, blue: 0.28, alpha: 1.0),
+            dark: UIColor(red: 0.94, green: 0.38, blue: 0.40, alpha: 1.0)
+        )
+        static let redForeground = dynamicColor(
+            light: UIColor(red: 0.54, green: 0.16, blue: 0.18, alpha: 1.0),
+            dark: UIColor(red: 0.96, green: 0.82, blue: 0.84, alpha: 1.0)
+        )
+        static let redBorder = dynamicColor(
+            light: UIColor(red: 0.78, green: 0.24, blue: 0.26, alpha: 1.0),
+            dark: UIColor(red: 0.86, green: 0.34, blue: 0.36, alpha: 1.0)
+        )
+        static let redFill = dynamicColor(
+            light: UIColor(red: 0.95, green: 0.82, blue: 0.84, alpha: 0.20),
+            dark: UIColor(red: 0.56, green: 0.24, blue: 0.26, alpha: 0.30)
+        )
+        static let redDisabledFill = dynamicColor(
+            light: UIColor(red: 0.95, green: 0.82, blue: 0.84, alpha: 0.10),
+            dark: UIColor(red: 0.56, green: 0.24, blue: 0.26, alpha: 0.15)
+        )
         static let accountBorder = dynamicColor(
             light: UIColor(red: 0.24, green: 0.48, blue: 0.72, alpha: 1.0),
             dark: UIColor(red: 0.30, green: 0.56, blue: 0.78, alpha: 1.0)
@@ -323,17 +343,36 @@ struct ContentView: View {
         selectedButtonTheme == .monochrome
     }
 
+    private var usesRedButtons: Bool {
+        selectedButtonTheme == .red
+    }
+
     private func actionButtonForeground(_ defaultColor: Color) -> Color {
-        usesMonochromeButtons ? ActionButtonPalette.monochromeForeground : defaultColor
+        if usesMonochromeButtons {
+            return ActionButtonPalette.monochromeForeground
+        }
+        if usesRedButtons {
+            return ActionButtonPalette.redForeground
+        }
+        return defaultColor
     }
 
     private func actionButtonTint(_ defaultColor: Color) -> Color {
-        usesMonochromeButtons ? ActionButtonPalette.monochromeFill : defaultColor
+        if usesMonochromeButtons {
+            return ActionButtonPalette.monochromeFill
+        }
+        if usesRedButtons {
+            return ActionButtonPalette.red
+        }
+        return defaultColor
     }
 
     private func actionButtonFill(_ defaultColor: Color, disabled: Bool = false) -> Color {
         if usesMonochromeButtons {
             return disabled ? ActionButtonPalette.monochromeDisabledFill : ActionButtonPalette.monochromeFill
+        }
+        if usesRedButtons {
+            return disabled ? ActionButtonPalette.redDisabledFill : ActionButtonPalette.redFill
         }
         return defaultColor
     }
@@ -341,6 +380,9 @@ struct ContentView: View {
     private func actionButtonBorder(_ defaultColor: Color, disabled: Bool = false) -> Color {
         if usesMonochromeButtons {
             return ActionButtonPalette.monochromeForeground.opacity(disabled ? 0.35 : 0.85)
+        }
+        if usesRedButtons {
+            return disabled ? ActionButtonPalette.redBorder.opacity(0.35) : ActionButtonPalette.redBorder
         }
         return disabled ? .secondary.opacity(0.35) : defaultColor
     }
@@ -467,6 +509,14 @@ struct ContentView: View {
             }
             engineStatusText(engine.statusText)
                 .font(.footnote)
+            if !engineStatusPills.isEmpty {
+                HStack(spacing: 8) {
+                    ForEach(engineStatusPills, id: \.self) { pill in
+                        statusPillView(pill)
+                    }
+                }
+                .padding(.top, 2)
+            }
         }
         .animation(.easeInOut(duration: 0.3), value: isConnected)
         .animation(.easeInOut(duration: 0.3), value: engine.statusText)
@@ -626,15 +676,15 @@ struct ContentView: View {
                     } label: {
                         Label(NSLocalizedString("Sign In", comment: ""), systemImage: "person.crop.circle")
                             .font(.body.weight(.bold))
-                            .foregroundStyle(ActionButtonPalette.accountForeground)
+                            .foregroundStyle(actionButtonForeground(ActionButtonPalette.accountForeground))
                             .frame(maxWidth: .infinity, minHeight: actionButtonHeight)
                     }
                     .buttonStyle(.bordered)
                     .pillButtonBorder()
-                    .tint(ActionButtonPalette.account)
-                    .prominentButtonBackground(ActionButtonPalette.accountFill)
-                    .brightButtonBorder(ActionButtonPalette.accountBorder)
-                    .buttonGlow(ActionButtonPalette.account)
+                    .tint(actionButtonTint(ActionButtonPalette.account))
+                    .prominentButtonBackground(actionButtonFill(ActionButtonPalette.accountFill))
+                    .brightButtonBorder(actionButtonBorder(ActionButtonPalette.accountBorder))
+                    .buttonGlow(actionButtonTint(ActionButtonPalette.account))
                 } else {
                     Button {
                         Task { await engine.scrobbleNow(force: true) }
@@ -887,10 +937,16 @@ struct ContentView: View {
         return String(format: "%d:%02d", s / 60, s % 60)
     }
 
+    private var engineStatusPills: [String] {
+        ScrobbleEngine.statusPills(from: engine.statusText)
+    }
+
     private func engineStatusText(_ status: String) -> Text {
-        let parts = status
-            .split(separator: "|")
-            .map { $0.trimmingCharacters(in: .whitespaces) }
+        let parts = ScrobbleEngine.filteredStatusParts(from: status)
+
+        guard !parts.isEmpty else {
+            return Text("Engine: ")
+        }
 
         var text = Text("Engine: ")
         for (idx, part) in parts.enumerated() {
@@ -898,13 +954,30 @@ struct ContentView: View {
             let segment = Text(part)
             if part == NSLocalizedString("error scrobbling", comment: "") {
                 text = text + segment.fontWeight(.bold).foregroundColor(Color.accentColor)
-            } else if part == NSLocalizedString("now playing sent", comment: "") || part == NSLocalizedString("scrobbled", comment: "") {
-                text = text + segment.fontWeight(.bold)
             } else {
                 text = text + segment
             }
         }
         return text
+    }
+
+    @ViewBuilder
+    private func statusPillView(_ pill: String) -> some View {
+        let isScrobbled = ScrobbleEngine.isScrobbledStatus(pill)
+        let tint = isScrobbled ? Color.green : Color.secondary
+        Text(pill)
+            .font(.system(size: 11, weight: .bold))
+            .foregroundStyle(isScrobbled ? Color.green : Color.primary.opacity(0.85))
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(
+                Capsule()
+                    .fill(tint.opacity(0.16))
+            )
+            .overlay(
+                Capsule()
+                    .stroke(tint.opacity(0.4), lineWidth: 1)
+            )
     }
 
     private func presentSetupIfNeeded() {

@@ -261,7 +261,6 @@ private enum SyncedSettingsStore {
 
     static func captureLocalPayload(now: Date = Date()) -> Payload {
         let localMetadata = loadLocalMetadata()
-        let isFirstCapture = localMetadata.entries.isEmpty
         var existingByKey = Dictionary(uniqueKeysWithValues: localMetadata.entries.map { ($0.key, $0) })
 
         for definition in definitions {
@@ -386,6 +385,8 @@ final class ICloudSyncCoordinator: NSObject, ObservableObject {
     private var cloudPullTask: Task<Void, Never>?
     private var lastWrittenDataByFile: [String: Data] = [:]
 
+    private var cachedSyncDirectoryURL: URL?
+
     func startIfNeeded() async {
         await refreshStatus()
         guard isSyncEnabled else { return }
@@ -399,8 +400,13 @@ final class ICloudSyncCoordinator: NSObject, ObservableObject {
 
     func refreshStatus() async {
         isSyncEnabled = AppSettings.iCloudSyncEnabled()
-        isICloudAvailable = syncDirectoryURL() != nil
-        hasCloudData = cloudDataExists()
+        let directoryURL = await resolveSyncDirectoryURLInBackground()
+        isICloudAvailable = directoryURL != nil
+        if let directoryURL {
+            hasCloudData = await checkCloudDataExistsInBackground(directoryURL: directoryURL)
+        } else {
+            hasCloudData = false
+        }
     }
 
     func enableSync() async throws {
@@ -716,8 +722,38 @@ final class ICloudSyncCoordinator: NSObject, ObservableObject {
     }
 
     private func syncDirectoryURL() -> URL? {
-        FileManager.default.url(forUbiquityContainerIdentifier: ICloudSyncContainer.identifier)?
+        if let cached = cachedSyncDirectoryURL {
+            return cached
+        }
+        let url = FileManager.default.url(forUbiquityContainerIdentifier: ICloudSyncContainer.identifier)?
             .appendingPathComponent(ICloudSyncContainer.relativeDirectory, isDirectory: true)
+        cachedSyncDirectoryURL = url
+        return url
+    }
+
+    private func resolveSyncDirectoryURLInBackground() async -> URL? {
+        if let cached = cachedSyncDirectoryURL {
+            return cached
+        }
+        let url = await Task.detached(priority: .utility) {
+            FileManager.default.url(forUbiquityContainerIdentifier: ICloudSyncContainer.identifier)?
+                .appendingPathComponent(ICloudSyncContainer.relativeDirectory, isDirectory: true)
+        }.value
+        cachedSyncDirectoryURL = url
+        return url
+    }
+
+    private func checkCloudDataExistsInBackground(directoryURL: URL) async -> Bool {
+        await Task.detached(priority: .utility) {
+            for fileName in FileName.all {
+                let fileURL = directoryURL.appendingPathComponent(fileName)
+                let placeholderURL = directoryURL.appendingPathComponent("." + fileName + ".icloud")
+                if FileManager.default.fileExists(atPath: fileURL.path) || FileManager.default.fileExists(atPath: placeholderURL.path) {
+                    return true
+                }
+            }
+            return false
+        }.value
     }
 
     private func cloudDataExists() -> Bool {

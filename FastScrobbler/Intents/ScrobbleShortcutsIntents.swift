@@ -276,9 +276,10 @@ struct ScrobbleSongIntent: AppIntent {
         let scrobbleTrack = track.applyingProScrobblePreferences()
         let ts = max(1, Int(now.timeIntervalSince1970.rounded(.down)))
 
-        var activeServices: Set<ScrobbleService> = []
-        if sessionKey != nil { activeServices.insert(.lastfm) }
-        if listenBrainzToken != nil && !listenBrainzToken!.isEmpty { activeServices.insert(.listenbrainz) }
+        var configuredServices: Set<ScrobbleService> = []
+        if sessionKey != nil { configuredServices.insert(.lastfm) }
+        if listenBrainzToken != nil && !listenBrainzToken!.isEmpty { configuredServices.insert(.listenbrainz) }
+        let activeServices = configuredServices
 
         async let lastFMTask: (failed: Bool, error: Error?)? = {
             guard activeServices.contains(.lastfm), let sessionKey, let client = try? LastFMClient() else { return nil }

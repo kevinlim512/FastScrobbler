@@ -6,8 +6,8 @@
 "Account" = "Cuenta";
 "Avoids sending the same playback session to Last.fm more than once within a short time window." = "Evita enviar la misma sesión de reproducción a Last.fm más de una vez dentro de un corto intervalo de tiempo.";
 "Avoids sending the same playback session more than once within a short time window." = "Evita enviar la misma sesión de reproducción más de una vez dentro de un corto intervalo de tiempo.";
-"Retrieves up to 30 recently played songs via the Apple Music API, then adds them to the Listening History review list. Plays are recorded even when FastScrobbler is in the background.\n\nNote: playback timestamps aren’t provided by the API, so FastScrobbler assigns an estimated timestamp when the scrobble is submitted. Songs are recorded regardless of playback duration.\n\nWhen \"Auto-scrobble Listening History\" is off, Recently Played API songs are added to the Listening History review list instead of being submitted automatically." = "Recupera hasta 30 canciones reproducidas recientemente mediante la API de Apple Music y luego las añade a la lista de revisión del historial de reproducción. Las reproducciones se registran incluso cuando FastScrobbler está en segundo plano.\n\nNota: la API no proporciona las marcas de tiempo de reproducción, así que FastScrobbler asigna una marca de tiempo estimada cuando se envía el scrobble. Las canciones se registran independientemente de la duración de reproducción.\n\nCuando « Hacer scrobble automático del historial de reproducción » está desactivado, las canciones de la API de reproducidos recientemente se añaden a la lista de revisión del historial de reproducción en lugar de enviarse automáticamente.";
-"Beta feature: shows scrobbling status on your Lock Screen and Dynamic Island." = "Función beta: muestra el estado del scrobbling en la pantalla de bloqueo y en Dynamic Island.";
+"Retrieves up to 30 recently played songs via the Apple Music API, then adds them to the Listening History review list. Plays are recorded even when FastScrobbler is in the background.\n\nNote: playback timestamps aren’t provided by the API, so FastScrobbler assigns an estimated timestamp when the scrobble is submitted. Songs are recorded regardless of playback duration.\n\nWhen \"Auto-scrobble Listening History\" is off, Recently Played API songs are added to the Listening History review list instead of being submitted automatically." = "Recupera hasta 30 canciones reproducidas recientemente mediante la API de Apple Music y luego las añade a la lista de revisión del historial de reproducción. Las reproducciones se registran incluso cuando FastScrobbler está en segundo plano.\n\nNota: la API no proporciona las marcas de tiempo de reproducción, así que FastScrobbler asigna una marca de tiempo estimada cuando se envía el scrobble. Las canciones se registran independientemente de la duración de reproducción.\n\nCuando «Hacer scrobble automático del historial de reproducción» está desactivado, las canciones de la API de reproducidos recientemente se añaden a la lista de revisión del historial de reproducción en lugar de enviarse automáticamente.";
+"Shows scrobbling status on your Lock Screen and Dynamic Island." = "Muestra el estado del scrobbling en la pantalla de bloqueo y en Dynamic Island.";
 "Signed in" = "Conectado";
 "Done" = "Listo";
 "Dark" = "Oscuro";
@@ -221,7 +221,8 @@
 "App Theme" = "Tema de la app";
 "Button Theme" = "Tema de los botones";
 "Colourful" = "Colorido";
-"Monochrome" = "Monocromo";
+"Red" = "Rojo";
+"Greyscale" = "Escala de grises";
 "Background App Refresh" = "Actualización en segundo plano";
 "Live Activities" = "Actividades en Vivo";
 "Required to read Apple Music now-playing metadata." = "Requerido para leer la información de la reproducción actual en Apple Music.";
@@ -229,7 +230,7 @@
 "Add Shortcut actions and Control Center buttons to scrobble or control playback without opening the app." = "Añade acciones de Atajos y botones del Centro de control para hacer scrobble o controlar la reproducción sin abrir la app.";
 "Choose when a track scrobbles: 10%, 25%, 50% or 75% of the song duration." = "Elige cuándo hacer scrobble de una pista: al 10 %, 25 %, 50 % o 75 % de la duración de la canción.";
 "Auto-scrobble Listening History" = "Hacer scrobble automático del historial de reproducción";
-"Turn off \"Auto-scrobble Listening History\" to review items before submitting them." = "Desactiva « Hacer scrobble automático del historial de reproducción » para revisar los elementos antes de enviarlos.";
+"Turn off \"Auto-scrobble Listening History\" to review items before submitting them." = "Desactiva «Hacer scrobble automático del historial de reproducción» para revisar los elementos antes de enviarlos.";
 "Delete Selected" = "Eliminar seleccionados";
 "Delete Selected (%lld)" = "Eliminar seleccionados (%lld)";
 "Submit All" = "Enviar todo";
@@ -257,7 +258,7 @@
 "When macOS asks to let FastScrobbler control Music, click Allow. This lets FastScrobbler read what’s playing for scrobbling." = "Cuando macOS te pida permitir que FastScrobbler controle Música, pulsa Permitir. Esto permite que FastScrobbler lea lo que se está reproduciendo para hacer scrobbling.";
 "You’re signed out of Last.fm." = "Has cerrado sesión en Last.fm.";
 "interrupted" = "interrumpido";
-"loved" = "loved";
+"loved" = "favorita";
 "now playing sent" = "en reproducción enviado";
 "paused" = "pausado";
 "played %llds" = "reproducido %lld s";
@@ -301,7 +302,7 @@
 "Song" = "Canción";
 "This will restore all settings to their defaults." = "Esto restaurará todos los ajustes a sus valores predeterminados.";
 "Extended History Scan" = "Escaneo extendido del historial";
-"When off, \"Scan Listening History\" checks the past 36 hours. When on, \"Scan Listening History\" checks the past 7 days.\n\nAutomatic scans always check the past 36 hours and only run when \"Auto-scrobble Listening History\" is on." = "Cuando está desactivado, « Escanear historial de reproducción » revisa las últimas 36 horas. Cuando está activado, « Escanear historial de reproducción » revisa los últimos 7 días.\n\nLos escaneos automáticos siempre revisan las últimas 36 horas y solo se ejecutan cuando « Hacer scrobble automático del historial de reproducción » está activado.";
+"When off, \"Scan Listening History\" checks the past 36 hours. When on, \"Scan Listening History\" checks the past 7 days.\n\nAutomatic scans always check the past 36 hours and only run when \"Auto-scrobble Listening History\" is on." = "Cuando está desactivado, «Escanear historial de reproducción» revisa las últimas 36 horas. Cuando está activado, «Escanear historial de reproducción» revisa los últimos 7 días.\n\nLos escaneos automáticos siempre revisan las últimas 36 horas y solo se ejecutan cuando «Hacer scrobble automático del historial de reproducción» está activado.";
 "Scrobble looped tracks" = "Scrobble de canciones en bucle";
 "Scrobbles the same track again when it loops or restarts. Enable this if you replay songs and want each listen counted." = "Vuelve a hacer scrobble de la misma pista cuando se repite o reinicia. Actívalo si vuelves a escuchar canciones y quieres que cada escucha cuente.";
 "View Pro features" = "Ver funciones Pro";
@@ -355,7 +356,7 @@
 "ListenBrainz support is currently in beta." = "El soporte de ListenBrainz está actualmente en fase beta.";
 "Sign In to ListenBrainz" = "Iniciar sesión en ListenBrainz";
 "Connect ListenBrainz" = "Conectar ListenBrainz";
-"Choose where to display the \"Scan Listening History\" shortcut button, or disable it." = "Elige dónde mostrar el botón de acceso directo « Escanear historial de reproducción » o desactívalo.";
+"Choose where to display the \"Scan Listening History\" shortcut button, or disable it." = "Elige dónde mostrar el botón de acceso directo «Escanear historial de reproducción» o desactívalo.";
 "About" = "Acerca de";
 "Advanced" = "Avanzado";
 "Last.fm Account" = "Cuenta de Last.fm";
@@ -431,3 +432,7 @@
 "Apple Music recent tracks were initialized from your current history. Future scans will only add newer plays to the review list." = "Las pistas recientes de Apple Music se inicializaron a partir de tu historial actual. Los próximos escaneos solo añadirán las reproducciones más recientes a la lista de revisión.";
 "Apple Music recent tracks were initialized from your current history. Future scans will only import newer plays." = "Las pistas recientes de Apple Music se inicializaron a partir de tu historial actual. Los próximos escaneos solo importarán las reproducciones más recientes.";
 "No new library plays found. Apple Music recent tracks could not be checked because the Apple Music API request failed." = "No se han encontrado reproducciones nuevas en la biblioteca. No se han podido comprobar las pistas recientes de Apple Music porque ha fallado la solicitud a la API de Apple Music.";
+"Apply to" = "Aplicar a";
+"Scrobble Again" = "Volver a hacer scrobble";
+"Show Setup" = "Mostrar configuración";
+"You're signed out of Last.fm and ListenBrainz." = "Has cerrado sesión en Last.fm y ListenBrainz.";

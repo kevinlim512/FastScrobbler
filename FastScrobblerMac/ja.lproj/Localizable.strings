@@ -8,7 +8,7 @@
 "Allow Music Control" = "ミュージックの操作を許可";
 "Avoids sending the same playback session to Last.fm more than once within a short time window." = "同じ再生セッションを短時間に複数回Last.fmへ送信しないようにします。";
 "Avoids sending the same playback session more than once within a short time window." = "同じ再生セッションを短時間に複数回送信しないようにします。";
-"Beta feature: shows scrobbling status on your Lock Screen and Dynamic Island." = "ベータ機能: ロック画面とDynamic Islandにスクロブル状況を表示します。";
+"Shows scrobbling status on your Lock Screen and Dynamic Island." = "ロック画面とDynamic Islandにスクロブル状況を表示します。";
 "Signed in" = "接続済み";
 "Done" = "完了";
 "Duration: %@s | Playback: %@s" = "再生時間: %1$@秒 | 再生位置: %2$@秒";
@@ -22,7 +22,7 @@
 "Listening History" = "再生履歴";
 "Live Activities are disabled in iOS Settings for FastScrobbler." = "FastScrobblerのライブアクティビティがiOSの設定で無効になっています。";
 "Love Apple Music favourites on Last.fm" = "Apple Musicのお気に入りをLast.fmでもLovedにする";
-"Loved" = "Loved";
+"Loved" = "お気に入り";
 "No scrobbles yet." = "まだスクロブルはありません。";
 "No track detected." = "曲が検出されていません。";
 "Not connected" = "未接続";
@@ -172,7 +172,8 @@
 "Show Live Activity" = "ライブアクティビティを表示";
 "Button Theme" = "ボタンのテーマ";
 "Colourful" = "カラフル";
-"Monochrome" = "モノクロ";
+"Red" = "レッド";
+"Greyscale" = "グレースケール";
 "Sign In" = "サインイン";
 "Sign In to Last.fm" = "Last.fmにサインイン";
 "Sign in to start scrobbling to your Last.fm account." = "Last.fmアカウントにサインインしてスクロブルを始めてください。";
@@ -199,7 +200,7 @@
 "When macOS asks to let FastScrobbler control Music, click Allow. This lets FastScrobbler read what’s playing for scrobbling." = "macOSがFastScrobblerによるミュージックの操作を許可するか尋ねたら、「許可」をクリックしてください。これにより再生中の情報を読み取ってスクロブルできます。";
 "You’re signed out of Last.fm." = "Last.fmからサインアウトしています。";
 "interrupted" = "中断";
-"loved" = "Loved";
+"loved" = "お気に入り";
 "now playing sent" = "再生中を送信済み";
 "paused" = "一時停止";
 "played %llds" = "%lld秒再生";
@@ -348,3 +349,7 @@
 "Apple Music recent tracks were initialized from your current history. Future scans will only add newer plays to the review list." = "現在の履歴から Apple Music の最近のトラックを初期化しました。今後のスキャンでは、より新しい再生のみが確認リストに追加されます。";
 "Apple Music recent tracks were initialized from your current history. Future scans will only import newer plays." = "現在の履歴から Apple Music の最近のトラックを初期化しました。今後のスキャンでは、より新しい再生のみがインポートされます。";
 "No new library plays found. Apple Music recent tracks could not be checked because the Apple Music API request failed." = "新しいライブラリの再生は見つかりませんでした。Apple Music API リクエストが失敗したため、Apple Music の最近のトラックを確認できませんでした。";
+"Apply to" = "適用先";
+"Scrobble Again" = "もう一度スクロブル";
+"Show Setup" = "セットアップを表示";
+"You're signed out of Last.fm and ListenBrainz." = "Last.fm と ListenBrainz からサインアウトしています。";

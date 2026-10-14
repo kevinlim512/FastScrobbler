@@ -223,6 +223,7 @@ func runSettingsDefaultsTests() {
     expectEqual("macOS reset restores duplicate prevention to runtime default", macSettingsPreventDuplicatesAfterReset, runtimePreventDuplicatesDefault)
     expectEqual("macOS button theme defaults to colorful", macButtonThemeSelectionDefault, "colorful")
     expectEqual("macOS reset restores button theme default", macButtonThemeSelectionAfterReset, macButtonThemeSelectionDefault)
+    expectEqual("button theme cases include colorful, red, and monochrome", ButtonTheme.allCases.map(\.rawValue), ["colorful", "red", "monochrome"])
 
     let resetClearedKeys: Set<String> = [
         "FastScrobbler.Pro.loveOnFavoriteEnabled",

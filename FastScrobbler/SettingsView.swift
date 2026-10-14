@@ -479,6 +479,7 @@ private struct ScrobbleControlsSettingsPage: View {
                 removeBracketsNavigationLink(target: .songTitles)
                 removeBracketsNavigationLink(target: .albumTitles)
                 textReplacementNavigationLink
+                firstArtistOnlyNavigationLink
                 Toggle(isOn: proLockedBoolBinding($loveOnFavoriteEnabled, unlockedDefault: false)) {
                     HStack {
                         Text("Love Apple Music favourites on Last.fm")
@@ -505,7 +506,6 @@ private struct ScrobbleControlsSettingsPage: View {
                 .overlay(alignment: .trailing) {
                     lockedProBadgeOverlay(trailingInset: Self.iosLockedProToggleBadgeTrailingInset)
                 }
-                firstArtistOnlyNavigationLink
             }
         }
         .navigationTitle("Scrobble Controls")
@@ -791,7 +791,8 @@ private struct ThemeSettingsPage: View {
 
                 Picker("Button Theme", selection: $buttonThemeSelectionRawValue) {
                     Text("Colourful").tag(ButtonTheme.colorful.rawValue)
-                    Text("Monochrome").tag(ButtonTheme.monochrome.rawValue)
+                    Text("Red").tag(ButtonTheme.red.rawValue)
+                    Text("Greyscale").tag(ButtonTheme.monochrome.rawValue)
                 }
             }
         }
@@ -839,7 +840,7 @@ private struct LiveActivitySettingsPage: View {
                     }
                 }
 
-                Text("Beta feature: shows scrobbling status on your Lock Screen and Dynamic Island.")
+                Text("Shows scrobbling status on your Lock Screen and Dynamic Island.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }

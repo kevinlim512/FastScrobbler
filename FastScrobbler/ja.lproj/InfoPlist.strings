@@ -5,5 +5,5 @@
 "CFBundleName" = "FastScrobbler";
 
 /* Privacy - Media Library Usage Description */
-"NSAppleMusicUsageDescription" = "このアプリは、Apple Musicで現在再生中の曲のメタデータを読むためにメディアライブラリへのアクセスが必要です。";
+"NSAppleMusicUsageDescription" = "このアプリは、Apple Musicで現在再生中の曲のメタデータを読み取るためにメディアライブラリへのアクセスが必要です。";
 

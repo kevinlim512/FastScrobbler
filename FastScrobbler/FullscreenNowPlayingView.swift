@@ -336,16 +336,12 @@ struct FullscreenNowPlayingView: View {
                     .multilineTextAlignment(.center)
             }
         }
-        .padding(.vertical, 8)
-        .frame(maxWidth: .infinity, minHeight: 44, alignment: .center)
-        .offset(y: -8)
+        .padding(.bottom, 14)
+        .frame(maxWidth: .infinity, minHeight: 32, alignment: .center)
     }
 
     private var statusPills: [String] {
-        statusParts.filter {
-            $0 == NSLocalizedString("now playing sent", comment: "") ||
-            $0 == NSLocalizedString("scrobbled", comment: "")
-        }
+        ScrobbleEngine.statusPills(from: engine.statusText)
     }
 
     private var statusFallbackText: String? {
@@ -487,7 +483,7 @@ struct FullscreenNowPlayingView: View {
     }
 
     private func statusPillColor(for pill: String) -> Color {
-        if pill == NSLocalizedString("scrobbled", comment: "") {
+        if ScrobbleEngine.isScrobbledStatus(pill) {
             return Color.green
         }
         return Color.white.opacity(0.5)

@@ -7,7 +7,8 @@
 "Avoids sending the same playback session to Last.fm more than once within a short time window." = "Empêche d’envoyer la même session de lecture à Last.fm plus d’une fois dans un court laps de temps.";
 "Avoids sending the same playback session more than once within a short time window." = "Empêche d’envoyer la même session de lecture plus d’une fois dans un court laps de temps.";
 "Retrieves up to 30 recently played songs via the Apple Music API, then adds them to the Listening History review list. Plays are recorded even when FastScrobbler is in the background.\n\nNote: playback timestamps aren’t provided by the API, so FastScrobbler assigns an estimated timestamp when the scrobble is submitted. Songs are recorded regardless of playback duration.\n\nWhen \"Auto-scrobble Listening History\" is off, Recently Played API songs are added to the Listening History review list instead of being submitted automatically." = "Récupère jusqu’à 30 morceaux récemment écoutés via l’API Apple Music, puis les ajoute à la liste de révision de l’historique d’écoute. Les écoutes sont enregistrées même lorsque FastScrobbler est en arrière-plan.\n\nRemarque : l’API ne fournit pas les horodatages de lecture, donc FastScrobbler attribue un horodatage estimé lorsque le scrobble est envoyé. Les morceaux sont enregistrés quelle que soit la durée d’écoute.\n\nLorsque « Scrobbler automatiquement l’historique d’écoute » est désactivée, les morceaux de l’API d’écoute récente sont ajoutés à la liste de révision de l’historique d’écoute au lieu d’être envoyés automatiquement.";
-"Beta feature: shows scrobbling status on your Lock Screen and Dynamic Island." = "Fonction bêta : affiche l’état du scrobbling sur l’écran verrouillé et la Dynamic Island.";
+"Shows scrobbling status on your Lock Screen and Dynamic Island." = "Affiche l’état du scrobbling sur l’écran verrouillé et la Dynamic Island.";
+
 "Signed in" = "Connecté";
 "Done" = "Terminé";
 "Dark" = "Sombre";
@@ -190,7 +191,7 @@
 "Scrobbled" = "Scrobblé";
 "Scrobbled: %@ — %@" = "Scrobblé : %@ — %@";
 "Scrobbling from Listening History may be affected when AutoMix is on." = "Le scrobbling depuis l’historique d’écoute peut être affecté lorsque AutoMix est activé.";
-"Scrobbling…" = "Scrobbling…";
+"Scrobbling…" = "Scrobble en cours…";
 "Sending…" = "Envoi…";
 "Sent" = "Envoyé";
 "Note" = "Remarque";
@@ -221,7 +222,8 @@
 "App Theme" = "Thème de l’app";
 "Button Theme" = "Thème des boutons";
 "Colourful" = "Coloré";
-"Monochrome" = "Monochrome";
+"Red" = "Rouge";
+"Greyscale" = "Niveaux de gris";
 "Background App Refresh" = "Actualisation en arrière-plan";
 "Live Activities" = "Activités en direct";
 "Required to read Apple Music now-playing metadata." = "Requis pour lire les métadonnées de lecture en cours d’Apple Music.";
@@ -431,3 +433,7 @@
 "Apple Music recent tracks were initialized from your current history. Future scans will only add newer plays to the review list." = "Les morceaux récents d'Apple Music ont été initialisés à partir de votre historique actuel. Les prochaines analyses n'ajouteront que les lectures plus récentes à la liste de révision.";
 "Apple Music recent tracks were initialized from your current history. Future scans will only import newer plays." = "Les morceaux récents d'Apple Music ont été initialisés à partir de votre historique actuel. Les prochaines analyses n'importeront que les lectures plus récentes.";
 "No new library plays found. Apple Music recent tracks could not be checked because the Apple Music API request failed." = "Aucune nouvelle lecture de bibliothèque trouvée. Les morceaux récents d'Apple Music n'ont pas pu être vérifiés car la requête d'API Apple Music a échoué.";
+"Apply to" = "Appliquer à";
+"Scrobble Again" = "Scrobbler à nouveau";
+"Show Setup" = "Afficher la configuration";
+"You're signed out of Last.fm and ListenBrainz." = "Vous êtes déconnecté de Last.fm et ListenBrainz.";

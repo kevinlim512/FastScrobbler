@@ -7,7 +7,7 @@
 "Avoids sending the same playback session to Last.fm more than once within a short time window." = "同じ再生セッションを短時間に複数回Last.fmへ送信しないようにします。";
 "Avoids sending the same playback session more than once within a short time window." = "同じ再生セッションを短時間に複数回送信しないようにします。";
 "Retrieves up to 30 recently played songs via the Apple Music API, then adds them to the Listening History review list. Plays are recorded even when FastScrobbler is in the background.\n\nNote: playback timestamps aren’t provided by the API, so FastScrobbler assigns an estimated timestamp when the scrobble is submitted. Songs are recorded regardless of playback duration.\n\nWhen \"Auto-scrobble Listening History\" is off, Recently Played API songs are added to the Listening History review list instead of being submitted automatically." = "Apple Music API経由で最近再生した曲を最大30曲取得し、その後で再生履歴の確認リストに追加します。FastScrobblerがバックグラウンドにある場合でも再生は記録されます。\n\n注: 再生時刻はAPIから提供されないため、FastScrobblerはスクロブル送信時に推定の時刻を割り当てます。再生時間に関係なく、曲は記録されます。\n\n「再生履歴を自動でスクロブル」がオフの場合、最近再生 API の曲は自動で送信されず、再生履歴の確認リストに追加されます。";
-"Beta feature: shows scrobbling status on your Lock Screen and Dynamic Island." = "ベータ機能: ロック画面とDynamic Islandにスクロブル状況を表示します。";
+"Shows scrobbling status on your Lock Screen and Dynamic Island." = "ロック画面とDynamic Islandにスクロブル状況を表示します。";
 "Signed in" = "接続済み";
 "Done" = "完了";
 "Dark" = "ダーク";
@@ -27,7 +27,7 @@
 "Light" = "ライト";
 "Live Activities are disabled in iOS Settings for FastScrobbler." = "FastScrobblerのライブアクティビティがiOSの設定で無効になっています。";
 "Love Apple Music favourites on Last.fm" = "Apple Musicのお気に入りをLast.fmでもLovedにする";
-"Loved" = "Loved";
+"Loved" = "お気に入り";
 "No scrobbles yet." = "まだスクロブルはありません。";
 "No track detected." = "曲が検出されていません。";
 "No Artwork" = "アートワークなし";
@@ -220,7 +220,8 @@
 "App Theme" = "アプリのテーマ";
 "Button Theme" = "ボタンのテーマ";
 "Colourful" = "カラフル";
-"Monochrome" = "モノクロ";
+"Red" = "レッド";
+"Greyscale" = "グレースケール";
 "Background App Refresh" = "バックグラウンド更新";
 "Live Activities" = "ライブアクティビティ";
 "Required to read Apple Music now-playing metadata." = "Apple Musicの再生中メタデータを読み取るために必要です。";
@@ -255,7 +256,7 @@
 "When macOS asks to let FastScrobbler control Music, click Allow. This lets FastScrobbler read what’s playing for scrobbling." = "macOSがFastScrobblerによるミュージックの操作を許可するか尋ねたら、「許可」をクリックしてください。これにより再生中の情報を読み取ってスクロブルできます。";
 "You’re signed out of Last.fm." = "Last.fmからサインアウトしています。";
 "interrupted" = "中断";
-"loved" = "Loved";
+"loved" = "お気に入り";
 "now playing sent" = "再生中を送信済み";
 "paused" = "一時停止";
 "played %llds" = "%lld秒再生";
@@ -431,3 +432,7 @@
 "Apple Music recent tracks were initialized from your current history. Future scans will only add newer plays to the review list." = "現在の履歴から Apple Music の最近のトラックを初期化しました。今後のスキャンでは、より新しい再生のみが確認リストに追加されます。";
 "Apple Music recent tracks were initialized from your current history. Future scans will only import newer plays." = "現在の履歴から Apple Music の最近のトラックを初期化しました。今後のスキャンでは、より新しい再生のみがインポートされます。";
 "No new library plays found. Apple Music recent tracks could not be checked because the Apple Music API request failed." = "新しいライブラリの再生は見つかりませんでした。Apple Music API リクエストが失敗したため、Apple Music の最近のトラックを確認できませんでした。";
+"Apply to" = "適用先";
+"Scrobble Again" = "もう一度スクロブル";
+"Show Setup" = "セットアップを表示";
+"You're signed out of Last.fm and ListenBrainz." = "Last.fm と ListenBrainz からサインアウトしています。";

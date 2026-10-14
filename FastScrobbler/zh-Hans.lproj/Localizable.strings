@@ -7,7 +7,7 @@
 "Avoids sending the same playback session to Last.fm more than once within a short time window." = "避免在短时间内向 Last.fm 重复发送同一播放会话。";
 "Avoids sending the same playback session more than once within a short time window." = "避免在短时间内重复发送同一播放会话。";
 "Retrieves up to 30 recently played songs via the Apple Music API, then adds them to the Listening History review list. Plays are recorded even when FastScrobbler is in the background.\n\nNote: playback timestamps aren’t provided by the API, so FastScrobbler assigns an estimated timestamp when the scrobble is submitted. Songs are recorded regardless of playback duration.\n\nWhen \"Auto-scrobble Listening History\" is off, Recently Played API songs are added to the Listening History review list instead of being submitted automatically." = "通过 Apple Music API 最多获取 30 首最近播放的歌曲，然后将它们添加到播放历史审核列表中。即使 FastScrobbler 在后台运行，播放也会被记录。\n\n注意：播放时间戳并非由该 API 提供，因此 FastScrobbler 会在提交 scrobble 时分配一个估算时间戳。无论播放时长如何，歌曲都会被记录。\n\n当“自动 scrobble 播放历史”关闭时，最近播放 API 的歌曲不会自动提交，而是会添加到播放历史审核列表中。";
-"Beta feature: shows scrobbling status on your Lock Screen and Dynamic Island." = "Beta 功能：在锁定屏幕和灵动岛上显示 scrobble 状态。";
+"Shows scrobbling status on your Lock Screen and Dynamic Island." = "在锁定屏幕和灵动岛上显示 scrobble 状态。";
 "Signed in" = "已连接";
 "Done" = "完成";
 "Dark" = "深色";
@@ -27,7 +27,7 @@
 "Light" = "浅色";
 "Live Activities are disabled in iOS Settings for FastScrobbler." = "FastScrobbler 的实时活动已在 iOS 设置中关闭。";
 "Love Apple Music favourites on Last.fm" = "在 Last.fm 上同步喜爱 Apple Music 收藏歌曲";
-"Loved" = "Loved";
+"Loved" = "喜爱";
 "No scrobbles yet." = "还没有 scrobble。";
 "No track detected." = "未检测到歌曲。";
 "No Artwork" = "无封面图";
@@ -222,7 +222,8 @@
 "App Theme" = "应用主题";
 "Button Theme" = "按钮主题";
 "Colourful" = "彩色";
-"Monochrome" = "单色";
+"Red" = "红色";
+"Greyscale" = "灰度";
 "Background App Refresh" = "后台 App 刷新";
 "Live Activities" = "实时活动";
 "Required to read Apple Music now-playing metadata." = "读取 Apple Music 当前播放元数据所必需。";
@@ -258,7 +259,7 @@
 "When macOS asks to let FastScrobbler control Music, click Allow. This lets FastScrobbler read what’s playing for scrobbling." = "当 macOS 请求允许 FastScrobbler 控制\"音乐\"时，请点击\"允许\"。这样 FastScrobbler 才能读取当前播放内容并进行 scrobble。";
 "You’re signed out of Last.fm." = "你已退出 Last.fm 登录。";
 "interrupted" = "已中断";
-"loved" = "Loved";
+"loved" = "已喜爱";
 "now playing sent" = "已发送正在播放";
 "paused" = "已暂停";
 "played %llds" = "已播放 %lld 秒";
@@ -431,3 +432,7 @@
 "Apple Music recent tracks were initialized from your current history. Future scans will only add newer plays to the review list." = "Apple Music 最近播放已根据你当前的历史记录完成初始化。将来的扫描只会将较新的播放添加到待复核列表。";
 "Apple Music recent tracks were initialized from your current history. Future scans will only import newer plays." = "Apple Music 最近播放已根据你当前的历史记录完成初始化。将来的扫描只会导入较新的播放。";
 "No new library plays found. Apple Music recent tracks could not be checked because the Apple Music API request failed." = "未找到新的资料库播放。由于 Apple Music API 请求失败，无法检查 Apple Music 最近播放。";
+"Apply to" = "应用于";
+"Scrobble Again" = "重新 Scrobble";
+"Show Setup" = "显示设置向导";
+"You're signed out of Last.fm and ListenBrainz." = "你已退出 Last.fm 和 ListenBrainz。";

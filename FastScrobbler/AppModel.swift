@@ -685,7 +685,7 @@ final class AppReviewManager {
         guard defaults.string(forKey: Keys.lastPromptedVersion) != currentVersion else { return }
 
         defaults.set(currentVersion, forKey: Keys.lastPromptedVersion)
-        SKStoreReviewController.requestReview(in: windowScene)
+        AppStore.requestReview(in: windowScene)
     }
     #endif
 }

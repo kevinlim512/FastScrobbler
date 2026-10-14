@@ -254,7 +254,8 @@ struct SettingsView: View {
                 Text(localized("Button Theme"))
                 Picker(localized("Button Theme"), selection: $buttonThemeSelectionRawValue) {
                     Text(localized("Colourful")).tag(ButtonTheme.colorful.rawValue)
-                    Text(localized("Monochrome")).tag(ButtonTheme.monochrome.rawValue)
+                    Text(localized("Red")).tag(ButtonTheme.red.rawValue)
+                    Text(localized("Greyscale")).tag(ButtonTheme.monochrome.rawValue)
                 }
                 .pickerStyle(.menu)
                 .labelsHidden()
@@ -318,6 +319,7 @@ struct SettingsView: View {
             removeBracketsNavigationLink(target: .songTitles)
             removeBracketsNavigationLink(target: .albumTitles)
             textReplacementNavigationLink
+            firstArtistOnlyNavigationLink
             Toggle(isOn: proLockedBoolBinding($loveOnFavoriteEnabled, unlockedDefault: false)) {
                 HStack {
                     Text(localized("Love Apple Music favourites on Last.fm"))
@@ -336,7 +338,6 @@ struct SettingsView: View {
                 }
             }
             .disabled(!pro.isPro)
-            firstArtistOnlyNavigationLink
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
