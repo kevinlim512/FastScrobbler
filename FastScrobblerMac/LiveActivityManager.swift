@@ -20,7 +20,7 @@ final class LiveActivityManager {
         UserDefaults.standard.removeObject(forKey: Self.backgroundedAtDefaultsKey)
     }
 
-    func startIfPossible() {}
+    func startIfPossible() async {}
 
     func stop() async {}
 

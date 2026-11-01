@@ -206,6 +206,7 @@
 "played %llds" = "lu %lld s";
 "playing" = "en lecture";
 "scrobbled" = "scrobblé";
+"queued for retry" = "en attente de nouvel essai";
 "seeking backward" = "recherche vers l’arrière";
 "seeking forward" = "recherche vers l’avant";
 "stopped" = "arrêté";
@@ -353,3 +354,6 @@
 "Scrobble Again" = "Scrobbler à nouveau";
 "Show Setup" = "Afficher la configuration";
 "You're signed out of Last.fm and ListenBrainz." = "Vous êtes déconnecté de Last.fm et ListenBrainz.";
+"Sync Now" = "Synchroniser maintenant";
+"Last synced: %@" = "Dernière synchronisation : %@";
+"Syncing…" = "Synchronisation…";

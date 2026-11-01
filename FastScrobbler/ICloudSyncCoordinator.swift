@@ -1,5 +1,28 @@
 import Foundation
 import OSLog
+#if os(iOS)
+import UIKit
+
+private final class BackgroundTaskHelper {
+    private var taskID: UIBackgroundTaskIdentifier = .invalid
+
+    func begin(name: String) {
+        guard taskID == .invalid else { return }
+        taskID = UIApplication.shared.beginBackgroundTask(withName: name) { [weak self] in
+            self?.end()
+        }
+    }
+
+    func end() {
+        guard taskID != .invalid else { return }
+        let currentID = taskID
+        taskID = .invalid
+        UIApplication.shared.endBackgroundTask(currentID)
+    }
+}
+#elseif os(macOS)
+import AppKit
+#endif
 
 private enum ICloudSyncContainer {
     static let identifier = "iCloud.com.kevin.FastScrobbler"
@@ -327,6 +350,35 @@ private enum SyncedSettingsStore {
 private struct SyncedBacklogPayload: Codable {
     var version: Int = 1
     var items: [ScrobbleBacklog.Item]
+    var tombstones: [UUID: Date] = [:]
+
+    private enum CodingKeys: String, CodingKey {
+        case version
+        case items
+        case tombstones
+    }
+
+    init(items: [ScrobbleBacklog.Item], tombstones: [UUID: Date] = [:], version: Int = 1) {
+        self.version = version
+        self.items = items
+        self.tombstones = tombstones
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.version = try container.decodeIfPresent(Int.self, forKey: .version) ?? 1
+        self.items = try container.decodeIfPresent([ScrobbleBacklog.Item].self, forKey: .items) ?? []
+        self.tombstones = try container.decodeIfPresent([UUID: Date].self, forKey: .tombstones) ?? [:]
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(version, forKey: .version)
+        try container.encode(items, forKey: .items)
+        if !tombstones.isEmpty {
+            try container.encode(tombstones, forKey: .tombstones)
+        }
+    }
 }
 
 private struct SyncedScrobbleLogPayload: Codable {
@@ -363,12 +415,19 @@ final class ICloudSyncCoordinator: NSObject, ObservableObject {
         static let all = [settings, backlog, scrobbleLog, importerState]
     }
 
+    private static let lastSyncedAtKey = "FastScrobbler.ICloudSync.lastSyncedAt"
+
     @Published private(set) var isSyncEnabled = AppSettings.iCloudSyncEnabled()
     @Published private(set) var isICloudAvailable = false
     @Published private(set) var hasCloudData = false
     @Published private(set) var isBusy = false
     @Published private(set) var statusMessage: String?
     @Published private(set) var lastErrorMessage: String?
+    @Published private(set) var lastSyncedAt: Date? = AppGroup.userDefaults.object(forKey: lastSyncedAtKey) as? Date
+
+    #if os(iOS)
+    private let backgroundTaskHelper = BackgroundTaskHelper()
+    #endif
 
     private let logger = Logger(subsystem: "FastScrobbler", category: "ICloudSync")
     private let encoder: JSONEncoder = {
@@ -436,6 +495,24 @@ final class ICloudSyncCoordinator: NSObject, ObservableObject {
         }
     }
 
+    func syncNow() async throws {
+        guard !isBusy else { return }
+        isBusy = true
+        defer { isBusy = false }
+
+        lastErrorMessage = nil
+        statusMessage = nil
+        await refreshStatus()
+
+        guard isICloudAvailable else {
+            throw SyncError.unavailable
+        }
+        guard isSyncEnabled else { return }
+
+        await pullMergeAndPersist(reason: "manual sync")
+        await refreshStatus()
+    }
+
     func disableSync() async {
         AppSettings.setICloudSyncEnabled(false)
         isSyncEnabled = false
@@ -484,6 +561,8 @@ final class ICloudSyncCoordinator: NSObject, ObservableObject {
             }
 
             await refreshStatus()
+            lastSyncedAt = nil
+            AppGroup.userDefaults.removeObject(forKey: Self.lastSyncedAtKey)
             statusMessage = NSLocalizedString("iCloud data deleted. Sync remains off on this device.", comment: "")
         } catch {
             lastErrorMessage = error.localizedDescription
@@ -552,6 +631,26 @@ final class ICloudSyncCoordinator: NSObject, ObservableObject {
                 }
             }
         )
+
+        #if os(iOS)
+        observers.append(
+            center.addObserver(forName: UIApplication.willEnterForegroundNotification, object: nil, queue: nil) { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    guard let self = self, self.isSyncEnabled, !self.isBusy else { return }
+                    await self.pullMergeAndPersist(reason: "foreground")
+                }
+            }
+        )
+        #elseif os(macOS)
+        observers.append(
+            center.addObserver(forName: NSApplication.willBecomeActiveNotification, object: nil, queue: nil) { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    guard let self = self, self.isSyncEnabled, !self.isBusy else { return }
+                    await self.pullMergeAndPersist(reason: "foreground")
+                }
+            }
+        )
+        #endif
     }
 
     private func startMetadataQuery() {
@@ -586,8 +685,17 @@ final class ICloudSyncCoordinator: NSObject, ObservableObject {
         guard !isApplyingCloudState else { return }
         guard syncDirectoryURL() != nil else { return }
 
+        #if os(iOS)
+        backgroundTaskHelper.begin(name: "iCloudSync.push")
+        #endif
+
         localPushTask?.cancel()
         localPushTask = Task { @MainActor [weak self] in
+            defer {
+                #if os(iOS)
+                self?.backgroundTaskHelper.end()
+                #endif
+            }
             try? await Task.sleep(nanoseconds: 750_000_000)
             guard !Task.isCancelled else { return }
             await self?.pushLocalState(reason: "local change")
@@ -611,11 +719,16 @@ final class ICloudSyncCoordinator: NSObject, ObservableObject {
 
         let settings = SyncedSettingsStore.captureLocalPayload()
         let backlogItems = await ScrobbleBacklog.shared.syncedItemsSnapshot()
+        let backlogTombstones = await ScrobbleBacklog.shared.syncedTombstonesSnapshot()
         let scrobbleLogEntries = ScrobbleLogStore.shared.syncedEntriesSnapshot()
         let playbackHistoryState = PlaybackHistoryImporter.shared.exportSyncState()
 
         await writePayload(settings, fileName: FileName.settings, reason: reason)
-        await writePayload(SyncedBacklogPayload(items: backlogItems), fileName: FileName.backlog, reason: reason)
+        await writePayload(
+            SyncedBacklogPayload(items: backlogItems, tombstones: backlogTombstones),
+            fileName: FileName.backlog,
+            reason: reason
+        )
         await writePayload(SyncedScrobbleLogPayload(entries: scrobbleLogEntries), fileName: FileName.scrobbleLog, reason: reason)
         await writePayload(
             SyncedImporterStatePayload(playbackHistory: playbackHistoryState),
@@ -630,22 +743,28 @@ final class ICloudSyncCoordinator: NSObject, ObservableObject {
 
         let localSettings = SyncedSettingsStore.captureLocalPayload()
         let localBacklog = await ScrobbleBacklog.shared.syncedItemsSnapshot()
+        let localTombstones = await ScrobbleBacklog.shared.syncedTombstonesSnapshot()
         let localScrobbleLog = ScrobbleLogStore.shared.syncedEntriesSnapshot()
         let localPlaybackHistoryState = PlaybackHistoryImporter.shared.exportSyncState()
 
-        let cloudSettings: SyncedSettingsStore.Payload? = readPayload(fileName: FileName.settings)
-        let cloudBacklog: SyncedBacklogPayload? = readPayload(fileName: FileName.backlog)
-        let cloudScrobbleLog: SyncedScrobbleLogPayload? = readPayload(fileName: FileName.scrobbleLog)
-        let cloudImporterState: SyncedImporterStatePayload? = readPayload(fileName: FileName.importerState)
+        let cloudSettings: SyncedSettingsStore.Payload? = await readPayload(fileName: FileName.settings)
+        let cloudBacklog: SyncedBacklogPayload? = await readPayload(fileName: FileName.backlog)
+        let cloudScrobbleLog: SyncedScrobbleLogPayload? = await readPayload(fileName: FileName.scrobbleLog)
+        let cloudImporterState: SyncedImporterStatePayload? = await readPayload(fileName: FileName.importerState)
 
         let mergedSettings = SyncedSettingsStore.merged(local: localSettings, remote: cloudSettings)
-        let mergedBacklogItems = ScrobbleBacklog.mergedSyncedItems(local: localBacklog, remote: cloudBacklog?.items ?? [])
+        let mergedBacklog = ScrobbleBacklog.mergedSyncedState(
+            localItems: localBacklog,
+            localTombstones: localTombstones,
+            remoteItems: cloudBacklog?.items ?? [],
+            remoteTombstones: cloudBacklog?.tombstones ?? [:]
+        )
         let mergedScrobbleLogEntries = ScrobbleLogStore.mergedSyncedEntries(local: localScrobbleLog, remote: cloudScrobbleLog?.entries ?? [])
         let mergedPlaybackHistoryState = mergePlaybackHistoryState(local: localPlaybackHistoryState, remote: cloudImporterState?.playbackHistory)
 
         isApplyingCloudState = true
         SyncedSettingsStore.apply(mergedSettings)
-        await ScrobbleBacklog.shared.replaceItemsForSync(mergedBacklogItems)
+        await ScrobbleBacklog.shared.replaceSyncState(items: mergedBacklog.items, tombstones: mergedBacklog.tombstones)
         ScrobbleLogStore.shared.replaceEntriesForSync(mergedScrobbleLogEntries)
         PlaybackHistoryImporter.shared.mergeSyncState(mergedPlaybackHistoryState)
         isApplyingCloudState = false
@@ -653,7 +772,11 @@ final class ICloudSyncCoordinator: NSObject, ObservableObject {
         logger.info("applied merged iCloud state (\(reason, privacy: .public))")
 
         await writePayload(mergedSettings, fileName: FileName.settings, reason: reason)
-        await writePayload(SyncedBacklogPayload(items: mergedBacklogItems), fileName: FileName.backlog, reason: reason)
+        await writePayload(
+            SyncedBacklogPayload(items: mergedBacklog.items, tombstones: mergedBacklog.tombstones),
+            fileName: FileName.backlog,
+            reason: reason
+        )
         await writePayload(SyncedScrobbleLogPayload(entries: mergedScrobbleLogEntries), fileName: FileName.scrobbleLog, reason: reason)
         await writePayload(
             SyncedImporterStatePayload(playbackHistory: mergedPlaybackHistoryState),
@@ -661,6 +784,10 @@ final class ICloudSyncCoordinator: NSObject, ObservableObject {
             reason: reason
         )
         hasCloudData = cloudDataExists()
+
+        let now = Date()
+        lastSyncedAt = now
+        AppGroup.userDefaults.set(now, forKey: Self.lastSyncedAtKey)
     }
 
     private func mergePlaybackHistoryState(
@@ -680,18 +807,30 @@ final class ICloudSyncCoordinator: NSObject, ObservableObject {
         return merged
     }
 
-    private func readPayload<T: Decodable>(fileName: String) -> T? {
+    private func readPayload<T: Decodable>(fileName: String) async -> T? {
         guard let directoryURL = syncDirectoryURL() else { return nil }
         let fileURL = directoryURL.appendingPathComponent(fileName)
         let placeholderURL = directoryURL.appendingPathComponent("." + fileName + ".icloud")
 
-        if !FileManager.default.fileExists(atPath: fileURL.path) && FileManager.default.fileExists(atPath: placeholderURL.path) {
+        let isPlaceholder = await Task.detached(priority: .utility) {
+            !FileManager.default.fileExists(atPath: fileURL.path) && FileManager.default.fileExists(atPath: placeholderURL.path)
+        }.value
+
+        if isPlaceholder {
             logger.info("iCloud payload \(fileName, privacy: .public) is not downloaded locally; triggering download.")
             try? FileManager.default.startDownloadingUbiquitousItem(at: fileURL)
             return nil
         }
 
-        guard let data = try? Data(contentsOf: fileURL) else {
+        let data: Data? = await Task.detached(priority: .utility) { () -> Data? in
+            do {
+                return try coordinatedReadData(from: fileURL)
+            } catch {
+                return nil
+            }
+        }.value
+
+        guard let data else {
             return nil
         }
 
@@ -709,15 +848,29 @@ final class ICloudSyncCoordinator: NSObject, ObservableObject {
         do {
             let data = try encoder.encode(payload)
             let fileURL = directoryURL.appendingPathComponent(fileName)
-            let existingData = lastWrittenDataByFile[fileName] ?? (try? Data(contentsOf: fileURL))
-            guard existingData != data else { return }
+            let existingData = lastWrittenDataByFile[fileName]
+            if existingData == data {
+                return
+            }
 
-            try FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
-            try data.write(to: fileURL, options: [.atomic])
-            lastWrittenDataByFile[fileName] = data
-            logger.debug("wrote iCloud payload \(fileName, privacy: .public) (\(reason, privacy: .public))")
+            let writeResult: Result<Void, Error> = await Task.detached(priority: .utility) {
+                do {
+                    try coordinatedWriteData(data, to: fileURL)
+                    return .success(())
+                } catch {
+                    return .failure(error)
+                }
+            }.value
+
+            switch writeResult {
+            case .success:
+                lastWrittenDataByFile[fileName] = data
+                logger.debug("wrote iCloud payload \(fileName, privacy: .public) (\(reason, privacy: .public))")
+            case .failure(let error):
+                logger.warning("failed to write iCloud payload \(fileName, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            }
         } catch {
-            logger.warning("failed to write iCloud payload \(fileName, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            logger.warning("failed to encode iCloud payload \(fileName, privacy: .public): \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -807,5 +960,40 @@ final class ICloudSyncCoordinator: NSObject, ObservableObject {
         case (.none, .none):
             return nil
         }
+    }
+}
+
+private func coordinatedReadData(from url: URL) throws -> Data? {
+    var coordinatorError: NSError?
+    var fileData: Data?
+    let coordinator = NSFileCoordinator(filePresenter: nil)
+    coordinator.coordinate(readingItemAt: url, options: .withoutChanges, error: &coordinatorError) { readURL in
+        if FileManager.default.fileExists(atPath: readURL.path) {
+            fileData = try? Data(contentsOf: readURL)
+        }
+    }
+    if let error = coordinatorError {
+        throw error
+    }
+    return fileData
+}
+
+private func coordinatedWriteData(_ data: Data, to url: URL) throws {
+    var coordinatorError: NSError?
+    var writeError: Error?
+    let coordinator = NSFileCoordinator(filePresenter: nil)
+    try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+    coordinator.coordinate(writingItemAt: url, options: .forReplacing, error: &coordinatorError) { writeURL in
+        do {
+            try data.write(to: writeURL, options: [.atomic])
+        } catch {
+            writeError = error
+        }
+    }
+    if let error = coordinatorError {
+        throw error
+    }
+    if let error = writeError {
+        throw error
     }
 }

@@ -53,6 +53,7 @@ actor ScrobbleBacklog {
         static let maxPendingItems = 1_000
         static let maxItemAge: TimeInterval = 14 * 24 * 60 * 60
         static let maxAttemptCount = 10
+        static let maxTombstoneAge: TimeInterval = 7 * 24 * 60 * 60
     }
 
     private struct PersistedTrack: Codable {
@@ -159,6 +160,8 @@ actor ScrobbleBacklog {
     private var isLoaded = false
     private var isFlushing = false
     private var items: [Item] = []
+    private var tombstones: [UUID: Date] = [:]
+    private static let tombstonesDefaultsKey = "FastScrobbler.ScrobbleBacklog.tombstones"
 
     private init() {}
 
@@ -170,6 +173,11 @@ actor ScrobbleBacklog {
     func syncedItemsSnapshot() async -> [Item] {
         await loadIfNeeded()
         return items
+    }
+
+    func syncedTombstonesSnapshot() async -> [UUID: Date] {
+        await loadIfNeeded()
+        return tombstones
     }
 
     func storageSizeBytes() async -> Int64 {
@@ -205,6 +213,10 @@ actor ScrobbleBacklog {
         guard !items.isEmpty else {
             await save(pruneBeforeWrite: false)
             return
+        }
+        let now = Date()
+        for item in items {
+            tombstones[item.id] = now
         }
         items = []
         await save(pruneBeforeWrite: false)
@@ -367,9 +379,16 @@ actor ScrobbleBacklog {
     func removeAll(origin targetOrigin: Origin) async -> Int {
         await loadIfNeeded()
 
-        let originalCount = items.count
-        items.removeAll { $0.origin == targetOrigin }
-        let removedCount = originalCount - items.count
+        let initialCount = items.count
+        let now = Date()
+        items.removeAll { item in
+            if item.origin == targetOrigin {
+                tombstones[item.id] = now
+                return true
+            }
+            return false
+        }
+        let removedCount = initialCount - items.count
 
         if removedCount > 0 {
             await save()
@@ -603,8 +622,10 @@ actor ScrobbleBacklog {
                 }
                 if idx < items.count, items[idx].id == item.id {
                     items.remove(at: idx)
+                    tombstones[item.id] = now
                 } else if let currentIndex = items.firstIndex(where: { $0.id == item.id }) {
                     items.remove(at: currentIndex)
+                    tombstones[item.id] = now
                 }
             } else {
                 if itemFailed {
@@ -624,13 +645,44 @@ actor ScrobbleBacklog {
         return FlushResult(sentCount: sentCount, skippedCount: skippedCount, remainingCount: items.count, sentItems: sentItems)
     }
 
-    func replaceItemsForSync(_ syncedItems: [Item]) async {
+    func replaceSyncState(items newItems: [Item], tombstones newTombstones: [UUID: Date]) async {
         await loadIfNeeded()
-        items = Self.mergedSyncedItems(local: [], remote: syncedItems)
+        let merged = Self.mergedSyncedState(
+            localItems: [],
+            localTombstones: tombstones,
+            remoteItems: newItems,
+            remoteTombstones: newTombstones
+        )
+        items = merged.items
+        tombstones = merged.tombstones
         await save()
     }
 
-    static func mergedSyncedItems(local: [Item], remote: [Item]) -> [Item] {
+    func replaceItemsForSync(_ syncedItems: [Item]) async {
+        await replaceSyncState(items: syncedItems, tombstones: [:])
+    }
+
+    static func mergedSyncedState(
+        localItems: [Item],
+        localTombstones: [UUID: Date],
+        remoteItems: [Item],
+        remoteTombstones: [UUID: Date],
+        now: Date = Date()
+    ) -> (items: [Item], tombstones: [UUID: Date]) {
+        let cutoff = now.addingTimeInterval(-CleanupLimits.maxTombstoneAge)
+
+        var mergedTombstones: [UUID: Date] = [:]
+        for (id, date) in localTombstones where date >= cutoff {
+            mergedTombstones[id] = date
+        }
+        for (id, date) in remoteTombstones where date >= cutoff {
+            if let existing = mergedTombstones[id] {
+                mergedTombstones[id] = max(existing, date)
+            } else {
+                mergedTombstones[id] = date
+            }
+        }
+
         var mergedByID: [UUID: Item] = [:]
 
         func mutationDate(for item: Item) -> Date {
@@ -649,7 +701,10 @@ actor ScrobbleBacklog {
             return candidate.startTimestamp > existing.startTimestamp
         }
 
-        for item in local + remote {
+        for item in localItems + remoteItems {
+            if let tombstoneDate = mergedTombstones[item.id], mutationDate(for: item) <= tombstoneDate {
+                continue
+            }
             if let existing = mergedByID[item.id] {
                 if shouldReplace(existing: existing, with: item) {
                     mergedByID[item.id] = item
@@ -659,17 +714,24 @@ actor ScrobbleBacklog {
             }
         }
 
-        return mergedByID.values.sorted {
+        let sortedItems = mergedByID.values.sorted {
             if $0.startTimestamp == $1.startTimestamp {
                 return $0.queuedAt > $1.queuedAt
             }
             return $0.startTimestamp > $1.startTimestamp
         }
+
+        return (items: sortedItems, tombstones: mergedTombstones)
+    }
+
+    static func mergedSyncedItems(local: [Item], remote: [Item]) -> [Item] {
+        mergedSyncedState(localItems: local, localTombstones: [:], remoteItems: remote, remoteTombstones: [:]).items
     }
 
     private func loadIfNeeded() async {
         guard !isLoaded else { return }
         isLoaded = true
+        loadTombstones()
 
         if let sharedURL = sharedFileURL() {
             let fm = FileManager.default
@@ -702,6 +764,7 @@ actor ScrobbleBacklog {
     }
 
     private func save(pruneBeforeWrite: Bool = true) async {
+        saveTombstones()
         let url = fileURL()
         do {
             if pruneBeforeWrite {
@@ -721,6 +784,24 @@ actor ScrobbleBacklog {
             ICloudSyncLocalChangeNotifier.post(.backlog)
         } catch {
             logger.warning("failed to persist backlog: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    private func loadTombstones() {
+        guard let data = AppGroup.userDefaults.data(forKey: Self.tombstonesDefaultsKey),
+              let decoded = try? JSONDecoder().decode([UUID: Date].self, from: data) else {
+            return
+        }
+        let cutoff = Date().addingTimeInterval(-CleanupLimits.maxTombstoneAge)
+        tombstones = decoded.filter { $0.value >= cutoff }
+    }
+
+    private func saveTombstones() {
+        let cutoff = Date().addingTimeInterval(-CleanupLimits.maxTombstoneAge)
+        let pruned = tombstones.filter { $0.value >= cutoff }
+        tombstones = pruned
+        if let data = try? JSONEncoder().encode(pruned) {
+            AppGroup.userDefaults.set(data, forKey: Self.tombstonesDefaultsKey)
         }
     }
 

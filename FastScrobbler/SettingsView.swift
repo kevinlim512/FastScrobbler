@@ -1175,8 +1175,20 @@ private struct ICloudSyncSettingsPage: View {
         !iCloudSync.isBusy && (iCloudSync.isSyncEnabled || iCloudSync.hasCloudData)
     }
 
+    private var canSyncNow: Bool {
+        !iCloudSync.isBusy && iCloudSync.isICloudAvailable && iCloudSync.isSyncEnabled
+    }
+
     private func localized(_ key: String) -> String {
         NSLocalizedString(key, comment: "")
+    }
+
+    private var formattedLastSynced: String? {
+        guard let date = iCloudSync.lastSyncedAt else { return nil }
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
     }
 
     var body: some View {
@@ -1191,6 +1203,23 @@ private struct ICloudSyncSettingsPage: View {
                     Text(localized("Sync with iCloud"))
                 }
                 .disabled(iCloudSync.isBusy || (!iCloudSync.isICloudAvailable && !iCloudSync.isSyncEnabled))
+
+                if iCloudSync.isSyncEnabled {
+                    Button {
+                        Task { await syncNowTapped() }
+                    } label: {
+                        HStack {
+                            Label(localized("Sync Now"), systemImage: "arrow.triangle.2.circlepath")
+                                .foregroundStyle(canSyncNow ? Color.accentColor : .secondary)
+                            Spacer()
+                            if iCloudSync.isBusy {
+                                ProgressView()
+                                    .controlSize(.small)
+                            }
+                        }
+                    }
+                    .disabled(!canSyncNow)
+                }
 
                 Button {
                     isConfirmingICloudDeletion = true
@@ -1207,11 +1236,14 @@ private struct ICloudSyncSettingsPage: View {
                     if !iCloudSync.isICloudAvailable {
                         Text(localized("iCloud is currently unavailable on this device."))
                     } else if iCloudSync.isBusy {
-                        Text(localized("Working…"))
+                        Text(localized("Syncing…"))
                     } else if let error = iCloudSync.lastErrorMessage, !error.isEmpty {
                         Text(error)
+                            .foregroundStyle(.red)
                     } else if let status = iCloudSync.statusMessage, !status.isEmpty {
                         Text(status)
+                    } else if let lastSyncedText = formattedLastSynced {
+                        Text(String(format: localized("Last synced: %@"), lastSyncedText))
                     }
                 }
             }
@@ -1240,6 +1272,15 @@ private struct ICloudSyncSettingsPage: View {
             Button(localized("Cancel"), role: .cancel) {}
         } message: {
             Text(localized("This removes only the iCloud copy of your synced FastScrobbler data. Local data on this iPhone stays intact, and iCloud sync will be turned off here."))
+        }
+    }
+
+    @MainActor
+    private func syncNowTapped() async {
+        do {
+            try await iCloudSync.syncNow()
+        } catch {
+            alertMessage = error.localizedDescription
         }
     }
 
@@ -1373,6 +1414,7 @@ private struct AppStorageSettingsPage: View {
 
 private struct DebugSettingsPage: View {
     let isShowingSetup: Binding<Bool>?
+    @ObservedObject private var screenshotMode = ScreenshotModeManager.shared
 
     var body: some View {
         Form {
@@ -1390,6 +1432,8 @@ private struct DebugSettingsPage: View {
                     Text("Test Crashlytics")
                         .foregroundStyle(Color.accentColor)
                 }
+
+                Toggle("Screenshot Mode", isOn: $screenshotMode.isEnabled)
             }
         }
         .navigationTitle("Debug")

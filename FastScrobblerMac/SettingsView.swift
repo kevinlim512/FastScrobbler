@@ -865,11 +865,31 @@ struct SettingsView: View {
             }
             .disabled(iCloudSync.isBusy || (!iCloudSync.isICloudAvailable && !iCloudSync.isSyncEnabled))
 
+            if iCloudSync.isSyncEnabled {
+                HStack(spacing: 12) {
+                    Button {
+                        Task { await syncNowTapped() }
+                    } label: {
+                        Label(localized("Sync Now"), systemImage: "arrow.triangle.2.circlepath")
+                    }
+                    .disabled(iCloudSync.isBusy || !iCloudSync.isICloudAvailable)
+
+                    if iCloudSync.isBusy {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else if let lastSyncedText = macFormattedLastSynced {
+                        Text(String(format: localized("Last synced: %@"), lastSyncedText))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+
             if !iCloudSync.isICloudAvailable {
                 Text(localized("iCloud is currently unavailable on this device."))
                     .font(.caption)
                     .foregroundStyle(.secondary)
-            } else if iCloudSync.isBusy {
+            } else if iCloudSync.isBusy && !iCloudSync.isSyncEnabled {
                 ProgressView()
                     .controlSize(.small)
             } else if let error = iCloudSync.lastErrorMessage, !error.isEmpty {
@@ -907,6 +927,20 @@ struct SettingsView: View {
         } message: {
             Text(localized("This removes only the iCloud copy of your synced FastScrobbler data. Local data on this Mac stays intact, and iCloud sync will be turned off here."))
         }
+    }
+
+    private var macFormattedLastSynced: String? {
+        guard let date = iCloudSync.lastSyncedAt else { return nil }
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
+    }
+
+    private func syncNowTapped() async {
+        do {
+            try await iCloudSync.syncNow()
+        } catch {}
     }
 
     private func setICloudSyncEnabled(_ isEnabled: Bool) async {

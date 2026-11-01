@@ -8,7 +8,6 @@
 "Avoids sending the same playback session more than once within a short time window." = "Empêche d’envoyer la même session de lecture plus d’une fois dans un court laps de temps.";
 "Retrieves up to 30 recently played songs via the Apple Music API, then adds them to the Listening History review list. Plays are recorded even when FastScrobbler is in the background.\n\nNote: playback timestamps aren’t provided by the API, so FastScrobbler assigns an estimated timestamp when the scrobble is submitted. Songs are recorded regardless of playback duration.\n\nWhen \"Auto-scrobble Listening History\" is off, Recently Played API songs are added to the Listening History review list instead of being submitted automatically." = "Récupère jusqu’à 30 morceaux récemment écoutés via l’API Apple Music, puis les ajoute à la liste de révision de l’historique d’écoute. Les écoutes sont enregistrées même lorsque FastScrobbler est en arrière-plan.\n\nRemarque : l’API ne fournit pas les horodatages de lecture, donc FastScrobbler attribue un horodatage estimé lorsque le scrobble est envoyé. Les morceaux sont enregistrés quelle que soit la durée d’écoute.\n\nLorsque « Scrobbler automatiquement l’historique d’écoute » est désactivée, les morceaux de l’API d’écoute récente sont ajoutés à la liste de révision de l’historique d’écoute au lieu d’être envoyés automatiquement.";
 "Shows scrobbling status on your Lock Screen and Dynamic Island." = "Affiche l’état du scrobbling sur l’écran verrouillé et la Dynamic Island.";
-
 "Signed in" = "Connecté";
 "Done" = "Terminé";
 "Dark" = "Sombre";
@@ -265,6 +264,7 @@
 "played %llds" = "lu %lld s";
 "playing" = "en lecture";
 "scrobbled" = "scrobblé";
+"queued for retry" = "en attente de nouvel essai";
 "seeking backward" = "recherche vers l’arrière";
 "seeking forward" = "recherche vers l’avant";
 "stopped" = "arrêté";
@@ -437,3 +437,6 @@
 "Scrobble Again" = "Scrobbler à nouveau";
 "Show Setup" = "Afficher la configuration";
 "You're signed out of Last.fm and ListenBrainz." = "Vous êtes déconnecté de Last.fm et ListenBrainz.";
+"Sync Now" = "Synchroniser maintenant";
+"Last synced: %@" = "Dernière synchronisation : %@";
+"Syncing…" = "Synchronisation…";

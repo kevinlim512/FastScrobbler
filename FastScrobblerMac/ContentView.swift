@@ -332,14 +332,14 @@ struct ContentView: View {
 
         return VStack(alignment: .leading, spacing: Layout.sectionSpacing) {
             if !hasLastFM && !hasListenBrainz {
-                singleStatusCard(title: "Last.fm", isConnected: false)
-                singleStatusCard(title: "ListenBrainz", isConnected: false)
+                singleStatusCard(service: .lastfm, isConnected: false)
+                singleStatusCard(service: .listenbrainz, isConnected: false)
             } else {
                 if hasLastFM {
-                    singleStatusCard(title: "Last.fm", isConnected: true)
+                    singleStatusCard(service: .lastfm, isConnected: true)
                 }
                 if hasListenBrainz {
-                    singleStatusCard(title: "ListenBrainz", isConnected: true)
+                    singleStatusCard(service: .listenbrainz, isConnected: true)
                 }
             }
         }
@@ -348,9 +348,10 @@ struct ContentView: View {
         .animation(.easeInOut(duration: 0.3), value: engine.statusText)
     }
 
-    private func singleStatusCard(title: String, isConnected: Bool) -> some View {
-        VStack(alignment: .leading, spacing: Layout.statusLineSpacing) {
-            Text(title)
+    private func singleStatusCard(service: ScrobbleService, isConnected: Bool) -> some View {
+        let pills = engine.statusPills(for: service)
+        return VStack(alignment: .leading, spacing: Layout.statusLineSpacing) {
+            Text(service.displayName)
                 .font(.title2.weight(.semibold))
             if isConnected {
                 Text("Signed in")
@@ -361,11 +362,11 @@ struct ContentView: View {
                     .font(.footnote)
                     .foregroundColor(.secondary)
             }
-            engineStatusText(engine.statusText)
+            engineStatusText(for: service)
                 .font(.footnote)
-            if !engineStatusPills.isEmpty {
+            if !pills.isEmpty {
                 HStack(spacing: 8) {
-                    ForEach(engineStatusPills, id: \.self) { pill in
+                    ForEach(pills) { pill in
                         statusPillView(pill)
                     }
                 }
@@ -727,12 +728,8 @@ struct ContentView: View {
         return String(format: "%d:%02d", s / 60, s % 60)
     }
 
-    private var engineStatusPills: [String] {
-        ScrobbleEngine.statusPills(from: engine.statusText)
-    }
-
-    private func engineStatusText(_ status: String) -> Text {
-        let parts = ScrobbleEngine.filteredStatusParts(from: status)
+    private func engineStatusText(for service: ScrobbleService) -> Text {
+        let parts = engine.filteredStatusParts(for: service)
 
         guard !parts.isEmpty else {
             return Text("Engine: ")
@@ -749,6 +746,37 @@ struct ContentView: View {
             }
         }
         return text
+    }
+
+    @ViewBuilder
+    private func statusPillView(_ pill: ScrobbleEngine.ServiceStatusPill) -> some View {
+        let tint: Color = {
+            switch pill.style {
+            case .success: return Color.green
+            case .warning: return Color.orange
+            case .neutral: return Color.secondary
+            }
+        }()
+        let textColor: Color = {
+            switch pill.style {
+            case .success: return Color.green
+            case .warning: return Color.orange
+            case .neutral: return Color.primary.opacity(0.85)
+            }
+        }()
+        Text(pill.text)
+            .font(.system(size: 11, weight: .bold))
+            .foregroundStyle(textColor)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(
+                Capsule()
+                    .fill(tint.opacity(0.16))
+            )
+            .overlay(
+                Capsule()
+                    .stroke(tint.opacity(0.4), lineWidth: 1)
+            )
     }
 
     @ViewBuilder

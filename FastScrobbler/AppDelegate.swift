@@ -52,6 +52,13 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         return config
     }
 
+    func application(
+        _ application: UIApplication,
+        supportedInterfaceOrientationsFor window: UIWindow?
+    ) -> UIInterfaceOrientationMask {
+        OrientationManager.shared.supportedInterfaceOrientations(for: window)
+    }
+
     private func configureFirebaseIfPossible() {
         guard !didConfigureFirebase else { return }
         guard let configPath = Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist"),

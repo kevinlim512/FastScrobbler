@@ -11,6 +11,8 @@ struct FullscreenNowPlayingView: View {
     @EnvironmentObject private var listenBrainzAuth: ListenBrainzAuthManager
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @ObservedObject private var screenshotMode = ScreenshotModeManager.shared
 
     @State private var shuffleMode: MPMusicShuffleMode = MPMusicPlayerController.systemMusicPlayer.shuffleMode
     @State private var repeatMode: MPMusicRepeatMode = MPMusicPlayerController.systemMusicPlayer.repeatMode
@@ -29,7 +31,9 @@ struct FullscreenNowPlayingView: View {
         NavigationStack {
             GeometryReader { proxy in
                 let layout = fullscreenLayout(in: proxy.size)
-                let track = observer.track
+                let isCompact = isCompactScreen(proxy.size)
+                let track = screenshotMode.isEnabled ? screenshotMode.mockTrack : observer.track
+                let isWide = proxy.size.width > proxy.size.height && (UIDevice.current.userInterfaceIdiom == .pad || OrientationManager.shared.isPhoneDuoOpened())
                 let contentWidth = max(0, proxy.size.width - (horizontalPadding * 2))
 
                 ZStack {
@@ -40,78 +44,69 @@ struct FullscreenNowPlayingView: View {
                     backgroundColor
                         .ignoresSafeArea()
 
-                    VStack(spacing: 0) {
-                        Spacer(minLength: layout.topContentInset)
-                        if layout.showsArtwork {
-                            artworkView(side: layout.artworkSide)
-                        }
-                        Spacer(minLength: 0)
+                    if isWide {
+                        let columnWidth = proxy.size.width / 2
+                        let maxArtworkWidth = max(0, columnWidth - (horizontalPadding * 2))
+                        let maxArtworkHeight = max(0, proxy.size.height - 48)
+                        let artworkSide = min(maxArtworkWidth, maxArtworkHeight)
+                        let rightContentWidth = max(0, columnWidth - (horizontalPadding * 2))
 
-                        VStack(spacing: layout.verticalSpacing) {
-                            VStack(spacing: 6) {
-                                if let track {
-                                    Text(track.title)
-                                        .font(.system(size: layout.titleFontSize, weight: .bold))
-                                        .foregroundStyle(.white)
-                                        .multilineTextAlignment(.center)
-                                        .lineLimit(2)
-                                        .minimumScaleFactor(0.68)
+                        HStack(spacing: 0) {
+                            // Left column: The artwork, centered vertically and horizontally
+                            VStack(spacing: 0) {
+                                Spacer(minLength: 0)
+                                artworkView(side: artworkSide)
+                                Spacer(minLength: 0)
+                            }
+                            .frame(width: columnWidth, height: proxy.size.height)
 
-                                    Text(track.artist)
-                                        .font(.system(size: 22, weight: .semibold))
-                                        .foregroundStyle(.white.opacity(0.8))
-                                        .multilineTextAlignment(.center)
-                                        .lineLimit(2)
-                                        .minimumScaleFactor(0.78)
-
-                                    if let album = track.album, !album.isEmpty {
-                                        Text(album)
-                                            .font(.system(size: 17, weight: .regular))
-                                            .foregroundStyle(.white.opacity(0.58))
-                                            .multilineTextAlignment(.center)
-                                            .lineLimit(2)
-                                            .minimumScaleFactor(0.78)
-                                    }
-                                } else {
-                                    Text(NSLocalizedString("No track detected.", comment: ""))
-                                        .font(.system(size: 22, weight: .semibold))
-                                        .foregroundStyle(.white.opacity(0.85))
+                            // Right column: Everything else, vertically centered
+                            ScrollView(showsIndicators: false) {
+                                VStack(spacing: 0) {
+                                    Spacer(minLength: 16)
+                                    rightColumnControls(track: track, width: rightContentWidth, spacing: 20)
+                                        .padding(.horizontal, horizontalPadding)
+                                    Spacer(minLength: 16)
                                 }
+                                .frame(minHeight: proxy.size.height)
+                            }
+                            .frame(width: columnWidth, height: proxy.size.height)
+                        }
+                        .frame(width: proxy.size.width, height: proxy.size.height)
+                    } else {
+                        VStack(spacing: 0) {
+                            if isCompact {
+                                artworkView(side: layout.artworkSide)
+                                Spacer(minLength: layout.titleTopPadding)
+                                    .frame(maxHeight: layout.titleTopPadding + 6)
+                            } else {
+                                Spacer(minLength: layout.topContentInset)
+                                artworkView(side: layout.artworkSide)
+                                Spacer(minLength: 0)
+                            }
+
+                            VStack(spacing: layout.verticalSpacing) {
+                                trackDetailsView(
+                                    track: track,
+                                    titleFontSize: layout.titleFontSize,
+                                    artistFontSize: layout.artistFontSize,
+                                    albumFontSize: layout.albumFontSize
+                                )
+                                .padding(.top, isCompact ? 0 : layout.titleTopPadding)
+
+                                progressSection(for: track)
+                                transportControls(width: contentWidth)
+                                statusSection
+                                openMusicAppButton
                             }
                             .frame(maxWidth: .infinity)
-                            .padding(.top, layout.titleTopPadding)
-
-                            progressSection(for: track)
-                            transportControls(width: contentWidth)
-                            statusSection
-
-                            Button {
-                                if let url = URL(string: "music://") {
-                                    openURL(url)
-                                }
-                            } label: {
-                                Label(NSLocalizedString("Open Music App", comment: ""), systemImage: "music.note")
-                                    .font(.system(size: 17, weight: .bold))
-                                    .foregroundStyle(.white)
-                                    .frame(maxWidth: .infinity, minHeight: 50)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 24, style: .continuous)
-                                            .fill(Color.white.opacity(0.12))
-                                    )
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 24, style: .continuous)
-                                            .stroke(Color.white.opacity(0.10), lineWidth: 1)
-                                    )
-                            }
-                            .buttonStyle(.plain)
                         }
-                        .frame(maxWidth: .infinity)
+                        .padding(.horizontal, horizontalPadding)
+                        .padding(.top, layout.topPadding)
+                        .padding(.bottom, layout.bottomPadding)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .clipped()
                     }
-                    .padding(.horizontal, horizontalPadding)
-                    .padding(.top, 14)
-                    .padding(.bottom, layout.bottomPadding)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .clipped()
                 }
                 .frame(width: proxy.size.width, height: proxy.size.height)
             }
@@ -133,6 +128,7 @@ struct FullscreenNowPlayingView: View {
             .navigationBarTitleDisplayMode(.inline)
         }
         .onAppear {
+            OrientationManager.shared.setFullscreenNowPlayingPresented(true)
             syncPlaybackModes()
             updateIdleSleepPrevention()
         }
@@ -146,6 +142,7 @@ struct FullscreenNowPlayingView: View {
         .onDisappear {
             resetProgressScrubbing()
             releaseIdleSleepPrevention()
+            OrientationManager.shared.setFullscreenNowPlayingPresented(false)
         }
         .background {
             ZStack {
@@ -160,8 +157,88 @@ struct FullscreenNowPlayingView: View {
     }
 
     @ViewBuilder
+    private func trackDetailsView(
+        track: Track?,
+        titleFontSize: CGFloat,
+        artistFontSize: CGFloat = 22,
+        albumFontSize: CGFloat = 17
+    ) -> some View {
+        VStack(spacing: 6) {
+            if let track {
+                Text(track.title)
+                    .font(.system(size: titleFontSize, weight: .bold))
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.68)
+
+                Text(track.artist)
+                    .font(.system(size: artistFontSize, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.8))
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.78)
+
+                if let album = track.album, !album.isEmpty {
+                    Text(album)
+                        .font(.system(size: albumFontSize, weight: .regular))
+                        .foregroundStyle(.white.opacity(0.58))
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.78)
+                }
+            } else {
+                Text(NSLocalizedString("No track detected.", comment: ""))
+                    .font(.system(size: artistFontSize, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.85))
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var openMusicAppButton: some View {
+        Button {
+            if let url = URL(string: "music://") {
+                openURL(url)
+            }
+        } label: {
+            Label(NSLocalizedString("Open Music App", comment: ""), systemImage: "music.note")
+                .font(.system(size: 17, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity, minHeight: 50)
+                .background(
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .fill(Color.white.opacity(0.12))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func rightColumnControls(track: Track?, width: CGFloat, spacing: CGFloat) -> some View {
+        VStack(spacing: spacing) {
+            trackDetailsView(track: track, titleFontSize: 28)
+            progressSection(for: track)
+            transportControls(width: width)
+            statusSection
+            openMusicAppButton
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    @ViewBuilder
     private func artworkView(side: CGFloat) -> some View {
-        if let image = nowPlayingArtworkImage(size: CGSize(width: side * 2, height: side * 2)) {
+        let artworkImage: UIImage? = {
+            if screenshotMode.isEnabled {
+                return screenshotMode.artworkImage
+            }
+            return nowPlayingArtworkImage(size: CGSize(width: side * 2, height: side * 2))
+        }()
+
+        if let image = artworkImage {
             Image(uiImage: image)
                 .resizable()
                 .scaledToFill()
@@ -195,7 +272,18 @@ struct FullscreenNowPlayingView: View {
 
     @ViewBuilder
     private func progressSection(for track: Track?) -> some View {
-        if let track, let duration = track.durationSeconds, duration > 0 {
+        if screenshotMode.isEnabled {
+            FullscreenPlaybackScrubber(
+                duration: ScreenshotModeManager.durationSeconds,
+                playedSeconds: ScreenshotModeManager.playbackSeconds,
+                thresholdFraction: ProSettings.scrobbleThresholdFraction(),
+                isInteractive: false,
+                formatTime: formatTime,
+                accessibilityHint: "",
+                onPreviewChange: { _ in },
+                onScrubEnd: { _ in }
+            )
+        } else if let track, let duration = track.durationSeconds, duration > 0 {
             let isInteractive = track.usesFallbackDuration != true
             let playedSeconds = displayedPlayedSeconds(for: track, duration: duration)
 
@@ -231,6 +319,7 @@ struct FullscreenNowPlayingView: View {
                 isActive: shuffleMode != .off,
                 side: modeButtonSide,
                 action: {
+                    guard !screenshotMode.isEnabled else { return }
                     let player = MPMusicPlayerController.systemMusicPlayer
                     player.shuffleMode = player.shuffleMode == .off ? .songs : .off
                     syncPlaybackModes()
@@ -238,18 +327,22 @@ struct FullscreenNowPlayingView: View {
             )
 
             transportButton(systemImage: "backward.fill", symbolSize: 28 * iconScale, frameWidth: sideButtonSide, frameHeight: 54) {
+                guard !screenshotMode.isEnabled else { return }
                 observer.skipToPreviousItem()
             }
 
+            let isPlaying = screenshotMode.isEnabled || observer.playbackState == .playing
             primaryTransportButton(
-                systemImage: observer.playbackState == .playing ? "pause.fill" : "play.fill",
-                symbolSize: (observer.playbackState == .playing ? 44 : 46) * min(iconScale, 1),
+                systemImage: isPlaying ? "pause.fill" : "play.fill",
+                symbolSize: (isPlaying ? 44 : 46) * min(iconScale, 1),
                 frameWidth: primaryWidth
             ) {
+                guard !screenshotMode.isEnabled else { return }
                 observer.togglePlayPause()
             }
 
             transportButton(systemImage: "forward.fill", symbolSize: 28 * iconScale, frameWidth: sideButtonSide, frameHeight: 54) {
+                guard !screenshotMode.isEnabled else { return }
                 observer.skipToNextItem()
             }
 
@@ -258,6 +351,7 @@ struct FullscreenNowPlayingView: View {
                 isActive: repeatMode != .none,
                 side: modeButtonSide,
                 action: {
+                    guard !screenshotMode.isEnabled else { return }
                     cycleRepeatMode()
                 }
             )
@@ -341,10 +435,16 @@ struct FullscreenNowPlayingView: View {
     }
 
     private var statusPills: [String] {
-        ScrobbleEngine.statusPills(from: engine.statusText)
+        if screenshotMode.isEnabled {
+            return screenshotMode.statusPills
+        }
+        return ScrobbleEngine.statusPills(from: engine.statusText)
     }
 
     private var statusFallbackText: String? {
+        if screenshotMode.isEnabled {
+            return nil
+        }
         if auth.sessionKey == nil && !listenBrainzAuth.isConnected {
             return NSLocalizedString("Connect Last.fm or ListenBrainz to scrobble.", comment: "")
         }
@@ -489,24 +589,58 @@ struct FullscreenNowPlayingView: View {
         return Color.white.opacity(0.5)
     }
 
-    private func fullscreenLayout(in size: CGSize) -> (artworkSide: CGFloat, verticalSpacing: CGFloat, topContentInset: CGFloat, titleTopPadding: CGFloat, titleFontSize: CGFloat, bottomPadding: CGFloat, showsArtwork: Bool) {
-        let showsArtwork = !isFourPointSevenInchPhone(size)
+    private func fullscreenLayout(in size: CGSize) -> (
+        artworkSide: CGFloat,
+        verticalSpacing: CGFloat,
+        topContentInset: CGFloat,
+        titleTopPadding: CGFloat,
+        titleFontSize: CGFloat,
+        artistFontSize: CGFloat,
+        albumFontSize: CGFloat,
+        bottomPadding: CGFloat,
+        topPadding: CGFloat
+    ) {
+        let isCompact = isCompactScreen(size)
         let availableWidth = size.width - (horizontalPadding * 2)
-        let bottomPadding: CGFloat = 40
-        let bottomControlsHeight: CGFloat = 374
-        let availableHeight = size.height - 14 - bottomPadding - bottomControlsHeight
-        let artworkSide = min(max(0, availableWidth), max(180, availableHeight))
-        let spacing: CGFloat = 22
-        let topContentInset: CGFloat = showsArtwork ? 22 : 76
-        let titleTopPadding: CGFloat = showsArtwork ? 28 : 0
-        let titleFontSize: CGFloat = 31
-        return (artworkSide, spacing, topContentInset, titleTopPadding, titleFontSize, bottomPadding, showsArtwork)
+
+        if isCompact {
+            let spacing: CGFloat = 12
+            let topPadding: CGFloat = 4
+            let bottomPadding: CGFloat = 16
+            let titleTopPadding: CGFloat = 12
+            let titleFontSize: CGFloat = 24
+            let artistFontSize: CGFloat = 18
+            let albumFontSize: CGFloat = 15
+
+            // Estimated height of bottom controls on compact:
+            // track details (~82), progress (54), transport (76), status (46), open music button (50), vertical gaps (4 * 12 = 48)
+            let bottomControlsHeight: CGFloat = 356
+            let nonArtworkVerticalSpace = topPadding + bottomPadding + titleTopPadding + bottomControlsHeight
+            let availableHeight = max(0, size.height - nonArtworkVerticalSpace)
+            let maxArtworkSide = min(availableWidth, 235)
+            let artworkSide = min(maxArtworkSide, max(160, availableHeight))
+
+            return (artworkSide, spacing, 0, titleTopPadding, titleFontSize, artistFontSize, albumFontSize, bottomPadding, topPadding)
+        } else {
+            let topPadding: CGFloat = 14
+            let bottomPadding: CGFloat = 40
+            let bottomControlsHeight: CGFloat = 374
+            let availableHeight = size.height - topPadding - bottomPadding - bottomControlsHeight
+            let artworkSide = min(max(0, availableWidth), max(180, availableHeight))
+            let spacing: CGFloat = 22
+            let topContentInset: CGFloat = 22
+            let titleTopPadding: CGFloat = 28
+            let titleFontSize: CGFloat = 31
+            let artistFontSize: CGFloat = 22
+            let albumFontSize: CGFloat = 17
+            return (artworkSide, spacing, topContentInset, titleTopPadding, titleFontSize, artistFontSize, albumFontSize, bottomPadding, topPadding)
+        }
     }
 
-    private func isFourPointSevenInchPhone(_ size: CGSize) -> Bool {
+    private func isCompactScreen(_ size: CGSize) -> Bool {
         let shortSide = min(size.width, size.height)
         let longSide = max(size.width, size.height)
-        return shortSide <= 375 && longSide <= 667
+        return (shortSide <= 375 && longSide <= 667) || (shortSide <= 390 && longSide <= 700) || size.height <= 700
     }
 }
 

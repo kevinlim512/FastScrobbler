@@ -209,6 +209,7 @@
 "played %llds" = "已播放 %lld 秒";
 "playing" = "播放中";
 "scrobbled" = "已 scrobble";
+"queued for retry" = "等待重试";
 "seeking backward" = "向后拖动";
 "seeking forward" = "向前拖动";
 "stopped" = "已停止";
@@ -353,3 +354,6 @@
 "Scrobble Again" = "重新 Scrobble";
 "Show Setup" = "显示设置向导";
 "You're signed out of Last.fm and ListenBrainz." = "你已退出 Last.fm 和 ListenBrainz。";
+"Sync Now" = "立即同步";
+"Last synced: %@" = "上次同步：%@";
+"Syncing…" = "正在同步…";

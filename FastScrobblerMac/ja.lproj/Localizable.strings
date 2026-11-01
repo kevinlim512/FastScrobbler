@@ -206,6 +206,7 @@
 "played %llds" = "%lld秒再生";
 "playing" = "再生中";
 "scrobbled" = "スクロブル済み";
+"queued for retry" = "再試行待ち";
 "seeking backward" = "巻き戻し中";
 "seeking forward" = "早送り中";
 "stopped" = "停止";
@@ -353,3 +354,6 @@
 "Scrobble Again" = "もう一度スクロブル";
 "Show Setup" = "セットアップを表示";
 "You're signed out of Last.fm and ListenBrainz." = "Last.fm と ListenBrainz からサインアウトしています。";
+"Sync Now" = "今すぐ同期";
+"Last synced: %@" = "前回の同期: %@";
+"Syncing…" = "同期中…";

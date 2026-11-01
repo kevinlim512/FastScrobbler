@@ -148,9 +148,13 @@ struct ContentView: View {
     @EnvironmentObject private var engine: ScrobbleEngine
     @EnvironmentObject private var scrobbleLog: ScrobbleLogStore
     @EnvironmentObject private var pro: ProPurchaseManager
+#if os(iOS)
+    @ObservedObject private var screenshotMode = ScreenshotModeManager.shared
+#endif
 
     @Environment(\.openURL) private var openURL
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     @AppStorage(Keys.hasSeenSetup) private var hasSeenSetup = false
     @AppStorage(AppSettings.Keys.listeningHistoryRequireConfirmationEnabled, store: AppGroup.userDefaults) private var listeningHistoryRequireConfirmationEnabled = true
@@ -198,19 +202,39 @@ struct ContentView: View {
 
     var body: some View {
         Group {
-            // TabView keeps both tabs alive so the engine continues running in the background.
-            TabView(selection: $selectedTab) {
-                NavigationView {
-                    mainContent
+            if horizontalSizeClass == .regular {
+                HStack(spacing: 0) {
+                    NavigationView {
+                        mainContent
+                    }
+                    .navigationViewStyle(.stack)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                    Divider()
+
+                    settingsTabContent
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
-                .tabItem { Label("Home", systemImage: UIImage(systemName: "music.note.arrow.trianglehead.clockwise") != nil ? "music.note.arrow.trianglehead.clockwise" : "music.note") }
-                .tag(Tab.home)
+            } else {
+                // TabView keeps both tabs alive so the engine continues running in the background.
+                TabView(selection: $selectedTab) {
+                    NavigationView {
+                        mainContent
+                    }
+                    .navigationViewStyle(.stack)
+                    .tabItem { Label("Home", systemImage: UIImage(systemName: "music.note.arrow.trianglehead.clockwise") != nil ? "music.note.arrow.trianglehead.clockwise" : "music.note") }
+                    .tag(Tab.home)
 
-                settingsTabContent
-                    .tabItem { Label("Settings", systemImage: "gear") }
-                    .tag(Tab.settings)
+                    settingsTabContent
+                        .tabItem { Label("Settings", systemImage: "gear") }
+                        .tag(Tab.settings)
+                }
             }
-
+        }
+        .onValueChange(of: horizontalSizeClass) { newSizeClass in
+            if newSizeClass == .compact {
+                selectedTab = .settings
+            }
         }
         .onAppear {
             refreshScrobbleLogDisplay(now: .now, forceReload: true)
@@ -388,20 +412,11 @@ struct ContentView: View {
     }
 
     private var mainContent: some View {
-        let hasLastFM = auth.sessionKey != nil
-        let hasListenBrainz = listenBrainzAuth.isConnected
-        let isTwoServicesSignedIn = hasLastFM && hasListenBrainz
-
         return ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 controls
-                if !isTwoServicesSignedIn {
-                    statusCard
-                    trackCard
-                } else {
-                    trackCard
-                    statusCard
-                }
+                trackCard
+                statusCard
                 scrobbleLogCard
                 if let errorText {
                     Text(errorText)
@@ -410,7 +425,7 @@ struct ContentView: View {
                 }
             }
             .padding()
-            .padding(.top, 8)
+            .padding(.top, 16)
             .animation(.easeInOut(duration: 0.3), value: observer.track)
             .animation(.easeInOut(duration: 0.3), value: auth.sessionKey != nil)
             .animation(.easeInOut(duration: 0.3), value: listenBrainzAuth.isConnected)
@@ -418,25 +433,6 @@ struct ContentView: View {
         }
         .refreshable {
             await refreshHome()
-        }
-        .overlay(alignment: .top) {
-            GeometryReader { proxy in
-                // Keep this overlay out of the scroll view so SwiftUI never snapshots it
-                // at full width with a transient zero-height container during modal transitions.
-                LinearGradient(
-                    colors: [
-                        Color(.systemBackground),
-                        Color(.systemBackground).opacity(0)
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .frame(height: homeTopGradientHeight(for: proxy.size))
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                .ignoresSafeArea(edges: .top)
-                .allowsHitTesting(false)
-            }
-            .allowsHitTesting(false)
         }
         .onReceive(Timer.publish(every: 60, on: .main, in: .common).autoconnect()) { _ in
             refreshScrobbleLogDisplay(now: .now)
@@ -447,16 +443,6 @@ struct ContentView: View {
     private var settingsTabContent: some View {
         SettingsView(isShowingSetup: $isShowingSetup, scrollRequest: $settingsScrollRequest)
             .environment(\.isEmbeddedInTab, true)
-    }
-
-    private func homeTopGradientHeight(for size: CGSize) -> CGFloat {
-        isFourPointSevenInchPhone(size) ? 40 : 70
-    }
-
-    private func isFourPointSevenInchPhone(_ size: CGSize) -> Bool {
-        let shortSide = min(size.width, size.height)
-        let longSide = max(size.width, size.height)
-        return shortSide <= 375 && longSide <= 667
     }
 
     private var contentCardBackground: some View {
@@ -474,29 +460,52 @@ struct ContentView: View {
 
     @ViewBuilder
     private var statusCard: some View {
+#if os(iOS)
+        if screenshotMode.isEnabled {
+            VStack(alignment: .leading, spacing: 12) {
+                singleStatusCard(service: .lastfm, isConnected: true)
+                singleStatusCard(service: .listenbrainz, isConnected: true)
+            }
+        } else {
+            normalStatusCard
+        }
+#else
+        normalStatusCard
+#endif
+    }
+
+    @ViewBuilder
+    private var normalStatusCard: some View {
         let hasLastFM = auth.sessionKey != nil
         let hasListenBrainz = listenBrainzAuth.isConnected
 
         if !hasLastFM && !hasListenBrainz {
             VStack(alignment: .leading, spacing: 12) {
-                singleStatusCard(title: "Last.fm", isConnected: false)
-                singleStatusCard(title: "ListenBrainz", isConnected: false)
+                singleStatusCard(service: .lastfm, isConnected: false)
+                singleStatusCard(service: .listenbrainz, isConnected: false)
             }
         } else {
             VStack(alignment: .leading, spacing: 12) {
                 if hasLastFM {
-                    singleStatusCard(title: "Last.fm", isConnected: true)
+                    singleStatusCard(service: .lastfm, isConnected: true)
                 }
                 if hasListenBrainz {
-                    singleStatusCard(title: "ListenBrainz", isConnected: true)
+                    singleStatusCard(service: .listenbrainz, isConnected: true)
                 }
             }
         }
     }
 
-    private func singleStatusCard(title: String, isConnected: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title)
+    private func singleStatusCard(service: ScrobbleService, isConnected: Bool) -> some View {
+#if os(iOS)
+        let isScreenshot = screenshotMode.isEnabled
+        let pills = isScreenshot ? screenshotMode.serviceStatusPills : engine.statusPills(for: service)
+#else
+        let isScreenshot = false
+        let pills = engine.statusPills(for: service)
+#endif
+        return VStack(alignment: .leading, spacing: 8) {
+            Text(service.displayName)
                 .font(.title2.weight(.semibold))
             if isConnected {
                 Text("Signed in")
@@ -507,11 +516,17 @@ struct ContentView: View {
                     .font(.footnote)
                     .foregroundColor(.secondary)
             }
-            engineStatusText(engine.statusText)
-                .font(.footnote)
-            if !engineStatusPills.isEmpty {
+            if isScreenshot {
+                Text(NSLocalizedString("Scrobbled.", comment: ""))
+                    .font(.footnote)
+                    .foregroundColor(.secondary)
+            } else {
+                engineStatusText(for: service)
+                    .font(.footnote)
+            }
+            if !pills.isEmpty {
                 HStack(spacing: 8) {
-                    ForEach(engineStatusPills, id: \.self) { pill in
+                    ForEach(pills) { pill in
                         statusPillView(pill)
                     }
                 }
@@ -526,7 +541,16 @@ struct ContentView: View {
     }
 
     private var trackCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
+#if os(iOS)
+        let isScreenshot = screenshotMode.isEnabled
+        let effectiveTrack = isScreenshot ? screenshotMode.mockTrack : observer.track
+        let isPlaying = isScreenshot ? true : (observer.playbackState == .playing)
+#else
+        let isScreenshot = false
+        let effectiveTrack = observer.track
+        let isPlaying = observer.playbackState == .playing
+#endif
+        return VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text("Now Playing")
                     .font(.title2.weight(.semibold))
@@ -543,13 +567,19 @@ struct ContentView: View {
                 .accessibilityLabel(Text(NSLocalizedString("Open Fullscreen Now Playing", comment: "")))
 #endif
             }
-            if let t = observer.track {
+            if let t = effectiveTrack {
                 nowPlayingMetadata(for: t)
                 if let d = t.durationSeconds, d > 0 {
                     VStack(spacing: 6) {
-                        TrackPlaybackProgressView(track: t, engine: engine, formatTime: formatTime)
+                        TrackPlaybackProgressView(
+                            track: t,
+                            engine: engine,
+                            formatTime: formatTime,
+                            overridePlayedSeconds: isScreenshot ? ScreenshotModeManager.playbackSeconds : nil
+                        )
                         HStack(spacing: 32) {
                             Button {
+                                guard !isScreenshot else { return }
                                 prevBounce += 1
                                 observer.skipToPreviousItem()
                             } label: {
@@ -557,15 +587,19 @@ struct ContentView: View {
                                     .symbolEffect(.bounce, value: prevBounce)
                             }
                             .font(.title3)
-                            Button { observer.togglePlayPause() } label: {
-                                Image(systemName: observer.playbackState == .playing ? "pause.fill" : "play.fill")
+                            Button {
+                                guard !isScreenshot else { return }
+                                observer.togglePlayPause()
+                            } label: {
+                                Image(systemName: isPlaying ? "pause.fill" : "play.fill")
                                     .contentTransition(.symbolEffect(.replace.downUp))
-                                    .scaleEffect(observer.playbackState == .playing ? 1.0 : 1.15)
-                                    .animation(.spring(response: 0.25, dampingFraction: 0.45), value: observer.playbackState)
+                                    .scaleEffect(isPlaying ? 1.0 : 1.15)
+                                    .animation(.spring(response: 0.25, dampingFraction: 0.45), value: isPlaying)
                                     .frame(width: 32, height: 32)
                             }
                             .font(.title)
                             Button {
+                                guard !isScreenshot else { return }
                                 nextBounce += 1
                                 observer.skipToNextItem()
                             } label: {
@@ -585,8 +619,8 @@ struct ContentView: View {
                 Text("No track detected.")
             }
         }
-        .animation(.easeInOut(duration: 0.3), value: observer.track)
-        .animation(.easeInOut(duration: 0.3), value: observer.playbackState)
+        .animation(.easeInOut(duration: 0.3), value: effectiveTrack)
+        .animation(.easeInOut(duration: 0.3), value: isPlaying)
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
         .background(contentCardBackground)
@@ -627,7 +661,14 @@ struct ContentView: View {
     private var controls: some View {
         let actionButtonHeight: CGFloat = 40
         let actionButtonSpacing: CGFloat = 12
+#if os(iOS)
+        let isScreenshot = screenshotMode.isEnabled
+#else
+        let isScreenshot = false
+#endif
         let hasAnyAccount = auth.sessionKey != nil || listenBrainzAuth.isConnected
+        let showLastFMProfile = isScreenshot || auth.sessionKey != nil
+        let showListenBrainzProfile = isScreenshot || listenBrainzAuth.isConnected
 
         return VStack(spacing: 12) {
             Button {
@@ -714,47 +755,47 @@ struct ContentView: View {
                 scanListeningHistoryButton
             }
 
+            if showLastFMProfile {
+                Button {
+                    if let url = auth.freshProfileURL() ?? (isScreenshot ? URL(string: "https://www.last.fm") : nil) {
+                        inAppBrowserURL = url
+                    }
+                } label: {
+                    Label(NSLocalizedString("View Profile in Last.fm", comment: ""), systemImage: "person.circle")
+                        .font(.body.weight(.bold))
+                        .foregroundStyle(actionButtonForeground(ActionButtonPalette.accountForeground))
+                        .frame(maxWidth: .infinity, minHeight: actionButtonHeight)
+                }
+                .buttonStyle(.bordered)
+                .pillButtonBorder()
+                .tint(actionButtonTint(ActionButtonPalette.account))
+                .prominentButtonBackground(actionButtonFill(ActionButtonPalette.accountFill))
+                .brightButtonBorder(actionButtonBorder(ActionButtonPalette.accountBorder))
+                .buttonGlow(actionButtonTint(ActionButtonPalette.account))
+                .disabled(!isScreenshot && auth.profileURL == nil)
+            }
+
+            if showListenBrainzProfile {
+                Button {
+                    if let url = listenBrainzAuth.freshProfileURL() ?? (isScreenshot ? URL(string: "https://listenbrainz.org") : nil) {
+                        inAppBrowserURL = url
+                    }
+                } label: {
+                    Label(NSLocalizedString("View Profile in ListenBrainz", comment: ""), systemImage: "waveform.path.ecg")
+                        .font(.body.weight(.bold))
+                        .foregroundStyle(actionButtonForeground(ActionButtonPalette.accountForeground))
+                        .frame(maxWidth: .infinity, minHeight: actionButtonHeight)
+                }
+                .buttonStyle(.bordered)
+                .pillButtonBorder()
+                .tint(actionButtonTint(ActionButtonPalette.account))
+                .prominentButtonBackground(actionButtonFill(ActionButtonPalette.accountFill))
+                .brightButtonBorder(actionButtonBorder(ActionButtonPalette.accountBorder))
+                .buttonGlow(actionButtonTint(ActionButtonPalette.account))
+                .disabled(!isScreenshot && listenBrainzAuth.profileURL == nil)
+            }
+
             if hasAnyAccount {
-                if auth.sessionKey != nil {
-                    Button {
-                        if let url = auth.freshProfileURL() {
-                            inAppBrowserURL = url
-                        }
-                    } label: {
-                        Label(NSLocalizedString("View Profile in Last.fm", comment: ""), systemImage: "person.circle")
-                            .font(.body.weight(.bold))
-                            .foregroundStyle(actionButtonForeground(ActionButtonPalette.accountForeground))
-                            .frame(maxWidth: .infinity, minHeight: actionButtonHeight)
-                    }
-                    .buttonStyle(.bordered)
-                    .pillButtonBorder()
-                    .tint(actionButtonTint(ActionButtonPalette.account))
-                    .prominentButtonBackground(actionButtonFill(ActionButtonPalette.accountFill))
-                    .brightButtonBorder(actionButtonBorder(ActionButtonPalette.accountBorder))
-                    .buttonGlow(actionButtonTint(ActionButtonPalette.account))
-                    .disabled(auth.profileURL == nil)
-                }
-
-                if listenBrainzAuth.isConnected {
-                    Button {
-                        if let url = listenBrainzAuth.freshProfileURL() {
-                            inAppBrowserURL = url
-                        }
-                    } label: {
-                        Label(NSLocalizedString("View Profile in ListenBrainz", comment: ""), systemImage: "waveform.path.ecg")
-                            .font(.body.weight(.bold))
-                            .foregroundStyle(actionButtonForeground(ActionButtonPalette.accountForeground))
-                            .frame(maxWidth: .infinity, minHeight: actionButtonHeight)
-                    }
-                    .buttonStyle(.bordered)
-                    .pillButtonBorder()
-                    .tint(actionButtonTint(ActionButtonPalette.account))
-                    .prominentButtonBackground(actionButtonFill(ActionButtonPalette.accountFill))
-                    .brightButtonBorder(actionButtonBorder(ActionButtonPalette.accountBorder))
-                    .buttonGlow(actionButtonTint(ActionButtonPalette.account))
-                    .disabled(listenBrainzAuth.profileURL == nil)
-                }
-
                 Button {
                     isShowingManualScrobble = true
                 } label: {
@@ -937,12 +978,8 @@ struct ContentView: View {
         return String(format: "%d:%02d", s / 60, s % 60)
     }
 
-    private var engineStatusPills: [String] {
-        ScrobbleEngine.statusPills(from: engine.statusText)
-    }
-
-    private func engineStatusText(_ status: String) -> Text {
-        let parts = ScrobbleEngine.filteredStatusParts(from: status)
+    private func engineStatusText(for service: ScrobbleService) -> Text {
+        let parts = engine.filteredStatusParts(for: service)
 
         guard !parts.isEmpty else {
             return Text("Engine: ")
@@ -959,6 +996,37 @@ struct ContentView: View {
             }
         }
         return text
+    }
+
+    @ViewBuilder
+    private func statusPillView(_ pill: ScrobbleEngine.ServiceStatusPill) -> some View {
+        let tint: Color = {
+            switch pill.style {
+            case .success: return Color.green
+            case .warning: return Color.orange
+            case .neutral: return Color.secondary
+            }
+        }()
+        let textColor: Color = {
+            switch pill.style {
+            case .success: return Color.green
+            case .warning: return Color.orange
+            case .neutral: return Color.primary.opacity(0.85)
+            }
+        }()
+        Text(pill.text)
+            .font(.system(size: 11, weight: .bold))
+            .foregroundStyle(textColor)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(
+                Capsule()
+                    .fill(tint.opacity(0.16))
+            )
+            .overlay(
+                Capsule()
+                    .stroke(tint.opacity(0.4), lineWidth: 1)
+            )
     }
 
     @ViewBuilder
@@ -1658,11 +1726,12 @@ private struct TrackPlaybackProgressView: View {
     let track: Track
     let engine: ScrobbleEngine
     let formatTime: (TimeInterval) -> String
+    var overridePlayedSeconds: TimeInterval? = nil
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { _ in
             let duration = track.durationSeconds ?? 0
-            let playedSeconds = engine.liveDisplayedPlayedSeconds(for: track)
+            let playedSeconds = overridePlayedSeconds ?? engine.liveDisplayedPlayedSeconds(for: track)
             let progress = duration > 0 ? min(playedSeconds / duration, 1.0) : 0
 
             VStack(spacing: 6) {

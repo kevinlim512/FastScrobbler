@@ -18,12 +18,12 @@ PROJECT_COMPATIBILITY_VERSION = "Xcode 3.2"
 PROJECT_LAST_SWIFT_UPDATE_CHECK = "1600"
 PROJECT_LAST_UPGRADE_CHECK = "2640"
 SCHEME_LAST_UPGRADE_VERSION = "2640"
-IOS_APP_MARKETING_VERSION = "7.1"
-IOS_APP_CURRENT_PROJECT_VERSION = "7101"
-MAC_APP_MARKETING_VERSION = "7.1"
-MAC_APP_CURRENT_PROJECT_VERSION = "7101"
-EXTENSION_MARKETING_VERSION = "7.1"
-EXTENSION_CURRENT_PROJECT_VERSION = "7101"
+IOS_APP_MARKETING_VERSION = "7.2"
+IOS_APP_CURRENT_PROJECT_VERSION = "7201"
+MAC_APP_MARKETING_VERSION = "7.2"
+MAC_APP_CURRENT_PROJECT_VERSION = "7201"
+EXTENSION_MARKETING_VERSION = "7.2"
+EXTENSION_CURRENT_PROJECT_VERSION = "7201"
 
 MAIN_APP_BUNDLE_ID = "com.kevin.FastScrobbler"
 LIVE_ACTIVITY_BUNDLE_ID = "com.kevin.FastScrobbler.liveactivity"
@@ -270,6 +270,7 @@ SHARED_CORE_SOURCES = %w[
   FastScrobbler/ListenBrainz/ListenBrainzConnectSheet.swift
   FastScrobbler/ListenBrainz/ListenBrainzSessionStore.swift
   FastScrobbler/LastFMSecrets.swift
+  FastScrobbler/FirstArtistOnlySettingsPage.swift
   FastScrobbler/Models/Track.swift
   FastScrobbler/ProPurchaseManager.swift
   FastScrobbler/Scrobble/LivePlaybackSnapshot.swift
@@ -300,9 +301,11 @@ IOS_APP_SOURCES = (SHARED_CORE_SOURCES + %w[
   FastScrobbler/NowPlaying/AppleMusicRecentTracksImporter.swift
   FastScrobbler/NowPlaying/ListeningHistoryScanService.swift
   FastScrobbler/NowPlaying/PlaybackHistoryImporter.swift
+  FastScrobbler/OrientationManager.swift
   FastScrobbler/Pro.swift
   FastScrobbler/RemoveBracketsSettingsPage.swift
   FastScrobbler/SceneDelegate.swift
+  FastScrobbler/ScreenshotModeManager.swift
   FastScrobbler/SetupHelpView.swift
   FastScrobbler/TextReplacementSettingsPage.swift
   FastScrobbler/WhatsNewView.swift
@@ -317,6 +320,7 @@ MAC_APP_SOURCES = %w[
   FastScrobbler/ListenBrainz/ListenBrainzConnectSheet.swift
   FastScrobbler/ListenBrainz/ListenBrainzSessionStore.swift
   FastScrobbler/LastFMSecrets.swift
+  FastScrobbler/FirstArtistOnlySettingsPage.swift
   FastScrobbler/Models/Track.swift
   FastScrobbler/ProPurchaseManager.swift
   FastScrobbler/RemoveBracketsSettingsPage.swift
@@ -390,7 +394,9 @@ IOS_APP_RESOURCES = (
     AppIcon.icon
     FastScrobbler/Resources/Assets.xcassets
     FastScrobbler/Resources/LaunchScreen.storyboard
-  ] + (File.exist?("GoogleService-Info.plist") ? ["GoogleService-Info.plist"] : []) + localized_resources("FastScrobbler")
+  ] + (File.exist?("GoogleService-Info.plist") ? ["GoogleService-Info.plist"] : []) +
+    (File.exist?("FastScrobbler/Resources/album_cover.jpg") ? ["FastScrobbler/Resources/album_cover.jpg"] : []) +
+    localized_resources("FastScrobbler")
 ).freeze
 
 MAC_APP_RESOURCES = (
@@ -430,7 +436,7 @@ TARGET_DEFINITIONS = [
     accent_color: "AccentColor",
     include_all_app_icon_assets: "YES",
     supported_platforms: "iphoneos iphonesimulator",
-    targeted_device_family: "1",
+    targeted_device_family: "1,2",
     skip_install: "NO",
     application_extension_api_only: "NO",
     development_team: DEVELOPMENT_TEAM,
@@ -527,7 +533,7 @@ TARGET_DEFINITIONS = [
     sources: LIVE_ACTIVITY_SOURCES,
     resources: [],
     supported_platforms: "iphoneos iphonesimulator",
-    targeted_device_family: "1",
+    targeted_device_family: "1,2",
     skip_install: "YES",
     application_extension_api_only: "YES",
     development_team: DEVELOPMENT_TEAM,
@@ -553,7 +559,7 @@ TARGET_DEFINITIONS = [
     sources: NOW_PLAYING_CONTROL_SOURCES,
     resources: localized_resources("FastScrobblerNowPlayingControl"),
     supported_platforms: "iphoneos iphonesimulator",
-    targeted_device_family: "1",
+    targeted_device_family: "1,2",
     skip_install: "YES",
     application_extension_api_only: "YES",
     development_team: DEVELOPMENT_TEAM,
@@ -580,7 +586,7 @@ TARGET_DEFINITIONS = [
     sources: SCROBBLE_CONTROL_SOURCES,
     resources: localized_resources("FastScrobblerScrobbleControl"),
     supported_platforms: "iphoneos iphonesimulator",
-    targeted_device_family: "1",
+    targeted_device_family: "1,2",
     skip_install: "YES",
     application_extension_api_only: "YES",
     development_team: DEVELOPMENT_TEAM,
@@ -607,7 +613,7 @@ TARGET_DEFINITIONS = [
     sources: MANUAL_SCROBBLE_CONTROL_SOURCES,
     resources: [],
     supported_platforms: "iphoneos iphonesimulator",
-    targeted_device_family: "1",
+    targeted_device_family: "1,2",
     skip_install: "YES",
     application_extension_api_only: "YES",
     development_team: DEVELOPMENT_TEAM,
@@ -634,7 +640,7 @@ TARGET_DEFINITIONS = [
     sources: LISTENING_HISTORY_CONTROL_SOURCES,
     resources: localized_resources("FastScrobblerListeningHistoryControl"),
     supported_platforms: "iphoneos iphonesimulator",
-    targeted_device_family: "1",
+    targeted_device_family: "1,2",
     skip_install: "YES",
     application_extension_api_only: "YES",
     development_team: DEVELOPMENT_TEAM,
