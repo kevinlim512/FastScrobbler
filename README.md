@@ -29,7 +29,6 @@ https://apps.apple.com/sg/app/fastscrobbler-for-last-fm/id6759501541
 <p align="center">
   <img src="Screenshots/Mac 1.png" height="240" alt="FastScrobbler main screen" />
   <img src="Screenshots/Mac 2.png" height="240" alt="FastScrobbler settings screen" />
-  <img src="Screenshots/Mac 3.png" height="240" alt="FastScrobbler setup screen" />
 </p>
 
 ## Features
